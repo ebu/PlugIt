@@ -1,0 +1,17 @@
+{% extends "plugIt/base.html" %}
+{% load i18n %}
+
+{% block title %}
+	{% trans "404 Error !" %}
+{% endblock %}
+
+{% block content %}
+	<h1>{% trans "404 Error" %}</h1>
+
+	<p>
+		{% blocktrans with reason as reason %}
+			This page dosen't exist. Internal reason. {{reason}}
+		{% endblocktrans %}
+	</p>
+
+{% endblock %}

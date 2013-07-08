@@ -1,0 +1,78 @@
+{% load i18n %}
+<!DOCTYPE html>
+    <html>
+        <head>
+            <title>{% block title %}{% endblock %} :: PlugIt -Standalone mode</title>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+            <link href="/media/css/bootstrap.min.css" rel="stylesheet" media="screen">
+            <link href="/media/css/bootstrap-responsive.min.css" rel="stylesheet" media="screen">
+            <script src="/media/js/jquery-1.10.1.min.js"></script>
+            <script src="/media/js/bootstrap.min.js"></script>
+
+            <link href="/media/css/plugIt-standalone.css" rel="stylesheet" media="screen">
+            
+
+        </head>
+        <body>
+
+            <script type="text/javascript">
+                function ebuio_setUser(mode) {
+
+                    $.ajax({
+                        url: "{{ebuio_baseUrl}}ebuio_setUser?mode=" + mode,
+                    }).done(function() {
+                         location.reload();
+                    });
+
+                }
+            </script>
+
+            <div class="container">
+
+                <div class="masthead">
+                    
+                    <div class="navbar">
+                      <div class="navbar-inner">
+                        <div class="container">
+                          <ul class="nav">
+
+                            <a class="brand" href="{{ebuio_baseUrl}}">PlugIt - Standalone mode</a>
+
+                            <li class="dropdown">
+                                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                                    {% trans "User" %}
+                                    <b class="caret"></b>
+                                </a>
+                                <ul class="dropdown-menu">
+                                    <li {% if ebuio_userMode == 'ano' %}class="active"{% endif %}><a href="#" onclick="ebuio_setUser('ano');">{% trans "Anonymous user" %}</a></li>
+                                    <li {% if ebuio_userMode == 'log' %}class="active"{% endif %}><a href="#" onclick="ebuio_setUser('log');">{% trans "Logged in user" %}</a></li>
+                                    <li {% if ebuio_userMode == 'mem' %}class="active"{% endif %}><a href="#" onclick="ebuio_setUser('mem');">{% trans "Project member" %}</a></li>
+                                    <li {% if ebuio_userMode == 'adm' %}class="active"{% endif %}><a href="#" onclick="ebuio_setUser('adm');">{% trans "Admin user" %}</a></li>
+                                </ul>
+                            </li>
+                          </ul>
+
+                          <ul class="nav pull-right">
+                            <li><a href="http://ebu.io" class="text-info">About Ebu.io</a></li>
+                            <li><a href="http://ebu.io/plugit" class="text-info">About PlugIt</a></li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div><!-- /.navbar -->
+                </div>
+
+                {% block content %}
+
+                {% endblock %}
+
+                <hr />
+
+                <div class="footer">
+                    <p>&copy; Ebu 2013</p>
+                </div>
+
+            </div>
+
+        </body>
+    </html>

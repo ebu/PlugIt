@@ -1,0 +1,14 @@
+{% extends "plugIt/base.html" %}
+
+{% block title %}Vote :: SimplePools{% endblock %}
+
+{% block content %} 
+    <h2>SimplePolls: Vote</h2>
+
+
+    <div class="alert alert-success">
+        Your vote has been successfully saved. You can <a href="{{ebuio_baseUrl}}show/{{id}}">go back to the poll</a>, <a href="{{ebuio_baseUrl}}create/">create a new poll</a> or <a href="{{ebuio_baseUrl}}">return to the list of poll</a>.
+    </div>
+
+{% endblock %}
+
