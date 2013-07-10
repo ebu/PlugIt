@@ -53,17 +53,17 @@ def cache(time=0, byUser=None):
 
 
 def user_info(props):
-    """Decorator to indiquate a list of properties requested about the current user"""
+    """Decorator to specify a list of properties requested about the current user"""
     def real_decorator(function):
         function.pi_api_user_info = props
         return function
     return real_decorator
 
-#Utils
+# Utils
 
 
 def md5Checksum(filePath):
-    """Compute the md5sum of a file"""
+    """Compute the MD5 sum of a file"""
     with open(filePath, 'rb') as fh:
         m = hashlib.md5()
         while True:

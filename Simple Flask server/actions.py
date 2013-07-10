@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 import sqlite3
 from utils import action, cache, only_logged_user, only_member_user, user_info
 
@@ -5,7 +8,7 @@ from utils import action, cache, only_logged_user, only_member_user, user_info
 # Anonymous users can see polls
 # Registered users can vote
 # Members can create polls
-# Admins can see who selected what
+# Administrators can see who selected what
 ## Data is stored into a simple sqlite database
 
 # Sqlite part: Load the database. If the database doesn't exist, create a new one
@@ -22,6 +25,7 @@ curDB.execute("VACUUM")
 
 coxDB.commit()
 
+
 @action(route="/", template="home.html")
 @cache(time=5, byUser=True)
 def home(request):
@@ -36,9 +40,9 @@ def home(request):
 
 
 @action(route="/show/<int:pollId>", template="show.html")
-@user_info(props=['ebuio_admin','username'])
+@user_info(props=['ebuio_admin', 'username'])
 def show(request, pollId):
-    """Show a poll. We send informations about votes only if the user is an admin"""
+    """Show a poll. We send informations about votes only if the user is an administrator"""
 
     # Get the poll
     curDB.execute('SELECT id, title, description FROM Poll WHERE id = ? ORDER BY title', (pollId,))
@@ -65,7 +69,7 @@ def show(request, pollId):
 
             nbVotes += 1
 
-            # If the user is and admin, saves each votes
+            # If the user is and administrator, saves each votes
             if request.args.get('ebuio_u_ebuio_admin') == 'True':
                 votes.append(rowVote[0])
 
