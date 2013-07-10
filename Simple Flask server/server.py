@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 from flask import Flask, jsonify, request, send_from_directory, make_response
 from flask.views import View
 
