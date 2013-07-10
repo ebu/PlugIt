@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 from flask import Flask, jsonify, request, send_from_directory, make_response
 from flask.views import View
 
@@ -7,12 +10,12 @@ from utils import md5Checksum
 from datetime import datetime, timedelta
 
 
-#Global parameters
+# Global parameters
 DEBUG = True
 
-#PlugIt Parameters
+# PlugIt Parameters
 
-#PI_META_CACHE specify the number of seconds meta informations should be cached
+# PI_META_CACHE specify the number of seconds meta informations should be cached
 if DEBUG:
     PI_META_CACHE = 0  # No cache
 else:
@@ -20,11 +23,12 @@ else:
 
 ## Does not edit code bellow !
 
-#Api version parameters
+# API version parameters
 PI_API_VERSION = '1'
 PI_API_NAME = 'EBUio-PlugIt'
 
 app = Flask(__name__, static_folder='media')
+
 
 @app.route("/ping")
 def ping():
@@ -47,10 +51,10 @@ class MetaView(View):
     def dispatch_request(self, *args, **kwargs):
         objResponse = {}
 
-        #Template information
+        # Template information
         objResponse['template_tag'] = md5Checksum('templates/' + self.action.pi_api_template)
 
-        #User restrictions
+        # User restrictions
         if hasattr(self.action, 'pi_api_only_logged_user'):
             objResponse['only_logged_user'] = self.action.pi_api_only_logged_user
 
@@ -60,18 +64,18 @@ class MetaView(View):
         if hasattr(self.action, 'pi_api_only_admin_user'):
             objResponse['only_admin_user'] = self.action.pi_api_only_admin_user
 
-        #Cache information
+        # Cache information
         if hasattr(self.action, 'pi_api_cache_time'):
             objResponse['cache_time'] = self.action.pi_api_cache_time
 
         if hasattr(self.action, 'pi_api_cache_by_user'):
             objResponse['cache_by_user'] = self.action.pi_api_cache_by_user
 
-        #User information requested
+        # User information requested
         if hasattr(self.action, 'pi_api_user_info'):
             objResponse['user_info'] = self.action.pi_api_user_info
 
-        #Add the cache headers
+        # Add the cache headers
         response = make_response(jsonify(objResponse))
 
         expires = datetime.utcnow() + timedelta(seconds=PI_META_CACHE)
@@ -80,7 +84,7 @@ class MetaView(View):
         response.headers['Expire'] = expires
         response.headers['Cache-Control'] = 'public, max-age=' + str(PI_META_CACHE)
 
-        #Return the final response
+        # Return the final response
         return response
 
 
@@ -106,20 +110,20 @@ class ActionView(View):
         return jsonify(self.action(request, *args, **kwargs))
 
 
-#Register the 3 url (meta, template, action) for each actions
-#We test for each element in the module actions if it's an action (added by the decorator in utils)
+# Register the 3 URLs (meta, template, action) for each actions
+# We test for each element in the module actions if it's an action (added by the decorator in utils)
 for act in dir(actions):
     obj = getattr(actions, act)
     if hasattr(obj, 'pi_api_action') and obj.pi_api_action:
-        #We found an action and we can now add it to our routes
+        # We found an action and we can now add it to our routes
 
-        #Meta
+        # Meta
         app.add_url_rule('/meta' + obj.pi_api_route, view_func=MetaView.as_view('meta_' + act, action=obj))
 
-        #Template
+        # Template
         app.add_url_rule('/template' + obj.pi_api_route, view_func=TemplateView.as_view('template_' + act, action=obj))
 
-        #Action
+        # Action
         app.add_url_rule('/action' + obj.pi_api_route, view_func=ActionView.as_view('action_' + act, action=obj), methods=obj.pi_api_methods)
 
 
