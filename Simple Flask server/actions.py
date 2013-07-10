@@ -1,5 +1,5 @@
-from utils import *
 import sqlite3
+from utils import action, cache, only_logged_user, only_member_user, user_info
 
 ### Basic sample service: polls
 # Anonymous users can see polls

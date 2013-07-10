@@ -9,7 +9,7 @@ from django.core.cache import cache
 from urlparse import urlparse
 from dateutil import parser
 import datetime
-from dateutil.tz import *
+from dateutil.tz import tzutc
 
 
 class PlugIt():
