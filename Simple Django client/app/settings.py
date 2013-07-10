@@ -24,7 +24,7 @@ DATABASES = {
 }
 
 
-from os.path import abspath, basename, dirname, join, normpath
+from os.path import abspath, dirname, join, normpath
 DJANGO_ROOT = dirname(abspath(__file__)) + '/../'
 
 
