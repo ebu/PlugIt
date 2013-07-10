@@ -3,12 +3,12 @@ import sqlite3
 
 ### Basic sample service: polls
 # Anonymous users can see polls
-# Registerd users can vote
+# Registered users can vote
 # Members can create polls
 # Admins can see who selected what
 ## Data is stored into a simple sqlite database
 
-# Sqlite part: Load the database. If the database dosen't exist, create a new one
+# Sqlite part: Load the database. If the database doesn't exist, create a new one
 coxDB = sqlite3.connect('poll.db', check_same_thread=False)
 curDB = coxDB.cursor()
 
@@ -17,7 +17,7 @@ curDB.execute("CREATE TABLE IF NOT EXISTS Poll(id INTEGER PRIMARY KEY AUTOINCREM
 curDB.execute("CREATE TABLE IF NOT EXISTS Response(id INTEGER PRIMARY KEY AUTOINCREMENT, pollId INTEGER, title TEXT)")
 curDB.execute("CREATE TABLE IF NOT EXISTS Vote(responseId INTEGER, username TEXT)")
 
-# Vaccum, for performances
+# Vacuum, for performances
 curDB.execute("VACUUM")
 
 coxDB.commit()
@@ -111,7 +111,7 @@ def create(request):
     id = ''
 
     if request.method == 'POST':  # User saved the form
-        # Retrive parameters
+        # Retrieve parameters
         title = request.form.get('title')
         description = request.form.get('description')
 

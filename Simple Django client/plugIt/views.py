@@ -199,7 +199,7 @@ def main(request, query):
 
     result = template.render(context)
 
-    # Cache the result for futur uses if requested
+    # Cache the result for future uses if requested
     if cacheKey is not None:
         cache.set(cacheKey, result, meta['cache_time'])
 

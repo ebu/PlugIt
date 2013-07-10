@@ -160,7 +160,7 @@ LOGGING = {
 }
 
 # Make this unique, and don't share it with anybody.
-SECRET_KEY = 'The game. Plase also replace this string.'
+SECRET_KEY = 'The game. Please also replace this string.'
 
 PIAPI_STANDALONE = True
 PIAPI_STANDALONE_URI = 'http://127.0.0.1:5000'
