@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 import requests
 import string
 import random
@@ -6,7 +9,7 @@ from django.core.cache import cache
 from urlparse import urlparse
 from dateutil import parser
 import datetime
-from dateutil.tz import *
+from dateutil.tz import tzutc
 
 
 class PlugIt():
@@ -22,7 +25,7 @@ class PlugIt():
 
         #Check if everything is ok
         if not self.ping():
-            raise Exception("Server dosen't reply to ping !")
+            raise Exception("Server doesn't reply to ping !")
         if not self.checkVersion():
             raise Exception("Not a correct PlugIt API version !")
 
@@ -37,7 +40,7 @@ class PlugIt():
         return r
 
     def ping(self):
-        """Return true if the server succesfully pinged"""
+        """Return true if the server successfully pinged"""
 
         randomToken = ''.join(random.choice(string.ascii_uppercase + string.ascii_lowercase + string.digits) for x in range(32))
 
@@ -61,7 +64,7 @@ class PlugIt():
         return False
 
     def getMedia(self, uri):
-        """Return a tupple with a media and his content-type. Don't cache anything !"""
+        """Return a tuple with a media and his content-type. Don't cache anything !"""
 
         r = self.doQuery('media/' + uri)
 
@@ -79,12 +82,12 @@ class PlugIt():
 
         meta = cache.get(mediaKey, None)
 
-        # Nothing found -> Retrive it from the server and cache it
+        # Nothing found -> Retrieve it from the server and cache it
         if not meta:
 
             r = self.doQuery('meta/' + uri)
 
-            if r.status_code == 200:  # Get the content if there is not problem. If there is, tempalte will stay to None
+            if r.status_code == 200:  # Get the content if there is not problem. If there is, template will stay to None
                 meta = r.json()
 
             if 'expire' not in r.headers:
@@ -112,12 +115,12 @@ class PlugIt():
         templateKey = self.cacheKey + '_templates_' + action + '_' + meta['template_tag']
         template = cache.get(templateKey, None)
 
-        # Nothing found -> Retrive it from the server and cache it
+        # Nothing found -> Retrieve it from the server and cache it
         if not template:
 
             r = self.doQuery('template/' + uri)
 
-            if r.status_code == 200:  # Get the content if there is not problem. If there is, tempalte will stay to None
+            if r.status_code == 200:  # Get the content if there is not problem. If there is, template will stay to None
                 template = r.content
 
             cache.set(templateKey, template, None)  # None = Cache forever
@@ -127,7 +130,7 @@ class PlugIt():
     def doAction(self, uri, usePost=False, getParmeters=None, postParameters=None, files=None):
         r = self.doQuery('action/' + uri, usePost=usePost, getParmeters=getParmeters, postParameters=postParameters, files=files)
 
-        if r.status_code == 200:  # Get the content if there is not problem. If there is, tempalte will stay to None
+        if r.status_code == 200:  # Get the content if there is not problem. If there is, template will stay to None
             # {} is parsed as None (but should be an empty object)
 
             if r.content == "{}":

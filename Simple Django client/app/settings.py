@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 # Django settings for PlugIt project.
 DEBUG = True
 
@@ -21,7 +24,7 @@ DATABASES = {
 }
 
 
-from os.path import abspath, basename, dirname, join, normpath
+from os.path import abspath, dirname, join, normpath
 DJANGO_ROOT = dirname(abspath(__file__)) + '/../'
 
 
@@ -157,7 +160,7 @@ LOGGING = {
 }
 
 # Make this unique, and don't share it with anybody.
-SECRET_KEY = 'The game. Plase also replace this string.'
+SECRET_KEY = 'The game. Please also replace this string.'
 
 PIAPI_STANDALONE = True
 PIAPI_STANDALONE_URI = 'http://127.0.0.1:5000'

@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 from django.shortcuts import get_object_or_404, render_to_response, redirect
@@ -29,7 +30,7 @@ from django.core.cache import cache
 from django.contrib.auth.models import User, AnonymousUser
 
 
-#Standalone mode: Load the main plugit interface
+# Standalone mode: Load the main plugit interface
 if settings.PIAPI_STANDALONE:
     plugIt = PlugIt(settings.PIAPI_STANDALONE_URI)
 
@@ -110,7 +111,7 @@ def main(request, query):
         if not request.user.ebuio_member:
             return gen403('only_memeber_user')
 
-    # User must be admin of the project ?
+    # User must be administrator of the project ?
     if ('only_admin_user' in meta and meta['only_admin_user']):
         if not request.user.ebuio_admin:
             return gen403('only_admin_user')
@@ -163,12 +164,12 @@ def main(request, query):
     if 'user_info' in meta:
         for prop in meta['user_info']:
 
-            # Test if the value exist, othervise return None
+            # Test if the value exist, otherwise return None
             value = None
             if hasattr(request.user, prop):
                 value = getattr(request.user, prop)
 
-            #Add informations to get or post parameters, depending on the current method
+            # Add informations to get or post parameters, depending on the current method
             if request.method == 'POST':
                 postParameters['ebuio_u_' + prop] = value
             else:
@@ -198,7 +199,7 @@ def main(request, query):
 
     result = template.render(context)
 
-    # Cache the result for futur uses if requested
+    # Cache the result for future uses if requested
     if cacheKey is not None:
         cache.set(cacheKey, result, meta['cache_time'])
 

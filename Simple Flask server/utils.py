@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 """Utils and decorators"""
 
 import hashlib
@@ -17,7 +20,7 @@ def action(route, template, methods=['GET']):
 
 
 def only_logged_user():
-    """Decorator to indiquate the action must only be called by logger users"""
+    """Decorator to specify the action must only be called by logger users"""
     def real_decorator(function):
         function.pi_api_only_logged_user = True
         return function
@@ -25,7 +28,7 @@ def only_logged_user():
 
 
 def only_member_user():
-    """Decorator to indiquate the action must only be called by users members of the project"""
+    """Decorator to specify the action must only be called by users members of the project"""
     def real_decorator(function):
         function.pi_api_only_member_user = True
         return function
@@ -33,7 +36,7 @@ def only_member_user():
 
 
 def only_admin_user():
-    """Decorator to indiquate the action must only be called by users admins of the project"""
+    """Decorator to specify the action must only be called by admin users of the project"""
     def real_decorator(function):
         function.pi_api_only_admin_user = True
         return function
@@ -41,7 +44,7 @@ def only_admin_user():
 
 
 def cache(time=0, byUser=None):
-    """Decorator to indiquate the number of seconds the result should be cached, and if cache can be shared between users"""
+    """Decorator to specify the number of seconds the result should be cached, and if cache can be shared between users"""
     def real_decorator(function):
         function.pi_api_cache_time = time
         function.pi_api_cache_by_user = byUser
@@ -50,17 +53,17 @@ def cache(time=0, byUser=None):
 
 
 def user_info(props):
-    """Decorator to indiquate a list of properties requested about the current user"""
+    """Decorator to specify a list of properties requested about the current user"""
     def real_decorator(function):
         function.pi_api_user_info = props
         return function
     return real_decorator
 
-#Utils
+# Utils
 
 
 def md5Checksum(filePath):
-    """Compute the md5sum of a file"""
+    """Compute the MD5 sum of a file"""
     with open(filePath, 'rb') as fh:
         m = hashlib.md5()
         while True:
