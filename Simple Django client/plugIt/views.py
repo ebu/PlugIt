@@ -180,6 +180,13 @@ def main(request, query):
     if data is None:
         return gen404('data')
 
+    if data.__class__.__name__ == 'PlugItRedirect':
+        url = data.url
+        if not data.no_prefix:
+            url = settings.PIAPI_BASEURI + url
+
+        return HttpResponseRedirect(url)
+
     # Add user information
     data['ebuio_u'] = request.user
 

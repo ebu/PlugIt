@@ -129,8 +129,22 @@ class PlugIt():
     def doAction(self, uri, usePost=False, getParmeters=None, postParameters=None, files=None):
         r = self.doQuery('action/' + uri, usePost=usePost, getParmeters=getParmeters, postParameters=postParameters, files=files)
 
+        class PlugItRedirect():
+            """Object to perform a redirection"""
+            def __init__(self, url, no_prefix=False):
+                self.url = url
+                self.no_prefix = no_prefix
+
         if r.status_code == 200:  # Get the content if there is not problem. If there is, template will stay to None
             # {} is parsed as None (but should be an empty object)
+
+            if 'EbuIo-PlugIt-Redirect' in r.headers:
+                no_prefix = False
+
+                if 'EbuIo-PlugIt-Redirect-NoPrefix' in r.headers:
+                    no_prefix = r.headers['EbuIo-PlugIt-Redirect-NoPrefix'] == 'True'
+
+                return PlugItRedirect(r.headers['EbuIo-PlugIt-Redirect'], no_prefix)
 
             if r.content == "{}":
                 return {}

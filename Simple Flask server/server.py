@@ -107,7 +107,17 @@ class ActionView(View):
 
     def dispatch_request(self, *args, **kwargs):
         # Call the action
-        return jsonify(self.action(request, *args, **kwargs))
+        result = self.action(request, *args, **kwargs)
+
+        # Is it a redirect ?
+        if result.__class__.__name__ == 'PlugItRedirect':
+            response = make_response("")
+            response.headers['EbuIo-PlugIt-Redirect'] = result.url
+            if result.no_prefix:
+                response.headers['EbuIo-PlugIt-Redirect-NoPrefix'] = 'True'
+            return response
+
+        return jsonify(result)
 
 
 # Register the 3 URLs (meta, template, action) for each actions

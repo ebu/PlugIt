@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import sqlite3
-from utils import action, cache, only_logged_user, only_member_user, user_info
+from utils import action, cache, only_logged_user, only_member_user, user_info, PlugItRedirect
 
 ### Basic sample service: polls
 # Anonymous users can see polls
@@ -98,6 +98,10 @@ def vote(request, pollId, responseId):
 
     coxDB.commit()
 
+    # To display a success page, comment this line
+    return PlugItRedirect("show/" + str(pollId))
+
+    # Line to display the success page
     return {'id': pollId}
 
 

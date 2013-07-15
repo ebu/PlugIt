@@ -71,3 +71,12 @@ def md5Checksum(filePath):
                 break
             m.update(data)
         return m.hexdigest()
+
+
+# Class
+
+class PlugItRedirect():
+    """Object to perform a redirection"""
+    def __init__(self, url, no_prefix=False):
+        self.url = url
+        self.no_prefix = no_prefix
