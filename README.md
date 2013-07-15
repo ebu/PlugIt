@@ -7,6 +7,15 @@ We use this framework at EBU to access web services on the EBU.io platform.
 
 ***This is a draft of the protocol and implementation. Except issues (and report them) !***
 
+## Deps
+
+(`pip install ...`)
+
+* django==1.5.1
+* flask
+* requests
+* python-dateutil
+
 ## Django client
 
 This repository contains an hors-de-la-boite django application to access a PlugIt server. No setup should be needed (django has to be installed however).
