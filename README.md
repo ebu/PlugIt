@@ -35,6 +35,8 @@ Use `cd Simple Flask server`and `python server.py` to run the server.
 ### Available option
 * _DEBUG_ : Boolean. Set to True to active flask debugging
 * _PI_META_CACHE_ : Number of seconds to ask the EBUio server to cache the meta information. Set by default to 0 if _DEBUG_ is True, 5 minutes if _DEBUG_ is False.
+* _PI_BASE_URL_ : String. The base URL to access the PlugIt API. It's possible to use a different URL (eg. '/plugIt/') to have others flask methods for another API using the same server.py. *Must end with a /*
+* _PI_ALLOWED_NETWORKS_ : Array of subnets. PlugIt call will be restricted to thoses networks. Eg: `['127.0.0.1/32']` (Single ip), `['0.0.0.0/0']` (Everyone), `['192.168.42.0/24']` (Everyone with ip 192.168.42.X)
 
 ### actions.py
 The user can implement his actions in the actions.py file. Each action is a defined like this

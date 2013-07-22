@@ -25,7 +25,7 @@ else:
 PI_BASE_URL = '/'
 
 # IP allowed to use the PlugIt API.
-PI_ALLOWED_NETWORKS = ['127.0.0.1/32']
+PI_ALLOWED_NETWORKS = ['0.0.0.0/0', '127.0.0.1/32']
 
 ## Does not edit code bellow !
 
@@ -46,6 +46,8 @@ def check_ip(request):
         import struct
         ipaddr = struct.unpack('L', socket.inet_aton(ip))[0]
         netaddr, bits = net.split('/')
+        if int(bits) == 0:
+            return True
         netmask = struct.unpack('L', socket.inet_aton(netaddr))[0] & ((2L << int(bits)-1) - 1)
         return ipaddr & netmask == netmask
 
