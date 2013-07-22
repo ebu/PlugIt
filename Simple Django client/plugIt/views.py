@@ -141,13 +141,7 @@ def main(request, query, hproPk=None):
         if result is not None:
             return HttpResponse(result)
 
-    # Get template, if needed
-    if not('json_only' in meta and meta['json_only']):
-
-        templateContent = plugIt.getTemplate(query, meta)
-
-        if not templateContent:
-            return gen404('template')
+   
 
     # Build parameters
     getParameters = {}
@@ -206,6 +200,22 @@ def main(request, query, hproPk=None):
             url = baseURI + url
 
         return HttpResponseRedirect(url)
+
+    if data.__class__.__name__ == 'PlugItFile':
+        response = HttpResponse(data.content, content_type=data.content_type)
+        response['Content-Disposition'] = data.content_disposition
+
+        return response
+
+
+
+    # Get template, if needed
+    if not('json_only' in meta and meta['json_only']):
+
+        templateContent = plugIt.getTemplate(query, meta)
+
+        if not templateContent:
+            return gen404('template')
 
     if 'json_only' in meta and meta['json_only']:  # Just send the json back
         result = json.dumps(data)

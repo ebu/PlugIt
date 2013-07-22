@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from flask import Flask, jsonify, request, send_from_directory, make_response, abort
+from flask import Flask, jsonify, request, send_from_directory, make_response, abort, send_file
 from flask.views import View
 
 import actions
-from utils import md5Checksum
+from utils import md5Checksum, PlugItRedirect, PlugItSendFile
 
 from datetime import datetime, timedelta
 
@@ -25,7 +25,7 @@ else:
 PI_BASE_URL = '/'
 
 # IP allowed to use the PlugIt API.
-PI_ALLOWED_NETWORKS = ['0.0.0.0/0', '127.0.0.1/32']
+PI_ALLOWED_NETWORKS = ['127.0.0.1/32']
 
 ## Does not edit code bellow !
 
@@ -162,11 +162,15 @@ class ActionView(View):
         result = self.action(request, *args, **kwargs)
 
         # Is it a redirect ?
-        if result.__class__.__name__ == 'PlugItRedirect':
+        if result.__class__ == PlugItRedirect:
             response = make_response("")
             response.headers['EbuIo-PlugIt-Redirect'] = result.url
             if result.no_prefix:
                 response.headers['EbuIo-PlugIt-Redirect-NoPrefix'] = 'True'
+            return response
+        elif result.__class__ == PlugItSendFile:
+            response = send_file(result.filename, mimetype=result.mimetype, as_attachment=result.as_attachment, attachment_filename=result.attachment_filename)
+            response.headers['EbuIo-PlugIt-ItAFile'] = 'True'
             return response
 
         return jsonify(result)

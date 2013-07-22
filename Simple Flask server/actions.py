@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import sqlite3
-from utils import action, cache, only_logged_user, only_member_user, user_info, json_only, PlugItRedirect
+from utils import action, cache, only_logged_user, only_member_user, user_info, json_only, PlugItRedirect, PlugItSendFile
 
 ### Basic sample service: polls
 # Anonymous users can see polls
@@ -169,3 +169,8 @@ def test(request):
 @json_only()
 def test_json(request):
     return {"hello": "Test", "data": request.args.get('data', '')}
+
+
+@action(route="/test_send_file", template="")
+def test_send_file(request):
+    return PlugItSendFile("utils.py", "text/plain", True, "utils.txt")

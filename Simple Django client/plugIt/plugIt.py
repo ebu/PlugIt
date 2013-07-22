@@ -136,6 +136,13 @@ class PlugIt():
                 self.url = url
                 self.no_prefix = no_prefix
 
+        class PlugItFile():
+            """Object to send a file"""
+            def __init__(self, content, content_type, content_disposition=''):
+                self.content = content
+                self.content_type = content_type
+                self.content_disposition = content_disposition
+
         if r.status_code == 200:  # Get the content if there is not problem. If there is, template will stay to None
             # {} is parsed as None (but should be an empty object)
 
@@ -146,6 +153,15 @@ class PlugIt():
                     no_prefix = r.headers['EbuIo-PlugIt-Redirect-NoPrefix'] == 'True'
 
                 return PlugItRedirect(r.headers['EbuIo-PlugIt-Redirect'], no_prefix)
+
+            if 'EbuIo-PlugIt-ItAFile' in r.headers:
+
+                if 'Content-Disposition' in r.headers:
+                    content_disposition = r.headers['Content-Disposition']
+                else:
+                    content_disposition = ''
+
+                return PlugItFile(r.content, r.headers['Content-Type'], content_disposition)
 
             if r.content == "{}":
                 return {}
