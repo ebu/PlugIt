@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from flask import Flask, jsonify, request, send_from_directory, make_response
+from flask import Flask, jsonify, request, send_from_directory, make_response, abort
 from flask.views import View
 
 import actions
@@ -21,22 +21,53 @@ if DEBUG:
 else:
     PI_META_CACHE = 5 * 60  # 5 minutes
 
+# Allow the API to be located at another endpoint (to share call with another API)
+PI_BASE_URL = '/'
+
+# IP allowed to use the PlugIt API.
+PI_ALLOWED_NETWORKS = ['127.0.0.1/32']
+
 ## Does not edit code bellow !
 
 # API version parameters
 PI_API_VERSION = '1'
 PI_API_NAME = 'EBUio-PlugIt'
 
+
 app = Flask(__name__, static_folder='media')
 
 
-@app.route("/ping")
+def check_ip(request):
+
+    def addressInNetwork(ip, net):
+        "Is an address in a network"
+        #http://stackoverflow.com/questions/819355/how-can-i-check-if-an-ip-is-in-a-network-in-python
+        import socket
+        import struct
+        ipaddr = struct.unpack('L', socket.inet_aton(ip))[0]
+        netaddr, bits = net.split('/')
+        netmask = struct.unpack('L', socket.inet_aton(netaddr))[0] & ((2L << int(bits)-1) - 1)
+        return ipaddr & netmask == netmask
+
+    for net in PI_ALLOWED_NETWORKS:
+        if addressInNetwork(request.remote_addr, net):
+            return True
+    # Ip not found
+    abort(404)
+    return False
+
+
+@app.route(PI_BASE_URL + "ping")
 def ping():
     """The ping method: Just return the data provided"""
+
+    if not check_ip(request):
+        return
+
     return jsonify(data=request.args.get('data', ''))
 
 
-@app.route("/version")
+@app.route(PI_BASE_URL + "version")
 def version():
     """The version method: Return current information about the version"""
     return jsonify(result='Ok', version=PI_API_VERSION, protocol=PI_API_NAME)
@@ -49,6 +80,10 @@ class MetaView(View):
         self.action = action
 
     def dispatch_request(self, *args, **kwargs):
+
+        if not check_ip(request):
+            return
+
         objResponse = {}
 
         # Template information
@@ -102,6 +137,10 @@ class TemplateView(View):
         self.action = action
 
     def dispatch_request(self, *args, **kwargs):
+
+        if not check_ip(request):
+            return
+
         # We just return the content of the template
         return send_from_directory('templates/', self.action.pi_api_template)
 
@@ -113,6 +152,10 @@ class ActionView(View):
         self.action = action
 
     def dispatch_request(self, *args, **kwargs):
+
+        if not check_ip(request):
+            return
+
         # Call the action
         result = self.action(request, *args, **kwargs)
 
@@ -135,13 +178,13 @@ for act in dir(actions):
         # We found an action and we can now add it to our routes
 
         # Meta
-        app.add_url_rule('/meta' + obj.pi_api_route, view_func=MetaView.as_view('meta_' + act, action=obj))
+        app.add_url_rule(PI_BASE_URL + 'meta' + obj.pi_api_route, view_func=MetaView.as_view('meta_' + act, action=obj))
 
         # Template
-        app.add_url_rule('/template' + obj.pi_api_route, view_func=TemplateView.as_view('template_' + act, action=obj))
+        app.add_url_rule(PI_BASE_URL + 'template' + obj.pi_api_route, view_func=TemplateView.as_view('template_' + act, action=obj))
 
         # Action
-        app.add_url_rule('/action' + obj.pi_api_route, view_func=ActionView.as_view('action_' + act, action=obj), methods=obj.pi_api_methods)
+        app.add_url_rule(PI_BASE_URL + 'action' + obj.pi_api_route, view_func=ActionView.as_view('action_' + act, action=obj), methods=obj.pi_api_methods)
 
 
 if __name__ == "__main__":
