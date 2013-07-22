@@ -14,6 +14,8 @@ from django.db import connections
 from django.core.paginator import InvalidPage, EmptyPage, Paginator
 from django.core.cache import cache
 from django import forms
+from django.core.urlresolvers import reverse
+
 
 from django.db.models import Q
 
@@ -32,17 +34,28 @@ from django.contrib.auth.models import User, AnonymousUser
 # Standalone mode: Load the main plugit interface
 if settings.PIAPI_STANDALONE:
     plugIt = PlugIt(settings.PIAPI_STANDALONE_URI)
+    baseURI = settings.PIAPI_BASEURI
 
 
-def main(request, query):
+def main(request, query, hproPk=None):
 
     def gen404(reason):
         """Return a 404 error"""
-        return HttpResponseNotFound(render_to_response('plugIt/404.html', {'reason': reason, 'ebuio_baseUrl':  settings.PIAPI_BASEURI, 'ebuio_userMode': request.session.get('plugit-standalone-usermode', 'ano')}, context_instance=RequestContext(request)))
+        return HttpResponseNotFound(render_to_response('plugIt/404.html', {'reason': reason, 'ebuio_baseUrl':  baseURI, 'ebuio_userMode': request.session.get('plugit-standalone-usermode', 'ano')}, context_instance=RequestContext(request)))
 
     def gen403(reason):
         """Return a 403 error"""
-        return HttpResponseNotFound(render_to_response('plugIt/403.html', {'reason': reason, 'ebuio_baseUrl':  settings.PIAPI_BASEURI, 'ebuio_userMode': request.session.get('plugit-standalone-usermode', 'ano')}, context_instance=RequestContext(request)))
+        return HttpResponseNotFound(render_to_response('plugIt/403.html', {'reason': reason, 'ebuio_baseUrl':  baseURI, 'ebuio_userMode': request.session.get('plugit-standalone-usermode', 'ano')}, context_instance=RequestContext(request)))
+
+    if not settings.PIAPI_STANDALONE:
+        from hprojects.models import HostedProject
+        hproject = get_object_or_404(HostedProject, pk=hproPk)
+        if hproject.plugItURI == '':
+            raise Http404
+        plugIt = PlugIt(hproject.plugItURI)
+        baseURI = reverse('plugIt.views.main', args=(hproject.pk, ''))
+    else:
+        global plugIt, baseURI
 
     # Get meta
     meta = plugIt.getMeta(query)
@@ -68,6 +81,9 @@ def main(request, query):
             request.user.ebuio_admin = True
         else:
             request.user = AnonymousUser()
+    else:
+        request.user.ebuio_member = hproject.isMemberRead(request.user)
+        request.user.ebuio_admin = hproject.isMemberWrite(request.user)
 
     # Caching
     cacheKey = None
@@ -183,7 +199,7 @@ def main(request, query):
     if data.__class__.__name__ == 'PlugItRedirect':
         url = data.url
         if not data.no_prefix:
-            url = settings.PIAPI_BASEURI + url
+            url = baseURI + url
 
         return HttpResponseRedirect(url)
 
@@ -191,10 +207,14 @@ def main(request, query):
     data['ebuio_u'] = request.user
 
     # Add current path
-    data['ebuio_baseUrl'] = settings.PIAPI_BASEURI
+    data['ebuio_baseUrl'] = baseURI
 
     # Add userMode
-    data['ebuio_userMode'] = request.session.get('plugit-standalone-usermode', 'ano')
+    if settings.PIAPI_STANDALONE:
+        data['ebuio_userMode'] = request.session.get('plugit-standalone-usermode', 'ano')
+    else:
+        data['ebuio_hpro_name'] = hproject.name
+        data['ebuio_hpro_pk'] = hproject.pk
 
     # Render it
     template = Template(templateContent)
@@ -202,6 +222,9 @@ def main(request, query):
 
     # Add csrf information to the contact
     context.update(csrf(request))
+
+    # Add media urls
+    context.update({'MEDIA_URL': settings.MEDIA_URL, 'STATIC_URL': settings.STATIC_URL})
 
     result = template.render(context)
 
@@ -213,8 +236,19 @@ def main(request, query):
 
 
 @cache_control(public=True, max_age=3600)
-def media(request, path):
+def media(request, path, hproPk=None):
     """Ask the server for a media and return it to the client browser. Add cache headers of 1 hour"""
+
+    if not settings.PIAPI_STANDALONE:
+        from hprojects.models import HostedProject
+        hproject = get_object_or_404(HostedProject, pk=hproPk)
+        if hproject.plugItURI == '':
+            raise Http404
+        plugIt = PlugIt(hproject.plugItURI)
+        baseURI = reverse('plugIt.views.main', args=(hproject.pk, ''))
+    else:
+        global plugIt, baseURI
+
     (media, contentType) = plugIt.getMedia(path)
 
     if not media:  # No media returned

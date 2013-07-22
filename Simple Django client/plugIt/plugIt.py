@@ -17,16 +17,17 @@ class PlugIt():
     PI_API_VERSION = '1'
     PI_API_NAME = 'EBUio-PlugIt'
 
-    def __init__(self, baseURI):
+    def __init__(self, baseURI, testIfOk=False):
         """Instance a new plugIt instance. Need the base URI of the server"""
         self.baseURI = baseURI
         self.cacheKey = 'plugit-' + hashlib.md5(baseURI).hexdigest()
 
-        #Check if everything is ok
-        if not self.ping():
-            raise Exception("Server doesn't reply to ping !")
-        if not self.checkVersion():
-            raise Exception("Not a correct PlugIt API version !")
+        if testIfOk:
+            #Check if everything is ok
+            if not self.ping():
+                raise Exception("Server doesn't reply to ping !")
+            if not self.checkVersion():
+                raise Exception("Not a correct PlugIt API version !")
 
     def doQuery(self, url, usePost=False, getParmeters=None, postParameters=None, files=None):
         """Send a request to the server and return the result"""
