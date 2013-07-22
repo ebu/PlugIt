@@ -30,6 +30,8 @@ from django.core.cache import cache
 
 from django.contrib.auth.models import User, AnonymousUser
 
+import json
+
 
 # Standalone mode: Load the main plugit interface
 if settings.PIAPI_STANDALONE:
@@ -139,11 +141,13 @@ def main(request, query, hproPk=None):
         if result is not None:
             return HttpResponse(result)
 
-    # Get template
-    templateContent = plugIt.getTemplate(query, meta)
+    # Get template, if needed
+    if not('json_only' in meta and meta['json_only']):
 
-    if not templateContent:
-        return gen404('template')
+        templateContent = plugIt.getTemplate(query, meta)
+
+        if not templateContent:
+            return gen404('template')
 
     # Build parameters
     getParameters = {}
@@ -203,30 +207,34 @@ def main(request, query, hproPk=None):
 
         return HttpResponseRedirect(url)
 
-    # Add user information
-    data['ebuio_u'] = request.user
-
-    # Add current path
-    data['ebuio_baseUrl'] = baseURI
-
-    # Add userMode
-    if settings.PIAPI_STANDALONE:
-        data['ebuio_userMode'] = request.session.get('plugit-standalone-usermode', 'ano')
+    if 'json_only' in meta and meta['json_only']:  # Just send the json back
+        result = json.dumps(data)
     else:
-        data['ebuio_hpro_name'] = hproject.name
-        data['ebuio_hpro_pk'] = hproject.pk
 
-    # Render it
-    template = Template(templateContent)
-    context = Context(data)
+        # Add user information
+        data['ebuio_u'] = request.user
 
-    # Add csrf information to the contact
-    context.update(csrf(request))
+        # Add current path
+        data['ebuio_baseUrl'] = baseURI
 
-    # Add media urls
-    context.update({'MEDIA_URL': settings.MEDIA_URL, 'STATIC_URL': settings.STATIC_URL})
+        # Add userMode
+        if settings.PIAPI_STANDALONE:
+            data['ebuio_userMode'] = request.session.get('plugit-standalone-usermode', 'ano')
+        else:
+            data['ebuio_hpro_name'] = hproject.name
+            data['ebuio_hpro_pk'] = hproject.pk
 
-    result = template.render(context)
+        # Render it
+        template = Template(templateContent)
+        context = Context(data)
+
+        # Add csrf information to the contact
+        context.update(csrf(request))
+
+        # Add media urls
+        context.update({'MEDIA_URL': settings.MEDIA_URL, 'STATIC_URL': settings.STATIC_URL})
+
+        result = template.render(context)
 
     # Cache the result for future uses if requested
     if cacheKey is not None:

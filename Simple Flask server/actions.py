@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import sqlite3
-from utils import action, cache, only_logged_user, only_member_user, user_info, PlugItRedirect
+from utils import action, cache, only_logged_user, only_member_user, user_info, json_only, PlugItRedirect
 
 ### Basic sample service: polls
 # Anonymous users can see polls
@@ -162,4 +162,10 @@ def create(request):
 @cache(time=42, byUser=True)
 @user_info(props=['username'])
 def test(request):
+    return {"hello": "Test", "data": request.args.get('data', '')}
+
+
+@action(route="/test_json", template="")
+@json_only()
+def test_json(request):
     return {"hello": "Test", "data": request.args.get('data', '')}

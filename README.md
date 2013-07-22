@@ -96,6 +96,7 @@ The default action, called when the user arrive on the project page on EBUio is 
 This call returns information about a specific action. The server must reply with an HTTP 200 response (or a 404 if the action doesn't exist) with an object. Properties of this object are:
 
 * template_tag : String. The current version of the template. This value must change if the template associated with the action change.
+* json_only : Boolean. Optional, default to False. If set to True, return the json directly to the browser, without using a template.
 * only_logged_user : Boolean. Optional, default to False. True if the user must be authenticated on EBUio to call the action.
 * only_member_user : Boolean. Optional, default to False.  True if the user must be in the project group on EBUio to call the action.
 * only_admin_user : Boolean. Optional, default to False.  True if the user must be an administrator of the project on EBUio to call the action.

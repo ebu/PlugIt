@@ -52,7 +52,10 @@ class MetaView(View):
         objResponse = {}
 
         # Template information
-        objResponse['template_tag'] = md5Checksum('templates/' + self.action.pi_api_template)
+        if self.action.pi_api_template != "":
+            objResponse['template_tag'] = md5Checksum('templates/' + self.action.pi_api_template)
+        else:
+            objResponse['template_tag'] = ""
 
         # User restrictions
         if hasattr(self.action, 'pi_api_only_logged_user'):
@@ -74,6 +77,10 @@ class MetaView(View):
         # User information requested
         if hasattr(self.action, 'pi_api_user_info'):
             objResponse['user_info'] = self.action.pi_api_user_info
+
+        # Only json
+        if hasattr(self.action, 'pi_api_json_only'):
+            objResponse['json_only'] = self.action.pi_api_json_only
 
         # Add the cache headers
         response = make_response(jsonify(objResponse))

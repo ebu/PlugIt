@@ -58,6 +58,14 @@ def user_info(props):
         return function
     return real_decorator
 
+
+def json_only():
+    """Decorator to specify the action return json that should be send directly to the browser."""
+    def real_decorator(function):
+        function.pi_api_json_only = True
+        return function
+    return real_decorator
+
 # Utils
 
 
