@@ -70,19 +70,23 @@ def main(request, query, hproPk=None):
         currentUserMode = request.session.get('plugit-standalone-usermode', 'ano')
 
         if currentUserMode == 'log':
-            request.user = User(pk=-1, username='Logged')
+            request.user = User(pk=-1, username='Logged', first_name='Logged', last_name='Hector', email='logeedin@plugit-standalone.ebuio')
             request.user.ebuio_member = False
             request.user.ebuio_admin = False
         elif currentUserMode == 'mem':
-            request.user = User(pk=-2, username='Member')
+            request.user = User(pk=-2, username='Member', first_name='Member', last_name='Luc', email='memeber@plugit-standalone.ebuio')
             request.user.ebuio_member = True
             request.user.ebuio_admin = False
         elif currentUserMode == 'adm':
-            request.user = User(pk=-3, username='Admin')
+            request.user = User(pk=-3, username='Admin', first_name='Admin', last_name='Charles', email='admin@plugit-standalone.ebuio')
             request.user.ebuio_member = True
             request.user.ebuio_admin = True
         else:
             request.user = AnonymousUser()
+            request.user.email = 'nobody@plugit-standalone.ebuio'
+            request.user.first_name = 'Ano'
+            request.user.last_name = 'Nymous'
+
     else:
         request.user.ebuio_member = hproject.isMemberRead(request.user)
         request.user.ebuio_admin = hproject.isMemberWrite(request.user)

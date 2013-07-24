@@ -160,7 +160,7 @@ def create(request):
 @action(route="/test", template="test.html")
 @only_logged_user()
 @cache(time=42, byUser=True)
-@user_info(props=['username'])
+@user_info(props=['username', 'email', 'last_name'])
 def test(request):
     return {"hello": "Test", "data": request.args.get('data', '')}
 
