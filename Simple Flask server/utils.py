@@ -7,7 +7,7 @@ import hashlib
 # Decorators
 
 
-def action(route, template, methods=['GET']):
+def action(route, template='', methods=['GET']):
     """Decorator to create an action"""
     def real_decorator(function):
         function.pi_api_action = True

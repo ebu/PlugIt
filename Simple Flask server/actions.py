@@ -165,12 +165,12 @@ def test(request):
     return {"hello": "Test", "data": request.args.get('data', '')}
 
 
-@action(route="/test_json", template="")
+@action(route="/test_json")
 @json_only()
 def test_json(request):
     return {"hello": "Test", "data": request.args.get('data', '')}
 
 
-@action(route="/test_send_file", template="")
+@action(route="/test_send_file")
 def test_send_file(request):
     return PlugItSendFile("utils.py", "text/plain", True, "utils.txt")
