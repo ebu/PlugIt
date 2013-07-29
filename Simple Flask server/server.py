@@ -34,7 +34,7 @@ PI_API_VERSION = '1'
 PI_API_NAME = 'EBUio-PlugIt'
 
 
-app = Flask(__name__, static_folder='media')
+app = Flask(__name__, static_folder='media', static_url_path=PI_BASE_URL+'media')
 
 
 def check_ip(request):
