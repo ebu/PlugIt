@@ -33,7 +33,43 @@ class PlugIt():
         """Send a request to the server and return the result"""
 
         if usePost:
-            r = requests.post(self.baseURI + '/' + url, params=getParmeters, data=postParameters, files=files, stream=True)
+            if not files:
+                r = requests.post(self.baseURI + '/' + url, params=getParmeters, data=postParameters, stream=True)
+            else:  # Special way, for big files
+                from poster.encode import multipart_encode, MultipartParam
+                from poster.streaminghttp import register_openers
+                import urllib2
+
+                # Register the streaming http handlers with urllib2
+                register_openers()
+
+                # headers contains the necessary Content-Type and Content-Length
+                # datagen is a generator object that yields the encoded parameters
+                data = {}
+                for x in postParameters:
+                    data[x] = postParameters[x]
+
+                for f in files:
+                    data[f] = MultipartParam(f, fileobj=open(files[f].temporary_file_path(), 'rb'), filename=files[f].name)
+
+                datagen, headers = multipart_encode(data)
+
+                # Create the Request object
+                request = urllib2.Request(self.baseURI + '/' + url, datagen, headers)
+
+                re = urllib2.urlopen(request)
+
+                from requests import Response
+
+                r = Response()
+                r.status_code = re.getcode()
+                r.headers = re.info()
+                r.encoding = "application/json"
+                r.raw = re.read()
+                r._content = r.raw
+
+                return r
+
         else:
             r = requests.get(self.baseURI + '/' + url, params=getParmeters, stream=True)
 
