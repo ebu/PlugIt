@@ -33,9 +33,9 @@ class PlugIt():
         """Send a request to the server and return the result"""
 
         if usePost:
-            r = requests.post(self.baseURI + '/' + url, params=getParmeters, data=postParameters, files=files)
+            r = requests.post(self.baseURI + '/' + url, params=getParmeters, data=postParameters, files=files, stream=True)
         else:
-            r = requests.get(self.baseURI + '/' + url, params=getParmeters)
+            r = requests.get(self.baseURI + '/' + url, params=getParmeters, stream=True)
 
         return r
 
