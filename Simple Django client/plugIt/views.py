@@ -38,6 +38,18 @@ if settings.PIAPI_STANDALONE:
     plugIt = PlugIt(settings.PIAPI_STANDALONE_URI)
     baseURI = settings.PIAPI_BASEURI
 
+def getPlugItObject(hproPk):
+    """Return the plugit object and the baseURI to use if not in standalone mode"""
+
+    from hprojects.models import HostedProject
+    hproject = get_object_or_404(HostedProject, pk=hproPk)
+    if hproject.plugItURI == '':
+        raise Http404
+    plugIt = PlugIt(hproject.plugItURI)
+    baseURI = reverse('plugIt.views.main', args=(hproject.pk, ''))
+
+    return (plugIt, baseURI, hproject)
+
 
 def main(request, query, hproPk=None):
 
@@ -50,12 +62,7 @@ def main(request, query, hproPk=None):
         return HttpResponseNotFound(render_to_response('plugIt/403.html', {'reason': reason, 'ebuio_baseUrl':  baseURI, 'ebuio_userMode': request.session.get('plugit-standalone-usermode', 'ano')}, context_instance=RequestContext(request)))
 
     if not settings.PIAPI_STANDALONE:
-        from hprojects.models import HostedProject
-        hproject = get_object_or_404(HostedProject, pk=hproPk)
-        if hproject.plugItURI == '':
-            raise Http404
-        plugIt = PlugIt(hproject.plugItURI)
-        baseURI = reverse('plugIt.views.main', args=(hproject.pk, ''))
+        (plugIt, baseURI, hproject) = getPlugItObject(hproPk)
     else:
         global plugIt, baseURI
 
@@ -175,7 +182,7 @@ def main(request, query, hproPk=None):
 
         for v in request.FILES:
             if v[:6] != 'ebuio_':
-                files[v] = request.FILES[v].chunks()
+                files[v] = request.FILES[v]  # .chunks()
 
     # Add parameters requested by the server
     if 'user_info' in meta:
@@ -211,8 +218,6 @@ def main(request, query, hproPk=None):
 
         return response
 
-
-
     # Get template, if needed
     if not('json_only' in meta and meta['json_only']):
 
@@ -237,6 +242,8 @@ def main(request, query, hproPk=None):
         else:
             data['ebuio_hpro_name'] = hproject.name
             data['ebuio_hpro_pk'] = hproject.pk
+            from app.utils import create_secret
+            data['ebuio_hpro_key'] = create_secret(str(hproject.pk), hproject.name, str(request.user.pk))
 
         # Render it
         template = Template(templateContent)
@@ -262,12 +269,7 @@ def media(request, path, hproPk=None):
     """Ask the server for a media and return it to the client browser. Add cache headers of 1 hour"""
 
     if not settings.PIAPI_STANDALONE:
-        from hprojects.models import HostedProject
-        hproject = get_object_or_404(HostedProject, pk=hproPk)
-        if hproject.plugItURI == '':
-            raise Http404
-        plugIt = PlugIt(hproject.plugItURI)
-        baseURI = reverse('plugIt.views.main', args=(hproject.pk, ''))
+        (plugIt, baseURI, _) = getPlugItObject(hproPk)
     else:
         global plugIt, baseURI
 
