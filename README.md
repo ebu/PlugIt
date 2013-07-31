@@ -15,6 +15,8 @@ We use this framework at EBU to access web services on the EBU.io platform.
 * flask
 * requests
 * python-dateutil
+* poster
+
 
 ## Django client
 
@@ -75,6 +77,7 @@ An _ebuio_u_ object is provided, with the current user.
 
 A _ebuio_baseUrl_ value is provided, with the root URL to use for all URL generation (others actions, medias, etc..)
 
+You can use the template tag `plugitInclude` in the library `plugit_tags` to include another template inside a template. The argument to plugItInclude must be an action. The action won't be called but his template will be used. The context is preserved.
 
 # API Methods
 
