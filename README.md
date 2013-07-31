@@ -79,6 +79,8 @@ A _ebuio_baseUrl_ value is provided, with the root URL to use for all URL genera
 
 You can use the template tag `plugitInclude` in the library `plugit_tags` to include another template inside a template. The argument to plugItInclude must be an action. The action won't be called but his template will be used. The context is preserved.
 
+You can use the template tag `plugitGetUser` in the library `plugit_tags` to load information about an user using his pk. Example: `{% plugitGetUser media.user_id as tmpuser %}{{tmpuser.username}}`
+
 # API Methods
 
 Each method returns a JSON object, except for /template/ and /media/ calls.

@@ -46,3 +46,16 @@ def plugitInclude(parser, token):
     action = parser.compile_filter(bits[1])
 
     return PlugItIncludeNode(action)
+
+@register.assignment_tag
+def plugitGetUser(pk):
+    if settings.PIAPI_STANDALONE:
+        from plugIt.views import generate_user
+        return generate_user(pk=pk)
+    
+    else:
+        from users.models import TechUser
+        try:
+            return TechUser.objects.get(pk=pk)
+        except:
+            return None
