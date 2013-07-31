@@ -135,3 +135,5 @@ This call return a specific media on the server side. Each request on EBUio side
 ## API
 
 The API is available at /plugIt/ebuio_api/ . See the API root page using your browser for details.
+
+A small python class (PlugItAPI) is available in plugit_api.py, methods are also detailled on the API root page.
