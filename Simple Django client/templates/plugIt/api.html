@@ -1,0 +1,22 @@
+{% extends "plugIt/base.html" %}
+{% load i18n %}
+
+{% block title %}
+	{% trans "API" %}
+{% endblock %}
+
+{% block pretitle %}{% endblock %}
+
+{% block content %}
+	<h1>{% trans "API" %}</h1>
+
+	{% blocktrans %}
+		The API allow a PlugIt server to access different informations, about user or current organization.
+	{% endblocktrans %}
+
+	<h3>/user/&lt;id&gt;</h3>
+
+	Return information about an user.
+
+
+{% endblock %}

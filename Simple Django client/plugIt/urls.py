@@ -6,5 +6,8 @@ urlpatterns = patterns(
 	'plugIt.views',
     url(r'^media/(?P<path>.*)$', 'media'),
     url(r'^ebuio_setUser$', 'setUser'),
+    
+    url(r'^ebuio_api/$', 'api_home'),
+
     url(r'^(?P<query>.*)$', 'main'),
 )

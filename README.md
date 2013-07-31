@@ -129,3 +129,7 @@ It's possible to send a file using the header `EbuIo-PlugIt-ItAFile`. The conten
 
 ### /media/_medianame_
 This call return a specific media on the server side. Each request on EBUio side on /media/* is forwarded to the server and returned to the client. No caching is used, but a 1 hour Cache-Control header is set by EBUio-
+
+## API
+
+The API is available at /plugIt/ebuio_api/ . See the API root page using your browser for details.

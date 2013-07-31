@@ -293,3 +293,29 @@ def setUser(request):
     request.session['plugit-standalone-usermode'] = request.GET.get('mode')
 
     return HttpResponse('')
+
+def check_api_key(request, key, hproPk):
+    """Check if an API key is valid"""
+
+    if settings.PIAPI_STANDALONE:
+        return True
+
+    (_, _, hproject) = getPlugItObject(hproPk)
+
+    if not hproject:
+        return False
+
+    if hproject.plugItApiKey is None or hproject.plugItApiKey == '':
+        return False
+
+    return hproject.plugItApiKey == key
+
+
+
+def api_home(request, key=None, hproPk=None):
+    """Show the home page for the API with all methods"""
+
+    if not check_api_key(request, key, hproPk):
+        raise Http404
+    
+    return render_to_response('plugIt/api.html', {}, context_instance=RequestContext(request))
