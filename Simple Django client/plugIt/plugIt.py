@@ -29,10 +29,10 @@ class PlugIt():
             if not self.checkVersion():
                 raise Exception("Not a correct PlugIt API version !")
 
-    def doQuery(self, url, usePost=False, getParmeters=None, postParameters=None, files=None):
+    def doQuery(self, url, method='GET', getParmeters=None, postParameters=None, files=None):
         """Send a request to the server and return the result"""
 
-        if usePost:
+        if method == 'POST':
             if not files:
                 r = requests.post(self.baseURI + '/' + url, params=getParmeters, data=postParameters, stream=True)
             else:  
@@ -74,7 +74,8 @@ class PlugIt():
                 return r
 
         else:
-            r = requests.get(self.baseURI + '/' + url, params=getParmeters, stream=True)
+            # Call the function based on the method.
+            r = getattr(requests, method.lower())(self.baseURI + '/' + url, params=getParmeters, stream=True)
 
         return r
 
@@ -166,8 +167,8 @@ class PlugIt():
 
         return template
 
-    def doAction(self, uri, usePost=False, getParmeters=None, postParameters=None, files=None):
-        r = self.doQuery('action/' + uri, usePost=usePost, getParmeters=getParmeters, postParameters=postParameters, files=files)
+    def doAction(self, uri, method='GET', getParmeters=None, postParameters=None, files=None):
+        r = self.doQuery('action/' + uri, method=method, getParmeters=getParmeters, postParameters=postParameters, files=files)
 
         class PlugItRedirect():
             """Object to perform a redirection"""

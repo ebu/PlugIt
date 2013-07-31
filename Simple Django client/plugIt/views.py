@@ -208,7 +208,7 @@ def main(request, query, hproPk=None):
                 getParameters['ebuio_u_' + prop] = value
 
     # Do the action
-    data = plugIt.doAction(query, request.method == 'POST', getParameters, postParameters, files)
+    data = plugIt.doAction(query, request.method, getParameters, postParameters, files)
 
     if data is None:
         return gen404('data')
@@ -240,6 +240,7 @@ def main(request, query, hproPk=None):
 
         # Add user information
         data['ebuio_u'] = request.user
+        data['ebuio_u'].id = str(data['ebuio_u'].pk)
 
         # Add current path
         data['ebuio_baseUrl'] = baseURI
