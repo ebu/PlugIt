@@ -35,7 +35,10 @@ class PlugIt():
         if usePost:
             if not files:
                 r = requests.post(self.baseURI + '/' + url, params=getParmeters, data=postParameters, stream=True)
-            else:  # Special way, for big files
+            else:  
+                # Special way, for big files
+                # Requests is not usable: https://github.com/shazow/urllib3/issues/51
+                
                 from poster.encode import multipart_encode, MultipartParam
                 from poster.streaminghttp import register_openers
                 import urllib2
