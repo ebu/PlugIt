@@ -8,6 +8,7 @@ urlpatterns = patterns(
     url(r'^ebuio_setUser$', 'setUser'),
     
     url(r'^ebuio_api/$', 'api_home'),
+    url(r'^ebuio_api/user/(?P<userPk>[0-9]*)$', 'api_user'),
 
     url(r'^(?P<query>.*)$', 'main'),
 )

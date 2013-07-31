@@ -50,6 +50,30 @@ def getPlugItObject(hproPk):
 
     return (plugIt, baseURI, hproject)
 
+def generate_user(mode=None, pk=None):
+    """Return a false user for standalone mode"""
+
+    user = None
+
+    if currentUserMode == 'log' or pk == -1:
+        user = User(pk=-1, username='Logged', first_name='Logged', last_name='Hector', email='logeedin@plugit-standalone.ebuio')
+        user.ebuio_member = False
+        user.ebuio_admin = False
+    elif currentUserMode == 'mem' or pk == -2:
+        user = User(pk=-2, username='Member', first_name='Member', last_name='Luc', email='memeber@plugit-standalone.ebuio')
+        user.ebuio_member = True
+        user.ebuio_admin = False
+    elif currentUserMode == 'adm' or pk == -3:
+        user = User(pk=-3, username='Admin', first_name='Admin', last_name='Charles', email='admin@plugit-standalone.ebuio')
+        user.ebuio_member = True
+        user.ebuio_admin = True
+    elif currentUserMode == 'ano':
+        user = AnonymousUser()
+        user.email = 'nobody@plugit-standalone.ebuio'
+        user.first_name = 'Ano'
+        user.last_name = 'Nymous'
+
+    return user
 
 def main(request, query, hproPk=None):
 
@@ -75,24 +99,8 @@ def main(request, query, hproPk=None):
     ## If standalone mode, change the current user based on parameters
     if settings.PIAPI_STANDALONE:
         currentUserMode = request.session.get('plugit-standalone-usermode', 'ano')
-
-        if currentUserMode == 'log':
-            request.user = User(pk=-1, username='Logged', first_name='Logged', last_name='Hector', email='logeedin@plugit-standalone.ebuio')
-            request.user.ebuio_member = False
-            request.user.ebuio_admin = False
-        elif currentUserMode == 'mem':
-            request.user = User(pk=-2, username='Member', first_name='Member', last_name='Luc', email='memeber@plugit-standalone.ebuio')
-            request.user.ebuio_member = True
-            request.user.ebuio_admin = False
-        elif currentUserMode == 'adm':
-            request.user = User(pk=-3, username='Admin', first_name='Admin', last_name='Charles', email='admin@plugit-standalone.ebuio')
-            request.user.ebuio_member = True
-            request.user.ebuio_admin = True
-        else:
-            request.user = AnonymousUser()
-            request.user.email = 'nobody@plugit-standalone.ebuio'
-            request.user.first_name = 'Ano'
-            request.user.last_name = 'Nymous'
+        
+        request.user = generate_user(mode=currentUserMode)      
 
     else:
         request.user.ebuio_member = hproject.isMemberRead(request.user)
@@ -319,3 +327,34 @@ def api_home(request, key=None, hproPk=None):
         raise Http404
     
     return render_to_response('plugIt/api.html', {}, context_instance=RequestContext(request))
+
+def api_user(request, userPk, key=None, hproPk=None):
+    """Return information about a user"""
+
+    if not check_api_key(request, key, hproPk):
+        raise Http404
+
+    if settings.PIAPI_STANDALONE:
+        user = generate_user(pk=userPk)
+        if user is None:
+            raise Http404
+    else:
+        from users.models import TechUser
+        user = get_object_or_404(TechUser, pk=userPk)
+
+        (_, _, hproject) = getPlugItObject(hproPk)
+
+        user.ebuio_member = hproject.isMemberRead(user)
+        user.ebuio_admin = hproject.isMemberWrite(user)    
+
+    retour = {
+        'id': user.pk,
+        'username': user.username,
+        'first_name': user.first_name,
+        'last_name': user.last_name,
+        'email': user.email,
+        'ebuio_member': user.ebuio_member,
+        'ebuio_admin': user.ebuio_admin
+    }
+
+    return HttpResponse(json.dumps(retour), content_type="application/json") 
