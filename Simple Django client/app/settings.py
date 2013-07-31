@@ -162,7 +162,7 @@ LOGGING = {
 SECRET_KEY = 'The game. Please also replace this string.'
 
 PIAPI_STANDALONE = True
-PIAPI_STANDALONE_URI = 'http://10.73.141.24:5000'
+PIAPI_STANDALONE_URI = 'http://127.0.0.1:5000'
 PIAPI_BASEURI = '/plugIt/'
 
 CACHES = {
