@@ -55,19 +55,19 @@ def generate_user(mode=None, pk=None):
 
     user = None
 
-    if currentUserMode == 'log' or pk == -1:
+    if mode == 'log' or pk == "-1":
         user = User(pk=-1, username='Logged', first_name='Logged', last_name='Hector', email='logeedin@plugit-standalone.ebuio')
         user.ebuio_member = False
         user.ebuio_admin = False
-    elif currentUserMode == 'mem' or pk == -2:
+    elif mode == 'mem' or pk == "-2":
         user = User(pk=-2, username='Member', first_name='Member', last_name='Luc', email='memeber@plugit-standalone.ebuio')
         user.ebuio_member = True
         user.ebuio_admin = False
-    elif currentUserMode == 'adm' or pk == -3:
+    elif mode == 'adm' or pk == "-3":
         user = User(pk=-3, username='Admin', first_name='Admin', last_name='Charles', email='admin@plugit-standalone.ebuio')
         user.ebuio_member = True
         user.ebuio_admin = True
-    elif currentUserMode == 'ano':
+    elif mode == 'ano':
         user = AnonymousUser()
         user.email = 'nobody@plugit-standalone.ebuio'
         user.first_name = 'Ano'
