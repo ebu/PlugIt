@@ -164,6 +164,7 @@ SECRET_KEY = 'The game. Please also replace this string.'
 PIAPI_STANDALONE = True
 PIAPI_STANDALONE_URI = 'http://127.0.0.1:5000'
 PIAPI_BASEURI = '/plugIt/'
+PIAPI_USERDATA = ['username', 'pk', 'first_name', 'last_name', 'email', 'ebuio_member', 'ebuio_admin']
 
 CACHES = {
     'default': {
