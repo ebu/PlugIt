@@ -396,7 +396,7 @@ def api_home(request, key=None, hproPk=None):
     return render_to_response('plugIt/api.html', {}, context_instance=RequestContext(request))
 
 def api_user(request, userPk, key=None, hproPk=None):
-    """Return information about a user"""
+    """Return information about an user"""
 
     if not check_api_key(request, key, hproPk):
         raise Http404
@@ -423,5 +423,31 @@ def api_user(request, userPk, key=None, hproPk=None):
         retour[prop] = getattr(user, prop)
     
     retour['id'] = str(retour['pk'])
+
+    return HttpResponse(json.dumps(retour), content_type="application/json") 
+
+def api_orga(request, orgaPk, key=None, hproPk=None):
+    """Return information about an organization"""
+
+    if not check_api_key(request, key, hproPk):
+        raise Http404
+
+    retour = {}
+
+    if settings.PIAPI_STANDALONE:
+        retour['pk'] = orgaPk
+        if orgaPk == "-1":
+            retour['name'] = 'EBU'
+        if orgaPk == "-2":
+            retour['name'] = 'RTS'
+        if orgaPk == "-3":
+            retour['name'] = 'BBC'
+        if orgaPk == "-4":
+            retour['name'] = 'CNN'
+
+    else:
+        # TODO: ORGA  
+        pass
+
 
     return HttpResponse(json.dumps(retour), content_type="application/json") 

@@ -39,6 +39,16 @@ Use `cd Simple Flask server`and `python server.py` to run the server.
 * _PI_META_CACHE_ : Number of seconds to ask the EBUio server to cache the meta information. Set by default to 0 if _DEBUG_ is True, 5 minutes if _DEBUG_ is False.
 * _PI_BASE_URL_ : String. The base URL to access the PlugIt API. It's possible to use a different URL (eg. '/plugIt/') to have others flask methods for another API using the same server.py. *Must end with a /*
 * _PI_ALLOWED_NETWORKS_ : Array of subnets. PlugIt call will be restricted to thoses networks. Eg: `['127.0.0.1/32']` (Single ip), `['0.0.0.0/0']` (Everyone), `['192.168.42.0/24']` (Everyone with ip 192.168.42.X)
+* _PIAPI_USERDATA_ : Array of string. Properties allowed about the current user
+* _PIAPI_ORGAMODE_ : If true, work in Orga mode (next section)
+
+### OrgaMode
+
+In this mode, the system works with a current organization. For each request an ebuio_orgapk, with the unique ID of the current organization is send.
+
+The user can change the organization based on his list of organizations. It's possible to restrict access using only_orga_member_user and only_orga_admin_user.
+
+only_*_user are for the current project, only_orga_*_user for the current organization.
 
 ### actions.py
 The user can implement his actions in the actions.py file. Each action is a defined like this
@@ -54,6 +64,8 @@ It's possible to use various additional decorators to specify how the meta about
 * `@only_logged_user()`: Make action available only for logged users
 * `@only_member_user()`: Make action available only for members users
 * `@only_admin_user()`: Make action available only for admins users
+* `@only_orga_member_user()`: Make action available only for members of the current orga
+* `@only_orga_admin_user()`: Make action available only for admins of the current orga
 * `@cache(time=0, byUser=None)`: Specify how and how long the action should be cached
 * `@user_info(props=[])`: Specify the list of properties requested about the user
 
