@@ -239,7 +239,13 @@ def main(request, query, hproPk=None):
     else:
 
         # Add user information
-        data['ebuio_u'] = request.user
+        class User():
+            pass
+
+        data['ebuio_u'] = User()
+        for prop in ['username', 'pk', 'first_name', 'last_name', 'email']:
+            setattr(data['ebuio_u'], prop, getattr(request.user, prop))
+
         data['ebuio_u'].id = str(data['ebuio_u'].pk)
 
         # Add current path
