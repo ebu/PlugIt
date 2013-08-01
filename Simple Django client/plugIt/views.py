@@ -238,12 +238,12 @@ def main(request, query, hproPk=None):
         result = json.dumps(data)
     else:
 
-        # Add user information
+        # Return only wanted properties about the user
         class User():
             pass
 
         data['ebuio_u'] = User()
-        for prop in ['username', 'pk', 'first_name', 'last_name', 'email']:
+        for prop in settings.PIAPI_USERDATA:
             setattr(data['ebuio_u'], prop, getattr(request.user, prop))
 
         data['ebuio_u'].id = str(data['ebuio_u'].pk)
@@ -354,14 +354,12 @@ def api_user(request, userPk, key=None, hproPk=None):
         user.ebuio_member = hproject.isMemberRead(user)
         user.ebuio_admin = hproject.isMemberWrite(user)    
 
-    retour = {
-        'id': user.pk,
-        'username': user.username,
-        'first_name': user.first_name,
-        'last_name': user.last_name,
-        'email': user.email,
-        'ebuio_member': user.ebuio_member,
-        'ebuio_admin': user.ebuio_admin
-    }
+
+    retour = {}
+
+    for prop in settings.PIAPI_USERDATA:
+        retour[prop] = getattr(user, prop)
+    
+    retour['id'] = str(retour['pk'])
 
     return HttpResponse(json.dumps(retour), content_type="application/json") 

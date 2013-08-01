@@ -51,11 +51,23 @@ def plugitInclude(parser, token):
 def plugitGetUser(pk):
     if settings.PIAPI_STANDALONE:
         from plugIt.views import generate_user
-        return generate_user(pk=pk)
+        user = generate_user(pk=pk)
     
     else:
         from users.models import TechUser
         try:
-            return TechUser.objects.get(pk=pk)
+            user = TechUser.objects.get(pk=pk)
         except:
             return None
+
+    # Return only wanted properties about the user
+    class User():
+            pass
+
+    user_cleaned = User()
+    for prop in settings.PIAPI_USERDATA:
+        setattr(user_cleaned, prop, getattr(user, prop))
+
+    user_cleaned.id = str(user_cleaned.pk)
+
+    return user_cleaned
