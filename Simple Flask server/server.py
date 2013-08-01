@@ -104,6 +104,12 @@ class MetaView(View):
         if hasattr(self.action, 'pi_api_only_admin_user'):
             objResponse['only_admin_user'] = self.action.pi_api_only_admin_user
 
+        if hasattr(self.action, 'pi_api_only_orga_member_user'):
+            objResponse['only_orga_member_user'] = self.action.pi_api_only_orga_member_user
+
+        if hasattr(self.action, 'pi_api_only_orga_admin_user'):
+            objResponse['only_orga_admin_user'] = self.action.pi_api_only_orga_admin_user
+
         # Cache information
         if hasattr(self.action, 'pi_api_cache_time'):
             objResponse['cache_time'] = self.action.pi_api_cache_time

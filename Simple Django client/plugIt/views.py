@@ -72,8 +72,22 @@ def generate_user(mode=None, pk=None):
         user.email = 'nobody@plugit-standalone.ebuio'
         user.first_name = 'Ano'
         user.last_name = 'Nymous'
+        user.ebuio_member = False
+        user.ebuio_admin = False
+
+    user.ebuio_orga_member = user.ebuio_member
+    user.ebuio_orga_admin = user.ebuio_admin        
 
     return user
+
+
+class SimpleOrga():
+    """Simple orga class"""
+    pass
+
+class SimpleUser():
+    """Simple user class"""
+    pass
 
 def main(request, query, hproPk=None):
 
@@ -96,15 +110,25 @@ def main(request, query, hproPk=None):
     if not meta:
         return gen404('meta')
 
-    ## If standalone mode, change the current user based on parameters
+    ## If standalone mode, change the current user and orga mode based on parameters
     if settings.PIAPI_STANDALONE:
         currentUserMode = request.session.get('plugit-standalone-usermode', 'ano')
         
         request.user = generate_user(mode=currentUserMode)      
 
+        orgaMode = settings.PIAPI_ORGAMODE
+
+        currentOrga = SimpleOrga()
+        currentOrga.name = request.session.get('plugit-standalone-organame', 'EBU')
+        currentOrga.pk = request.session.get('plugit-standalone-orgapk', '-1')
+
     else:
         request.user.ebuio_member = hproject.isMemberRead(request.user)
         request.user.ebuio_admin = hproject.isMemberWrite(request.user)
+        orgaMode = hproject.plugit_orgamode
+
+        currentOrga = SimpleOrga()
+        # FIXME
 
     # Caching
     cacheKey = None
@@ -116,7 +140,11 @@ def main(request, query, hproPk=None):
             useUser = False
 
             # If a logged user in needed, cache the result by user
-            if ('only_logged_user' in meta and meta['only_logged_user']) or ('only_member_user' in meta and meta['only_member_user']) or ('only_admin_user' in meta and meta['only_admin_user']):
+            if ('only_logged_user' in meta and meta['only_logged_user']) or \
+                ('only_member_user' in meta and meta['only_member_user']) or \
+                ('only_admin_user' in meta and meta['only_admin_user']) or \
+                ('only_orga_member_user' in meta and meta['only_orga_member_user']) or \
+                ('only_orga_admin_user' in meta and meta['only_orga_admin_user']):
                 useUser = True
 
             # If a value if present in meta, use it
@@ -151,6 +179,16 @@ def main(request, query, hproPk=None):
     if ('only_admin_user' in meta and meta['only_admin_user']):
         if not request.user.ebuio_admin:
             return gen403('only_admin_user')
+
+    # User must be member of the orga ?
+    if ('only_orga_memeber_user' in meta and meta['only_orga_memeber_user']):
+        if not request.user.ebuio_orga_member:
+            return gen403('only_orga_memeber_user')
+
+    # User must be administrator of the orga ?
+    if ('only_orga_admin_user' in meta and meta['only_orga_admin_user']):
+        if not request.user.ebuio_orga_admin:
+            return gen403('only_orga_admin_user')
 
     # If we have to use cache, we try to find the result in cache
     if cacheKey is not None:
@@ -198,7 +236,7 @@ def main(request, query, hproPk=None):
 
             # Test if the value exist, otherwise return None
             value = None
-            if hasattr(request.user, prop):
+            if hasattr(request.user, prop) and prop in settings.PIAPI_USERDATA:
                 value = getattr(request.user, prop)
 
             # Add informations to get or post parameters, depending on the current method
@@ -206,6 +244,13 @@ def main(request, query, hproPk=None):
                 postParameters['ebuio_u_' + prop] = value
             else:
                 getParameters['ebuio_u_' + prop] = value
+
+    # If orga mode, add the current orga pk
+    if orgaMode:
+        if request.method == 'POST':
+            postParameters['ebuio_orgapk'] = currentOrga.pk
+        else:
+            getParameters['ebuio_orgapk'] = currentOrga.pk
 
     # Do the action
     data = plugIt.doAction(query, request.method, getParameters, postParameters, files)
@@ -239,12 +284,10 @@ def main(request, query, hproPk=None):
     else:
 
         # Return only wanted properties about the user
-        class User():
-            pass
-
-        data['ebuio_u'] = User()
+        data['ebuio_u'] = SimpleUser()
         for prop in settings.PIAPI_USERDATA:
-            setattr(data['ebuio_u'], prop, getattr(request.user, prop))
+            if hasattr(request.user, prop):
+                setattr(data['ebuio_u'], prop, getattr(request.user, prop))
 
         data['ebuio_u'].id = str(data['ebuio_u'].pk)
 
@@ -259,6 +302,12 @@ def main(request, query, hproPk=None):
             data['ebuio_hpro_pk'] = hproject.pk
             from app.utils import create_secret
             data['ebuio_hpro_key'] = create_secret(str(hproject.pk), hproject.name, str(request.user.pk))
+
+        # Add orga mode and orga
+        data['ebuio_orgamode'] = orgaMode
+
+        if orgaMode:
+            data['ebuio_orga']  = currentOrga
 
         # Render it
         template = Template(templateContent)
@@ -309,6 +358,17 @@ def setUser(request):
 
     return HttpResponse('')
 
+def setOrga(request):
+    """In standalone mode, change the current orga"""
+
+    if not settings.PIAPI_STANDALONE:
+        raise Http404
+
+    request.session['plugit-standalone-organame'] = request.GET.get('name')
+    request.session['plugit-standalone-orgapk'] = request.GET.get('pk')
+
+    return HttpResponse('')
+
 def check_api_key(request, key, hproPk):
     """Check if an API key is valid"""
 
@@ -352,7 +412,9 @@ def api_user(request, userPk, key=None, hproPk=None):
         (_, _, hproject) = getPlugItObject(hproPk)
 
         user.ebuio_member = hproject.isMemberRead(user)
-        user.ebuio_admin = hproject.isMemberWrite(user)    
+        user.ebuio_admin = hproject.isMemberWrite(user)  
+
+        # TODO: ORGA  
 
 
     retour = {}

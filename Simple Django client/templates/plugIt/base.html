@@ -26,6 +26,16 @@
                     });
 
                 }
+
+                 function ebuio_setOrga(name, pk) {
+
+                    $.ajax({
+                        url: "{{ebuio_baseUrl}}ebuio_setOrga?name=" + name + "&pk=" + pk,
+                    }).done(function() {
+                         location.reload();
+                    });
+
+                }
             </script>
 
             <div class="container">
@@ -51,6 +61,21 @@
                                     <li {% if ebuio_userMode == 'adm' %}class="active"{% endif %}><a href="#" onclick="ebuio_setUser('adm');">{% trans "Admin user" %}</a></li>
                                 </ul>
                             </li>
+
+                            {% if ebuio_orgamode %}
+                                <li class="dropdown">
+                                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                                        {% trans "Organization" %}
+                                        <b class="caret"></b>
+                                    </a>
+                                    <ul class="dropdown-menu">
+                                        <li {% if ebuio_orga.pk == '-1' %}class="active"{% endif %}><a href="#" onclick="ebuio_setOrga('EBU', '-1');">{% trans "EBU" %}</a></li>
+                                        <li {% if ebuio_orga.pk == '-2' %}class="active"{% endif %}><a href="#" onclick="ebuio_setOrga('RTS', '-2');">{% trans "RTS" %}</a></li>
+                                        <li {% if ebuio_orga.pk == '-3' %}class="active"{% endif %}><a href="#" onclick="ebuio_setOrga('BBC', '-3');">{% trans "BBC" %}</a></li>
+                                        <li {% if ebuio_orga.pk == '-4' %}class="active"{% endif %}><a href="#" onclick="ebuio_setOrga('CNN', '-4');">{% trans "CNN" %}</a></li>
+                                    </ul>
+                                </li>
+                            {% endif %}
                           </ul>
 
                           <ul class="nav pull-right">
