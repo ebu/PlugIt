@@ -66,7 +66,8 @@ def plugitGetUser(pk):
 
     user_cleaned = User()
     for prop in settings.PIAPI_USERDATA:
-        setattr(user_cleaned, prop, getattr(user, prop))
+        if hasattr(user, prop):
+            setattr(user_cleaned, prop, getattr(user, prop))
 
     user_cleaned.id = str(user_cleaned.pk)
 
