@@ -125,10 +125,37 @@ def main(request, query, hproPk=None):
     else:
         request.user.ebuio_member = hproject.isMemberRead(request.user)
         request.user.ebuio_admin = hproject.isMemberWrite(request.user)
-        orgaMode = hproject.plugit_orgamode
+        orgaMode = hproject.plugItOrgaMode
 
+        # List available orgas
+        availableOrga = request.user.getOrgas()
+
+        if len(availableOrga) == 0:
+            return gen403('no_orga_in_orgamode')
+
+        # Find the current orga
+        currentOrgaId = request.session.get('plugit-orgapk-' + str(hproject.pk), None)
+
+        if currentOrgaId is None:
+            (tmpOrga, _) = availableOrga[0]
+            currentOrgaId = tmpOrga.pk
+
+        from organizations.models import Organization
+        realCurrentOrga = get_object_or_404(Organization, pk=currentOrgaId)
+
+        # Build the current orga
         currentOrga = SimpleOrga()
-        # FIXME
+
+        currentOrga.pk = realCurrentOrga.pk
+        currentOrga.name = realCurrentOrga.name
+
+        # Get rights
+        request.user.ebuio_orga_member = realCurrentOrga.isMember(request.user)
+        request.user.ebuio_orga_admin = realCurrentOrga.isOwner(request.user)
+
+
+
+
 
     # Caching
     cacheKey = None
@@ -252,6 +279,7 @@ def main(request, query, hproPk=None):
         else:
             getParameters['ebuio_orgapk'] = currentOrga.pk
 
+
     # Do the action
     data = plugIt.doAction(query, request.method, getParameters, postParameters, files)
 
@@ -309,6 +337,16 @@ def main(request, query, hproPk=None):
         if orgaMode:
             data['ebuio_orga']  = currentOrga
 
+            # If not standalone mode, list the available orgas
+            if not settings.PIAPI_STANDALONE: 
+                data['ebuio_orgas']  = []
+                for (orga, _) in availableOrga:
+                    tmpOrga = SimpleOrga()
+                    tmpOrga.pk = orga.pk
+                    tmpOrga.name = orga.name
+                    data['ebuio_orgas'].append(tmpOrga)
+
+
         # Render it
         template = Template(templateContent)
         context = Context(data)
@@ -358,16 +396,24 @@ def setUser(request):
 
     return HttpResponse('')
 
-def setOrga(request):
-    """In standalone mode, change the current orga"""
+def setOrga(request, hproPk=None):
+    """Change the current orga"""
 
-    if not settings.PIAPI_STANDALONE:
-        raise Http404
+    if settings.PIAPI_STANDALONE:
+        request.session['plugit-standalone-organame'] = request.GET.get('name')
+        request.session['plugit-standalone-orgapk'] = request.GET.get('pk')
+    else:
 
-    request.session['plugit-standalone-organame'] = request.GET.get('name')
-    request.session['plugit-standalone-orgapk'] = request.GET.get('pk')
+        (_, _, hproject) = getPlugItObject(hproPk)
 
-    return HttpResponse('')
+        from organizations.models import Organization
+
+        orga = get_object_or_404(Organization, pk=request.GET.get('orga'))
+
+        if orga.isMember(request.user) or orga.isOwner(request.user):
+            request.session.get('plugit-orgapk-' + str(hproject.pk), orga.pk)
+
+        return HttpResponse('')
 
 def check_api_key(request, key, hproPk):
     """Check if an API key is valid"""
@@ -414,9 +460,6 @@ def api_user(request, userPk, key=None, hproPk=None):
         user.ebuio_member = hproject.isMemberRead(user)
         user.ebuio_admin = hproject.isMemberWrite(user)  
 
-        # TODO: ORGA  
-
-
     retour = {}
 
     for prop in settings.PIAPI_USERDATA:
@@ -446,8 +489,12 @@ def api_orga(request, orgaPk, key=None, hproPk=None):
             retour['name'] = 'CNN'
 
     else:
-        # TODO: ORGA  
-        pass
+        from organizations.models import Organization
+
+        orga = get_object_or_404(Organization, pk=orgaPk))
+
+        retour['pk'] = orga.pk
+        retour['name'] = orga.name
 
 
     return HttpResponse(json.dumps(retour), content_type="application/json") 
