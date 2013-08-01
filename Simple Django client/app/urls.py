@@ -4,7 +4,14 @@ from django.conf.urls import patterns, include, url
 from django.conf import settings
 from django.views.generic import RedirectView
 
+
+# Uncomment the next two lines to enable the admin:
+from django.contrib import admin
+admin.autodiscover()
+
 urlpatterns = patterns('',
+
+	url(r'^admin/', include(admin.site.urls)),
 
     (r'^$', RedirectView.as_view(url='/plugIt/')),
     url(r'^plugIt/', include('plugIt.urls')),

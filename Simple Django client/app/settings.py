@@ -126,6 +126,7 @@ INSTALLED_APPS = (
     'django.contrib.sites',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.admin',
     'plugIt',
 )
 
@@ -165,7 +166,8 @@ PIAPI_STANDALONE = True
 PIAPI_STANDALONE_URI = 'http://127.0.0.1:5000'
 PIAPI_BASEURI = '/plugIt/'
 PIAPI_USERDATA = ['username', 'pk', 'first_name', 'last_name', 'email', 'ebuio_member', 'ebuio_admin', 'ebuio_orga_member', 'ebuio_orga_admin']
-PIAPI_ORGAMODE = True
+PIAPI_ORGAMODE = False # Don't active this with PIAPI_REALUSERS !
+PIAPI_REALUSERS = False  # Don't active this with PIAPI_ORGAMODE !
 
 CACHES = {
     'default': {
@@ -177,3 +179,5 @@ CACHES = {
 SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
 
 FILE_UPLOAD_HANDLERS = ("django.core.files.uploadhandler.TemporaryFileUploadHandler",)
+
+LOGIN_REDIRECT_URL = '/'

@@ -104,6 +104,10 @@ def main(request, query, hproPk=None):
     else:
         global plugIt, baseURI
 
+        # Check if settings are ok
+        if settings.PIAPI_ORGAMODE and settings.PIAPI_REALUSERS:
+            return gen404("Configuration error. PIAPI_ORGAMODE and PIAPI_REALUSERS both set to True !")
+
     # Get meta
     meta = plugIt.getMeta(query)
 
@@ -112,15 +116,21 @@ def main(request, query, hproPk=None):
 
     ## If standalone mode, change the current user and orga mode based on parameters
     if settings.PIAPI_STANDALONE:
-        currentUserMode = request.session.get('plugit-standalone-usermode', 'ano')
-        
-        request.user = generate_user(mode=currentUserMode)      
 
-        orgaMode = settings.PIAPI_ORGAMODE
+        if not settings.PIAPI_REALUSERS:
+            currentUserMode = request.session.get('plugit-standalone-usermode', 'ano')
+            
+            request.user = generate_user(mode=currentUserMode)      
 
-        currentOrga = SimpleOrga()
-        currentOrga.name = request.session.get('plugit-standalone-organame', 'EBU')
-        currentOrga.pk = request.session.get('plugit-standalone-orgapk', '-1')
+            orgaMode = settings.PIAPI_ORGAMODE
+
+            currentOrga = SimpleOrga()
+            currentOrga.name = request.session.get('plugit-standalone-organame', 'EBU')
+            currentOrga.pk = request.session.get('plugit-standalone-orgapk', '-1')
+        else:
+            request.user.ebuio_member = request.user.is_staff
+            request.user.ebuio_admin = request.user.is_superuser
+            orgaMode = None
 
     else:
         request.user.ebuio_member = hproject.isMemberRead(request.user)
@@ -325,6 +335,7 @@ def main(request, query, hproPk=None):
         # Add userMode
         if settings.PIAPI_STANDALONE:
             data['ebuio_userMode'] = request.session.get('plugit-standalone-usermode', 'ano')
+            data['ebuio_realUsers'] = settings.PIAPI_REALUSERS
         else:
             data['ebuio_hpro_name'] = hproject.name
             data['ebuio_hpro_pk'] = hproject.pk
@@ -389,7 +400,7 @@ def media(request, path, hproPk=None):
 def setUser(request):
     """In standalone mode, change the current user"""
 
-    if not settings.PIAPI_STANDALONE:
+    if not settings.PIAPI_STANDALONE and not settings.PIAPI_REALUSERS:
         raise Http404
 
     request.session['plugit-standalone-usermode'] = request.GET.get('mode')
@@ -448,9 +459,12 @@ def api_user(request, userPk, key=None, hproPk=None):
         raise Http404
 
     if settings.PIAPI_STANDALONE:
-        user = generate_user(pk=userPk)
-        if user is None:
-            raise Http404
+        if not settings.PIAPI_REALUSERS:
+            user = generate_user(pk=userPk)
+            if user is None:
+                raise Http404
+        else:
+            user = get_object_or_404(User, pk=userPk)
     else:
         from users.models import TechUser
         user = get_object_or_404(TechUser, pk=userPk)
@@ -491,7 +505,7 @@ def api_orga(request, orgaPk, key=None, hproPk=None):
     else:
         from organizations.models import Organization
 
-        orga = get_object_or_404(Organization, pk=orgaPk))
+        orga = get_object_or_404(Organization, pk=orgaPk)
 
         retour['pk'] = orga.pk
         retour['name'] = orga.name

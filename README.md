@@ -41,6 +41,7 @@ Use `cd Simple Flask server`and `python server.py` to run the server.
 * _PI_ALLOWED_NETWORKS_ : Array of subnets. PlugIt call will be restricted to thoses networks. Eg: `['127.0.0.1/32']` (Single ip), `['0.0.0.0/0']` (Everyone), `['192.168.42.0/24']` (Everyone with ip 192.168.42.X)
 * _PIAPI_USERDATA_ : Array of string. Properties allowed about the current user
 * _PIAPI_ORGAMODE_ : If true, work in Orga mode (next section)
+* _PIAPI_REALUSERS_ : If true, work with real users. Exclusiv with PIAPI_ORGAMODE (don't active both !). You need to setup a database and use python manage.py migrate to create it. Administration is available @ _http://127.0.0.1:8000/admin/_
 
 ### OrgaMode
 
