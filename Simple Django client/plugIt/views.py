@@ -421,14 +421,16 @@ def setOrga(request, hproPk=None):
         request.session['plugit-standalone-orgapk'] = request.GET.get('pk')
     else:
 
+
         (_, _, hproject) = getPlugItObject(hproPk)
 
         from organizations.models import Organization
 
         orga = get_object_or_404(Organization, pk=request.GET.get('orga'))
 
-        if orga.isMember(request.user) or orga.isOwner(request.user):
-            request.session.get('plugit-orgapk-' + str(hproject.pk), orga.pk)
+
+        if request.user.is_superuser or orga.isMember(request.user) or orga.isOwner(request.user):
+            request.session['plugit-orgapk-' + str(hproject.pk)] = orga.pk
 
         return HttpResponse('')
 
