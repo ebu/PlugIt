@@ -194,7 +194,11 @@ def main(request, query, hproPk=None):
 
             # Add user info if needed
             if useUser:
-                cacheKey += str(request.user.pk) + '-'
+                cacheKey += str(request.user.pk) + 'usr-'
+
+            # Add orga
+            if orgaMode:
+                cacheKey += str(currentOrga.pk) + 'org-'
 
             # Add current query
             cacheKey += request.get_full_path()
