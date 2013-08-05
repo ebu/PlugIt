@@ -14,7 +14,7 @@ class PlugItAPI():
 		return getattr(requests, verb.lower())(self.url + uri, params=params, data=postParams, stream=True)
 
 	def get_user(self, userPk):
-		"""Return a User speficied with userPk"""
+		"""Return an user speficied with userPk"""
 		r = self._request('user/' + userPk)
 		if not r:
 			return None
@@ -32,8 +32,28 @@ class PlugItAPI():
 
 		return u
 
+	def get_orga(self, orgaPk):
+		"""Return an organization speficied with orgaPk"""
+		r = self._request('orga/' + orgaPk)
+		if not r:
+			return None
+
+		# Base properties
+		o = Orga()
+		o.pk = orgaPk
+		o.id = orgaPk
+
+		# Copy data inside the orga
+		data = r.json()
+
+		for attr in data:
+			setattr(o, attr, data[attr])
+
+		return o
+
 
 class User():
 	"""Represent an user"""
 
-
+class Orga():
+	"""Represent an organization"""
