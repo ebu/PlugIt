@@ -137,34 +137,36 @@ def main(request, query, hproPk=None):
         request.user.ebuio_admin = hproject.isMemberWrite(request.user)
         orgaMode = hproject.plugItOrgaMode
 
-        # List available orgas
-        availableOrga = request.user.getOrgas()
+        if orgaMode:
 
-        if len(availableOrga) == 0:
-            return gen403('no_orga_in_orgamode')
+            # List available orgas
+            if request.user.is_authenticated():
+                availableOrga = request.user.getOrgas()
+            else:
+                availableOrga = []
 
-        # Find the current orga
-        currentOrgaId = request.session.get('plugit-orgapk-' + str(hproject.pk), None)
+            if len(availableOrga) == 0:
+                return gen403('no_orga_in_orgamode')
 
-        if currentOrgaId is None:
-            (tmpOrga, _) = availableOrga[0]
-            currentOrgaId = tmpOrga.pk
+            # Find the current orga
+            currentOrgaId = request.session.get('plugit-orgapk-' + str(hproject.pk), None)
 
-        from organizations.models import Organization
-        realCurrentOrga = get_object_or_404(Organization, pk=currentOrgaId)
+            if currentOrgaId is None:
+                (tmpOrga, _) = availableOrga[0]
+                currentOrgaId = tmpOrga.pk
 
-        # Build the current orga
-        currentOrga = SimpleOrga()
+            from organizations.models import Organization
+            realCurrentOrga = get_object_or_404(Organization, pk=currentOrgaId)
 
-        currentOrga.pk = realCurrentOrga.pk
-        currentOrga.name = realCurrentOrga.name
+            # Build the current orga
+            currentOrga = SimpleOrga()
 
-        # Get rights
-        request.user.ebuio_orga_member = realCurrentOrga.isMember(request.user)
-        request.user.ebuio_orga_admin = realCurrentOrga.isOwner(request.user)
+            currentOrga.pk = realCurrentOrga.pk
+            currentOrga.name = realCurrentOrga.name
 
-
-
+            # Get rights
+            request.user.ebuio_orga_member = realCurrentOrga.isMember(request.user)
+            request.user.ebuio_orga_admin = realCurrentOrga.isOwner(request.user)
 
 
     # Caching
