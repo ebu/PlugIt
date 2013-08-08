@@ -472,7 +472,7 @@ def api_user(request, userPk, key=None, hproPk=None):
             if user is None:
                 raise Http404
         else:
-            user = get_object_or_404(User, pk=userPk)
+            user = get_object_or_404(DUser, pk=userPk)
     else:
         from users.models import TechUser
         user = get_object_or_404(TechUser, pk=userPk)
