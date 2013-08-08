@@ -28,7 +28,7 @@ from django.core.context_processors import csrf
 
 from django.core.cache import cache
 
-from django.contrib.auth.models import User, AnonymousUser
+from django.contrib.auth.models import User as DUser, AnonymousUser
 
 import json
 
@@ -56,15 +56,15 @@ def generate_user(mode=None, pk=None):
     user = None
 
     if mode == 'log' or pk == "-1":
-        user = User(pk=-1, username='Logged', first_name='Logged', last_name='Hector', email='logeedin@plugit-standalone.ebuio')
+        user = DUser(pk=-1, username='Logged', first_name='Logged', last_name='Hector', email='logeedin@plugit-standalone.ebuio')
         user.ebuio_member = False
         user.ebuio_admin = False
     elif mode == 'mem' or pk == "-2":
-        user = User(pk=-2, username='Member', first_name='Member', last_name='Luc', email='memeber@plugit-standalone.ebuio')
+        user = DUser(pk=-2, username='Member', first_name='Member', last_name='Luc', email='memeber@plugit-standalone.ebuio')
         user.ebuio_member = True
         user.ebuio_admin = False
     elif mode == 'adm' or pk == "-3":
-        user = User(pk=-3, username='Admin', first_name='Admin', last_name='Charles', email='admin@plugit-standalone.ebuio')
+        user = DUser(pk=-3, username='Admin', first_name='Admin', last_name='Charles', email='admin@plugit-standalone.ebuio')
         user.ebuio_member = True
         user.ebuio_admin = True
     elif mode == 'ano':
@@ -145,7 +145,7 @@ def main(request, query, hproPk=None):
             else:
                 availableOrga = []
 
-            if len(availableOrga) == 0:
+            if not availableOrga:
                 return gen403('no_orga_in_orgamode')
 
             # Find the current orga
