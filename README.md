@@ -7,11 +7,38 @@ We use this framework at EBU to access web services on the EBU.io platform.
 
 ***This is a draft of the protocol and implementation. Except issues (and report them) !***
 
+## License
+
+Copyright (c) 2013 EBU. All rights reserved.
+
+The project plugit has been created by the EBU. It consists of software that dynamically links to different existing open source code repositories. It does not incorporate or combines components through copying them (or parts) into the target application and producing a merged object file that is a stand-alone executable. The plugit code and documentation is made available by the EBU on the https://github.com/ebu/PlugIt website, under the terms and conditions of the EUPL (European Union Public Licence) v. 1.1
+
+### Latest version of EUPL
+
+The EUPL licence v1.1 is available in 22 languages: 22-07-2013, https://joinup.ec.europa.eu/software/page/eupl/licence-eupl
+Whenever a newer version is officially adopted, that version shall apply, and in case of doubt, the English version shall prevail.
+
+### Exceptions
+
+Contact the EBU (Michael Barroco, barroco@ebu.ch) if you are in need of special licence terms/ distribution rights different from the EU Public Licence.
+
+### Disclaimer
+
+For the avoidance of doubt, and in addition to Articles 7 and 8 of the EUPL, this software is provided 'as-is', without any express or implied warranty. In no event will the EBU or the authors be held liable for any damages arising from the use of this software. Furthermore the EBU cannot be held responsible for any use by third parties using the software, for example with a view to produce / manipulate illegal content or not paying for the use of licensed codec's or any other illegal use.
+
+## Project lead
+
+* Michael Barroco [@barroco](https://github.com/barroco)
+
+## Core contributors
+
+* Maximilien Cuony [@the-glu](https://github.com/the-glu)
+
 ## Deps
 
 (`pip install ...`)
 
-* django==1.5.1
+* django
 * flask
 * requests
 * python-dateutil
