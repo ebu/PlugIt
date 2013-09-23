@@ -168,13 +168,13 @@ class ActionView(View):
         result = self.action(request, *args, **kwargs)
 
         # Is it a redirect ?
-        if result.__class__ == PlugItRedirect:
+        if isinstance(result, PlugItRedirect):
             response = make_response("")
             response.headers['EbuIo-PlugIt-Redirect'] = result.url
             if result.no_prefix:
                 response.headers['EbuIo-PlugIt-Redirect-NoPrefix'] = 'True'
             return response
-        elif result.__class__ == PlugItSendFile:
+        elif isinstance(result, PlugItSendFile):
             response = send_file(result.filename, mimetype=result.mimetype, as_attachment=result.as_attachment, attachment_filename=result.attachment_filename)
             response.headers['EbuIo-PlugIt-ItAFile'] = 'True'
             return response
