@@ -2,7 +2,7 @@
 
 import requests
 
-class PlugItAPI():
+class PlugItAPI(object):
 	"""Main instance to access plugit api"""
 
 	def __init__(self, url):
@@ -35,8 +35,8 @@ class PlugItAPI():
 			return o
 		return None
 
-class User():
+class User(object):
 	"""Represent an user"""
 
-class Orga():
+class Orga(object):
 	"""Represent an organization"""
