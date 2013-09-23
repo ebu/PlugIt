@@ -21,14 +21,11 @@ class PlugItAPI():
 
 		# Base properties
 		u = User()
-		u.pk = userPk
-		u.id = userPk
+		u.pk = u.id = userPk
 
 		# Copy data inside the user
-		data = r.json()
-
-		for attr in data:
-			setattr(u, attr, data[attr])
+		for key, value in r.json().items():
+			setattr(u, key, value)
 
 		return u
 
@@ -40,14 +37,11 @@ class PlugItAPI():
 
 		# Base properties
 		o = Orga()
-		o.pk = orgaPk
-		o.id = orgaPk
+		o.pk = o.id = orgaPk
 
 		# Copy data inside the orga
-		data = r.json()
-
-		for attr in data:
-			setattr(o, attr, data[attr])
+		for key, value in r.json().items():
+			setattr(o, key, value)
 
 		return o
 

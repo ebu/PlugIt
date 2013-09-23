@@ -16,10 +16,7 @@ DEBUG = True
 # PlugIt Parameters
 
 # PI_META_CACHE specify the number of seconds meta informations should be cached
-if DEBUG:
-    PI_META_CACHE = 0  # No cache
-else:
-    PI_META_CACHE = 5 * 60  # 5 minutes
+PI_META_CACHE = 0 if DEBUG else 5 * 60  # 5 minutes
 
 # Allow the API to be located at another endpoint (to share call with another API)
 PI_BASE_URL = '/'
@@ -89,10 +86,8 @@ class MetaView(View):
         objResponse = {}
 
         # Template information
-        if self.action.pi_api_template != "":
-            objResponse['template_tag'] = md5Checksum('templates/' + self.action.pi_api_template)
-        else:
-            objResponse['template_tag'] = ""
+        objResponse['template_tag'] = ("" if self.action.pi_api_template == "" else
+                                       md5Checksum('templates/' + self.action.pi_api_template))
 
         for attribute in (u'only_logged_user', u'only_member_user', u'only_admin_user',
                           u'only_orga_member_user', u'only_orga_admin_user',  # User restrictions
