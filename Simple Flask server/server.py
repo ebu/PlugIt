@@ -94,36 +94,12 @@ class MetaView(View):
         else:
             objResponse['template_tag'] = ""
 
-        # User restrictions
-        if hasattr(self.action, 'pi_api_only_logged_user'):
-            objResponse['only_logged_user'] = self.action.pi_api_only_logged_user
-
-        if hasattr(self.action, 'pi_api_only_member_user'):
-            objResponse['only_member_user'] = self.action.pi_api_only_member_user
-
-        if hasattr(self.action, 'pi_api_only_admin_user'):
-            objResponse['only_admin_user'] = self.action.pi_api_only_admin_user
-
-        if hasattr(self.action, 'pi_api_only_orga_member_user'):
-            objResponse['only_orga_member_user'] = self.action.pi_api_only_orga_member_user
-
-        if hasattr(self.action, 'pi_api_only_orga_admin_user'):
-            objResponse['only_orga_admin_user'] = self.action.pi_api_only_orga_admin_user
-
-        # Cache information
-        if hasattr(self.action, 'pi_api_cache_time'):
-            objResponse['cache_time'] = self.action.pi_api_cache_time
-
-        if hasattr(self.action, 'pi_api_cache_by_user'):
-            objResponse['cache_by_user'] = self.action.pi_api_cache_by_user
-
-        # User information requested
-        if hasattr(self.action, 'pi_api_user_info'):
-            objResponse['user_info'] = self.action.pi_api_user_info
-
-        # Only json
-        if hasattr(self.action, 'pi_api_json_only'):
-            objResponse['json_only'] = self.action.pi_api_json_only
+        for attribute in (
+            u'only_logged_user', u'only_member_user', u'only_admin_user',  # User restrictions
+            u'cache_time', u'cache_by_user',                               # Cache information
+            u'user_info', u'json_only'):                                   # Only json + requested user information(s)
+            if hasattr(self.action, u'pi_api_' + attribute):
+                objResponse[attribute] = getattr(self.action, u'pi_api_' + attribute)
 
         # Add the cache headers
         response = make_response(jsonify(objResponse))
