@@ -16,35 +16,24 @@ class PlugItAPI():
 	def get_user(self, userPk):
 		"""Return an user speficied with userPk"""
 		r = self._request('user/' + userPk)
-		if not r:
-			return None
-
-		# Base properties
-		u = User()
-		u.pk = u.id = userPk
-
-		# Copy data inside the user
-		for key, value in r.json().items():
-			setattr(u, key, value)
-
-		return u
+		if r:
+			# Set base properties and copy data inside the user
+			u = User()
+			u.pk = u.id = userPk
+			u.__dict__.update(r.json())
+			return u
+		return None
 
 	def get_orga(self, orgaPk):
 		"""Return an organization speficied with orgaPk"""
 		r = self._request('orga/' + orgaPk)
-		if not r:
-			return None
-
-		# Base properties
-		o = Orga()
-		o.pk = o.id = orgaPk
-
-		# Copy data inside the orga
-		for key, value in r.json().items():
-			setattr(o, key, value)
-
-		return o
-
+		if r:
+			# Set base properties and copy data inside the orga
+			o = Orga()
+			o.pk = o.id = orgaPk
+			o.__dict__.update(r.json())
+			return o
+		return None
 
 class User():
 	"""Represent an user"""
