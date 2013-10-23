@@ -48,12 +48,16 @@ class PlugIt():
 
                 # headers contains the necessary Content-Type and Content-Length
                 # datagen is a generator object that yields the encoded parameters
-                data = {}
+                data = []
                 for x in postParameters:
-                    data[x] = postParameters[x]
+                    if isinstance(postParameters[x], list):
+                        for elem in postParameters[x]:
+                            data.append((x, elem))
+                    else:
+                        data.append((x, postParameters[x]))
 
                 for f in files:
-                    data[f] = MultipartParam(f, fileobj=open(files[f].temporary_file_path(), 'rb'), filename=files[f].name)
+                    data.append((f, MultipartParam(f, fileobj=open(files[f].temporary_file_path(), 'rb'), filename=files[f].name)))
 
                 datagen, headers = multipart_encode(data)
 
