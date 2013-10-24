@@ -16,10 +16,7 @@ DEBUG = True
 # PlugIt Parameters
 
 # PI_META_CACHE specify the number of seconds meta informations should be cached
-if DEBUG:
-    PI_META_CACHE = 0  # No cache
-else:
-    PI_META_CACHE = 5 * 60  # 5 minutes
+PI_META_CACHE = 0 if DEBUG else 5 * 60  # 5 minutes
 
 # Allow the API to be located at another endpoint (to share call with another API)
 PI_BASE_URL = '/'
@@ -89,41 +86,15 @@ class MetaView(View):
         objResponse = {}
 
         # Template information
-        if self.action.pi_api_template != "":
-            objResponse['template_tag'] = md5Checksum('templates/' + self.action.pi_api_template)
-        else:
-            objResponse['template_tag'] = ""
+        objResponse['template_tag'] = ("" if self.action.pi_api_template == "" else
+                                       md5Checksum('templates/' + self.action.pi_api_template))
 
-        # User restrictions
-        if hasattr(self.action, 'pi_api_only_logged_user'):
-            objResponse['only_logged_user'] = self.action.pi_api_only_logged_user
-
-        if hasattr(self.action, 'pi_api_only_member_user'):
-            objResponse['only_member_user'] = self.action.pi_api_only_member_user
-
-        if hasattr(self.action, 'pi_api_only_admin_user'):
-            objResponse['only_admin_user'] = self.action.pi_api_only_admin_user
-
-        if hasattr(self.action, 'pi_api_only_orga_member_user'):
-            objResponse['only_orga_member_user'] = self.action.pi_api_only_orga_member_user
-
-        if hasattr(self.action, 'pi_api_only_orga_admin_user'):
-            objResponse['only_orga_admin_user'] = self.action.pi_api_only_orga_admin_user
-
-        # Cache information
-        if hasattr(self.action, 'pi_api_cache_time'):
-            objResponse['cache_time'] = self.action.pi_api_cache_time
-
-        if hasattr(self.action, 'pi_api_cache_by_user'):
-            objResponse['cache_by_user'] = self.action.pi_api_cache_by_user
-
-        # User information requested
-        if hasattr(self.action, 'pi_api_user_info'):
-            objResponse['user_info'] = self.action.pi_api_user_info
-
-        # Only json
-        if hasattr(self.action, 'pi_api_json_only'):
-            objResponse['json_only'] = self.action.pi_api_json_only
+        for attribute in (u'only_logged_user', u'only_member_user', u'only_admin_user',
+                          u'only_orga_member_user', u'only_orga_admin_user',  # User restrictions
+                          u'cache_time', u'cache_by_user',                    # Cache information
+                          u'user_info', u'json_only'):                        # Requested user infos + JSON-only
+            if hasattr(self.action, u'pi_api_' + attribute):
+                objResponse[attribute] = getattr(self.action, u'pi_api_' + attribute)
 
         # Add the cache headers
         response = make_response(jsonify(objResponse))
@@ -168,13 +139,13 @@ class ActionView(View):
         result = self.action(request, *args, **kwargs)
 
         # Is it a redirect ?
-        if result.__class__ == PlugItRedirect:
+        if isinstance(result, PlugItRedirect):
             response = make_response("")
             response.headers['EbuIo-PlugIt-Redirect'] = result.url
             if result.no_prefix:
                 response.headers['EbuIo-PlugIt-Redirect-NoPrefix'] = 'True'
             return response
-        elif result.__class__ == PlugItSendFile:
+        elif isinstance(result, PlugItSendFile):
             response = send_file(result.filename, mimetype=result.mimetype, as_attachment=result.as_attachment, attachment_filename=result.attachment_filename)
             response.headers['EbuIo-PlugIt-ItAFile'] = 'True'
             return response
