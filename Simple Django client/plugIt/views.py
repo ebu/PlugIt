@@ -379,6 +379,9 @@ def main(request, query, hproPk=None):
     if cacheKey is not None:
         cache.set(cacheKey, result, meta['cache_time'])
 
+    if 'no_template' in meta and meta['no_template']:  # Just send the json back
+        return HttpResponse(result)
+
     return HttpResponse(result)
 
 

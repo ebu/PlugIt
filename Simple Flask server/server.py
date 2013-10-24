@@ -125,6 +125,10 @@ class MetaView(View):
         if hasattr(self.action, 'pi_api_json_only'):
             objResponse['json_only'] = self.action.pi_api_json_only
 
+        # No template
+        if hasattr(self.action, 'pi_api_no_template'):
+            objResponse['no_template'] = self.action.pi_api_no_template
+
         # Add the cache headers
         response = make_response(jsonify(objResponse))
 
