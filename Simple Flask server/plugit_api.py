@@ -52,7 +52,7 @@ class PlugItAPI():
 
         return o
 
-    def get_projet_memebers(self):
+    def get_project_members(self):
         """Return the list of members in the project"""
 
         r = self._request('members/')
