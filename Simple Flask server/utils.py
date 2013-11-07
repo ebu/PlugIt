@@ -81,6 +81,14 @@ def json_only():
         return function
     return real_decorator
 
+
+def no_template():
+    """Decorator to specify the action return template that should be send directly to the browser."""
+    def real_decorator(function):
+        function.pi_api_no_template = True
+        return function
+    return real_decorator
+
 # Utils
 
 
