@@ -16,7 +16,10 @@ DEBUG = True
 # PlugIt Parameters
 
 # PI_META_CACHE specify the number of seconds meta informations should be cached
-PI_META_CACHE = 0 if DEBUG else 5 * 60  # 5 minutes
+if DEBUG:
+    PI_META_CACHE = 0  # No cache
+else:
+    PI_META_CACHE = 5 * 60  # 5 minutes
 
 # Allow the API to be located at another endpoint (to share call with another API)
 PI_BASE_URL = '/'
@@ -92,7 +95,7 @@ class MetaView(View):
         for attribute in (u'only_logged_user', u'only_member_user', u'only_admin_user',
                           u'only_orga_member_user', u'only_orga_admin_user',  # User restrictions
                           u'cache_time', u'cache_by_user',                    # Cache information
-                          u'user_info', u'json_only'):                        # Requested user infos + JSON-only
+                          u'user_info', u'json_only', 'no_template'):         # Requested user infos + JSON-only
             if hasattr(self.action, u'pi_api_' + attribute):
                 objResponse[attribute] = getattr(self.action, u'pi_api_' + attribute)
 
