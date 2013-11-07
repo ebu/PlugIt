@@ -2,7 +2,7 @@
 
 import requests
 
-class PlugItAPI():
+class PlugItAPI(object):
 	"""Main instance to access plugit api"""
 
 	def __init__(self, url):
@@ -16,44 +16,27 @@ class PlugItAPI():
 	def get_user(self, userPk):
 		"""Return an user speficied with userPk"""
 		r = self._request('user/' + userPk)
-		if not r:
-			return None
-
-		# Base properties
-		u = User()
-		u.pk = userPk
-		u.id = userPk
-
-		# Copy data inside the user
-		data = r.json()
-
-		for attr in data:
-			setattr(u, attr, data[attr])
-
-		return u
+		if r:
+			# Set base properties and copy data inside the user
+			u = User()
+			u.pk = u.id = userPk
+			u.__dict__.update(r.json())
+			return u
+		return None
 
 	def get_orga(self, orgaPk):
 		"""Return an organization speficied with orgaPk"""
 		r = self._request('orga/' + orgaPk)
-		if not r:
-			return None
+		if r:
+			# Set base properties and copy data inside the orga
+			o = Orga()
+			o.pk = o.id = orgaPk
+			o.__dict__.update(r.json())
+			return o
+		return None
 
-		# Base properties
-		o = Orga()
-		o.pk = orgaPk
-		o.id = orgaPk
-
-		# Copy data inside the orga
-		data = r.json()
-
-		for attr in data:
-			setattr(o, attr, data[attr])
-
-		return o
-
-
-class User():
+class User(object):
 	"""Represent an user"""
 
-class Orga():
+class Orga(object):
 	"""Represent an organization"""
