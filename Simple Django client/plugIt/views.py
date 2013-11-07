@@ -524,7 +524,7 @@ def api_orga(request, orgaPk, key=None, hproPk=None):
     return HttpResponse(json.dumps(retour), content_type="application/json")
 
 
-def api_get_project_memebers(request, key=None, hproPk=True):
+def api_get_project_members(request, key=None, hproPk=True):
     """Return the list of project members"""
 
     if not check_api_key(request, key, hproPk):
