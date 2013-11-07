@@ -560,4 +560,4 @@ def api_get_project_members(request, key=None, hproPk=True):
 
         liste.append(retour)
 
-    return HttpResponse(json.dumps({'liste': liste}), content_type="application/json")
+    return HttpResponse(json.dumps({'members': liste}), content_type="application/json")

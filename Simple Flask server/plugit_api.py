@@ -61,7 +61,7 @@ class PlugItAPI():
 
         retour = []
 
-        for data in r.json()['liste']:
+        for data in r.json()['members']:
 
             # Base properties
             u = User()
