@@ -35,7 +35,7 @@ class PlugIt():
         if method == 'POST':
             if not files:
                 r = requests.post(self.baseURI + '/' + url, params=getParmeters, data=postParameters, stream=True)
-            else:  
+            else:
                 # Special way, for big files
                 # Requests is not usable: https://github.com/shazow/urllib3/issues/51
                 
