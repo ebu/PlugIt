@@ -38,12 +38,12 @@ For the avoidance of doubt, and in addition to Articles 7 and 8 of the EUPL, thi
 
 (`pip install ...`)
 
-* django
+* django==1.5.1
 * flask
 * requests
 * python-dateutil
 * poster
-
+* python-crypto
 
 ## Django client
 
@@ -137,6 +137,9 @@ If you use our Flask server, those method are automatically implemented !
 ### /version
 /version is used to get the current version of the server API. The server must reply with an HTTP 200 response and the object {result: 'Ok', version: '1', protocol: 'EBUio-PlugIt'}, for the current version, if everything is ok.
 
+### /mail
+/mail is used by the PlugIt client to send back to the server mails reply from users. He will send back, using a POST request the response_id provided with the API call to send the mail. 
+
 ## Actions' methods
 The project can define multiples actions, and they are triggered from the templates. There is no definition of the available actions.
 The default action, called when the user arrive on the project page on EBUio is defined by a blank string. (root)
@@ -180,3 +183,9 @@ This call return a specific media on the server side. Each request on EBUio side
 The API is available at /plugIt/ebuio_api/ . See the API root page using your browser for details.
 
 A small python class (PlugItAPI) is available in plugit_api.py, methods are also detailled on the API root page.
+
+### Mails
+
+It's possible to send mail using the API. All users reply to the mail, if keeping the same subject and send will a response_id will be send back to the PlugIt server using the /mail call. The response_id is secured in the subject and can be trusted (users cannot generate generic response_id).
+
+The management task check_mail is used to check mails and should be runned inside a cron job on the PlugIt client. Relevent configuration (`INCOMING_MAIL` and `EBUIO_SENDER`) should also be correct.

@@ -31,6 +31,10 @@ from django.core.cache import cache
 from django.contrib.auth.models import User as DUser, AnonymousUser
 
 import json
+import hashlib
+import base64
+
+from django.core.mail import send_mail
 
 
 # Standalone mode: Load the main plugit interface
@@ -325,6 +329,8 @@ def main(request, query, hproPk=None):
 
     if 'json_only' in meta and meta['json_only']:  # Just send the json back
         result = json.dumps(data)
+
+        return HttpResponse(result)
     else:
 
         # Return only wanted properties about the user
@@ -487,7 +493,8 @@ def api_user(request, userPk, key=None, hproPk=None):
     retour = {}
 
     for prop in settings.PIAPI_USERDATA:
-        retour[prop] = getattr(user, prop)
+        if hasattr(user, prop):
+            retour[prop] = getattr(user, prop)
 
     retour['id'] = str(retour['pk'])
 
@@ -561,3 +568,41 @@ def api_get_project_members(request, key=None, hproPk=True):
         liste.append(retour)
 
     return HttpResponse(json.dumps({'members': liste}), content_type="application/json")
+
+
+@csrf_exempt
+def api_send_mail(request, key=None, hproPk=None):
+    """Send a email. Posts parameters are used"""
+
+    if not check_api_key(request, key, hproPk):
+        raise Http404
+
+    sender = request.POST['sender'] or settings.EBUIO_SENDER
+    dests = request.POST.getlist('dests')
+    subject = request.POST['subject']
+    message = request.POST['message']
+
+    if 'response_id' in request.POST:
+
+        from Crypto.Cipher import AES
+        
+        key = hproPk + ':' + request.POST['response_id']
+        
+        hash_key = hashlib.sha512(key + settings.EBUIO_MAIL_SECRET_HASH).hexdigest()[30:42]
+
+        encrypter = AES.new(((settings.EBUIO_MAIL_SECRET_KEY) * 32)[:32], AES.MODE_CFB, '87447JEUPEBU4hR!')
+        encrypted_key = encrypter.encrypt(hash_key + ':' + key)
+
+        base64_key = base64.b64encode(encrypted_key)
+
+        subject = subject + ' - IOId:' +  base64_key
+        sender = settings.EBUIO_SENDER
+
+    if not settings.PIAPI_STANDALONE:
+        (_, _, hproject) = getPlugItObject(hproPk)
+        subject = '[EBUIo:' + smart_str(hproject.name) + '] ' + subject
+
+
+    send_mail(subject, message, sender, dests, fail_silently=False)
+
+    return HttpResponse(json.dumps({}), content_type="application/json")

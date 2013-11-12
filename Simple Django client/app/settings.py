@@ -181,3 +181,12 @@ SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
 FILE_UPLOAD_HANDLERS = ("django.core.files.uploadhandler.TemporaryFileUploadHandler",)
 
 LOGIN_REDIRECT_URL = '/'
+
+EBUIO_SENDER = 'no-reply@ebu.io'
+
+EBUIO_MAIL_SECRET_HASH = 'CHANGE_ME'
+EBUIO_MAIL_SECRET_KEY = 'CHANGE_ME'
+
+INCOMING_MAIL_USER = ''
+INCOMING_MAIL_PASSWORD = ''
+INCOMING_MAIL_HOST = ''
