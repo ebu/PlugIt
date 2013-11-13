@@ -37,66 +37,66 @@ You need to setup your database: decide the type of the database (mysql, sqlite,
 
 Then, edit the `utils.py` file to create the `get_db` function who is going to return the SQLAlchemy object to access the database:
 
-`from flask import Flask
-from flask.ext.sqlalchemy import SQLAlchemy
-import config
-def get_db():
-    """Return the database"""
+    from flask import Flask
+    from flask.ext.sqlalchemy import SQLAlchemy
+    import config
+    def get_db():
+        """Return the database"""
 
-    app = Flask(__name__)
-    app.config['SQLALCHEMY_DATABASE_URI'] = config.SQLALCHEMY_URL
-    db = SQLAlchemy(app)
+        app = Flask(__name__)
+        app.config['SQLALCHEMY_DATABASE_URI'] = config.SQLALCHEMY_URL
+        db = SQLAlchemy(app)
 
-    return db`
+        return db
 
 ## models.py
 
 Create a `models.py` file. You will implement your models here. At the begining of the file, import database-related objects:
 
-`from utils import get_db
-db = get_db()`
+    from utils import get_db
+    db = get_db()
 
 And create your models after. Example:
 
-`class Table(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(80))`
+    class Table(db.Model):
+        id = db.Column(db.Integer, primary_key=True)
+        name = db.Column(db.String(80))
 
 ### json property
 
 As data returned by PlugIt actions have to be json, it's usefull to add a property to convert your entires directly to json. Add this function at the beggining your `models.py` file:
 
-`def to_json(inst, cls, bonusProps=[]):
-    """
-    Jsonify the sql alchemy query result.
-    """
-    convert = dict()
-    # add your coversions for things like datetime's
-    # and what-not that aren't serializable.
-    d = dict()
-    for c in cls.__table__.columns:
-        v = getattr(inst, c.name)
-        if c.type in convert.keys() and v is not None:
-            try:
-                d[c.name] = convert[c.type](v)
-            except:
-                d[c.name] = "Error:  Failed to covert using ", str(convert[c.type])
-        elif v is None:
-            d[c.name] = str()
-        else:
-            d[c.name] = v
-    for p in bonusProps:
-        d[p] = getattr(inst, p)
+    def to_json(inst, cls, bonusProps=[]):
+        """
+        Jsonify the sql alchemy query result.
+        """
+        convert = dict()
+        # add your coversions for things like datetime's
+        # and what-not that aren't serializable.
+        d = dict()
+        for c in cls.__table__.columns:
+            v = getattr(inst, c.name)
+            if c.type in convert.keys() and v is not None:
+                try:
+                    d[c.name] = convert[c.type](v)
+                except:
+                    d[c.name] = "Error:  Failed to covert using ", str(convert[c.type])
+            elif v is None:
+                d[c.name] = str()
+            else:
+                d[c.name] = v
+        for p in bonusProps:
+            d[p] = getattr(inst, p)
 
-    return d`
+        return d
 
 and add the property to your models:
 
-`class Table(db.Model):
-    (...)
-    @property
-    def json(self):
-        return to_json(self, self.__class__, [])`
+    class Table(db.Model):
+        (...)
+        @property
+        def json(self):
+            return to_json(self, self.__class__, [])
 
 All model's fields will be used. If you want to add more information (e.g. custom properties), you can add them to the list (3th parameter) of the `to_json` function.
 
@@ -110,30 +110,30 @@ Then we need to edit configuration to use your config.py instead of the alembic.
 
 At line 12, after `fileConfig(config.config_file_name)`, add:
 
-`import sys
+    import sys
 
-# To acces models, add the current path
-sys.path.append('.')`
+    # To acces models, add the current path
+    sys.path.append('.')
 
 At line 23, replace `target_metadata = None` by
 
-`from models import db
-target_metadata = db.metadata`
+    from models import db
+    target_metadata = db.metadata
 
 At line 42, replace `url = config.get_main_option("sqlalchemy.url")` with
 
-`import config as app_config
-url = app_config.SQLALCHEMY_URL`
+    import config as app_config
+    url = app_config.SQLALCHEMY_URL
 
 And at line 56, remplace `engine = engine_from_config(
     config.get_section(config.config_ini_section),` by 
 
-`alembic_config = config.get_section(config.config_ini_section)
-import config as app_config
-alembic_config['sqlalchemy.url'] = app_config.SQLALCHEMY_URL
+    alembic_config = config.get_section(config.config_ini_section)
+    import config as app_config
+    alembic_config['sqlalchemy.url'] = app_config.SQLALCHEMY_URL
 
-engine = engine_from_config(
-    alembic_config,`
+    engine = engine_from_config(
+        alembic_config,
 
 ### Commands
 
@@ -169,32 +169,32 @@ You will need to:
 
 To run the flask server with apache, a wsgi is used. As an example, here is a basic `wsgi.py`:
 
-`import os
-os.chdir('/folder/to/your/project')
+    import os
+    os.chdir('/folder/to/your/project')
 
-from server import app as application`
+    from server import app as application
 
 Example: apache configuration you may use:
 
-`<VirtualHost *:80>
-    ServerName <YourProject>.ebu.io
+    <VirtualHost *:80>
+        ServerName <YourProject>.ebu.io
 
-    ErrorLog "/home/ubuntu/logs/error.log"
-    LogFormat "%h %l %u %t \"%r\" %>s %b" common
-    CustomLog "/home/ubuntu/logs/access.log" common
+        ErrorLog "/home/ubuntu/logs/error.log"
+        LogFormat "%h %l %u %t \"%r\" %>s %b" common
+        CustomLog "/home/ubuntu/logs/access.log" common
 
-    WSGIDaemonProcess flask processes=1 threads=1 display-name=%{GROUP} python-path=/folder/to/your/project/
-    WSGIProcessGroup flask
-    WSGIScriptAlias / /folder/to/your/project/wsgi.py
-    WSGIApplicationGroup %{GLOBAL}
-    WSGIPassAuthorization On
+        WSGIDaemonProcess flask processes=1 threads=1 display-name=%{GROUP} python-path=/folder/to/your/project/
+        WSGIProcessGroup flask
+        WSGIScriptAlias / /folder/to/your/project/wsgi.py
+        WSGIApplicationGroup %{GLOBAL}
+        WSGIPassAuthorization On
 
-    <Directory /folder/to/your/project/>
-        Order Allow,Deny
-        Allow from All
-        Require all granted
-    </Directory>
+        <Directory /folder/to/your/project/>
+            Order Allow,Deny
+            Allow from All
+            Require all granted
+        </Directory>
 
-</VirtualHost>`
+    </VirtualHost>
 
 In the `config.py` file you use on your server, don't forget to set `DEBUG  = False`.
