@@ -280,13 +280,18 @@ def main(request, query, hproPk=None):
 
     # Add parameters requested by the server
     if 'user_info' in meta:
+        print 'Meta'
+        print meta['user_info']
+        print request.user.id
         for prop in meta['user_info']:
 
             # Test if the value exist, otherwise return None
             value = None
             if hasattr(request.user, prop) and prop in settings.PIAPI_USERDATA:
                 value = getattr(request.user, prop)
-
+            else:
+                raise Exception('requested user attribute "%s", '
+                                'does not exist or requesting is not allowed' % prop)
             # Add informations to get or post parameters, depending on the current method
             if request.method == 'POST':
                 postParameters['ebuio_u_' + prop] = value
@@ -299,6 +304,9 @@ def main(request, query, hproPk=None):
             postParameters['ebuio_orgapk'] = currentOrga.pk
         else:
             getParameters['ebuio_orgapk'] = currentOrga.pk
+
+    print 'Post'
+    print postParameters
 
     # Do the action
     data = plugIt.doAction(query, request.method, getParameters, postParameters, files)
