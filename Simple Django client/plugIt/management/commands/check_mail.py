@@ -30,7 +30,7 @@ class Command(BaseCommand):
             data ='\n'.join(pop_connection.retr(i+1)[1])
             msg = email.message_from_string(data)
 
-            ebuid = re.search(r'\-.IOId:([^ ]+)$', msg['Subject'])
+            ebuid = re.search(r'.\-{23}.\[([^ ]+)\]$', msg['Subject'])
             if ebuid:
 
                 try:

@@ -595,12 +595,12 @@ def api_send_mail(request, key=None, hproPk=None):
 
         base64_key = base64.b64encode(encrypted_key)
 
-        subject = subject + ' - IOId:' +  base64_key
+        subject = subject + ' ----------------------- [' +  base64_key + ']'
         sender = settings.MAIL_SENDER
 
-    if not settings.PIAPI_STANDALONE:
-        (_, _, hproject) = getPlugItObject(hproPk)
-        subject = '[EBUIo:' + smart_str(hproject.name) + '] ' + subject
+    # if not settings.PIAPI_STANDALONE:
+    #     (_, _, hproject) = getPlugItObject(hproPk)
+    #     subject = '[EBUIo:' + smart_str(hproject.name) + '] ' + subject
 
 
     send_mail(subject, message, sender, dests, fail_silently=False)
