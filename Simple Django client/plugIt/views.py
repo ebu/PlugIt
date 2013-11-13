@@ -280,9 +280,7 @@ def main(request, query, hproPk=None):
 
     # Add parameters requested by the server
     if 'user_info' in meta:
-        print 'Meta'
-        print meta['user_info']
-        print request.user.id
+
         for prop in meta['user_info']:
 
             # Test if the value exist, otherwise return None
@@ -304,9 +302,6 @@ def main(request, query, hproPk=None):
             postParameters['ebuio_orgapk'] = currentOrga.pk
         else:
             getParameters['ebuio_orgapk'] = currentOrga.pk
-
-    print 'Post'
-    print postParameters
 
     # Do the action
     data = plugIt.doAction(query, request.method, getParameters, postParameters, files)
