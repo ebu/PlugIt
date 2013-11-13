@@ -38,12 +38,12 @@ For the avoidance of doubt, and in addition to Articles 7 and 8 of the EUPL, thi
 
 (`pip install ...`)
 
-* django
+* django==1.5.1
 * flask
 * requests
 * python-dateutil
 * poster
-
+* python-crypto
 
 ## Django client
 
@@ -62,13 +62,13 @@ server.py is the main flask file, providing different call to the framework, gen
 Use `cd Simple Flask server`and `python server.py` to run the server.
 
 ### Available option
-* _DEBUG_ : Boolean. Set to True to active flask debugging
-* _PI_META_CACHE_ : Number of seconds to ask the EBUio server to cache the meta information. Set by default to 0 if _DEBUG_ is True, 5 minutes if _DEBUG_ is False.
-* _PI_BASE_URL_ : String. The base URL to access the PlugIt API. It's possible to use a different URL (eg. '/plugIt/') to have others flask methods for another API using the same server.py. *Must end with a /*
-* _PI_ALLOWED_NETWORKS_ : Array of subnets. PlugIt call will be restricted to thoses networks. Eg: `['127.0.0.1/32']` (Single ip), `['0.0.0.0/0']` (Everyone), `['192.168.42.0/24']` (Everyone with ip 192.168.42.X)
-* _PIAPI_USERDATA_ : Array of string. Properties allowed about the current user
-* _PIAPI_ORGAMODE_ : If true, work in Orga mode (next section)
-* _PIAPI_REALUSERS_ : If true, work with real users. Exclusiv with PIAPI_ORGAMODE (don't active both !). You need to setup a database and use `python manage.py syncdb` to create it. Administration is available @ _http://127.0.0.1:8000/admin/_
+* `DEBUG` : Boolean. Set to True to active flask debugging
+* `PI_META_CACHE` : Number of seconds to ask the EBUio server to cache the meta information. Set by default to 0 if _DEBUG_ is True, 5 minutes if _DEBUG_ is False.
+* `PI_BASE_URL` : String. The base URL to access the PlugIt API. It's possible to use a different URL (eg. '/plugIt/') to have others flask methods for another API using the same server.py. *Must end with a /*
+* `PI_ALLOWED_NETWORKS` : Array of subnets. PlugIt call will be restricted to thoses networks. Eg: `['127.0.0.1/32']` (Single ip), `['0.0.0.0/0']` (Everyone), `['192.168.42.0/24']` (Everyone with ip 192.168.42.X)
+* `PI_API_USERDATA` : Array of string. Properties allowed about the current user
+* `PI_API_ORGAMODE` : If true, work in Orga mode (next section)
+* `PI_API_REALUSERS` : If true, work with real users. Exclusiv with PIAPI_ORGAMODE (don't active both !). You need to setup a database and use `python manage.py syncdb` to create it. Administration is available @ _http://127.0.0.1:8000/admin/_
 
 ### OrgaMode
 
@@ -137,6 +137,9 @@ If you use our Flask server, those method are automatically implemented !
 ### /version
 /version is used to get the current version of the server API. The server must reply with an HTTP 200 response and the object {result: 'Ok', version: '1', protocol: 'EBUio-PlugIt'}, for the current version, if everything is ok.
 
+### /mail
+/mail is used by the PlugIt client to send back to the server mails reply from users. He will send back, using a POST request the response_id provided with the API call to send the mail. 
+
 ## Actions' methods
 The project can define multiples actions, and they are triggered from the templates. There is no definition of the available actions.
 The default action, called when the user arrive on the project page on EBUio is defined by a blank string. (root)
@@ -180,3 +183,9 @@ This call return a specific media on the server side. Each request on EBUio side
 The API is available at /plugIt/ebuio_api/ . See the API root page using your browser for details.
 
 A small python class (PlugItAPI) is available in plugit_api.py, methods are also detailled on the API root page.
+
+### Mails
+
+It's possible to send mail using the API. All users reply to the mail, if keeping the same subject and send will a response_id will be send back to the PlugIt server using the /mail call. The response_id is secured in the subject and can be trusted (users cannot generate generic response_id).
+
+The management task check_mail is used to check mails and should be runned inside a cron job on the PlugIt client. Relevent configuration (`INCOMING_MAIL` and `MAIL_SENDER`) should also be correct.

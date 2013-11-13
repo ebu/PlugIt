@@ -75,6 +75,12 @@ def version():
     return jsonify(result='Ok', version=PI_API_VERSION, protocol=PI_API_NAME)
 
 
+@app.route(PI_BASE_URL + "mail", methods=['POST'])
+def mail():
+    """The mail method: Process mail handling"""
+    return jsonify(result='Ok')
+
+
 class MetaView(View):
     """The dynamic view (based on the current action) for the /meta method"""
 
