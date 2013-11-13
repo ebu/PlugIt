@@ -47,7 +47,7 @@ class Command(BaseCommand):
 
                 (hash, data) = decrypted_ebuid.split(':', 1)
 
-                excepted_hash = hashlib.sha512(data + settings.EBUIO_MAIL_SECRET_HASH).hexdigest()[30:42]
+                excepted_hash = hashlib.sha512(data + settings.EBUIO_MAIL_SECRET_HASH).hexdigest()[30:42]  # Substring to avoid long strings
 
                 if excepted_hash != hash:
                     print "Error with", msg['Subject'], "Unexecpted hash !"
