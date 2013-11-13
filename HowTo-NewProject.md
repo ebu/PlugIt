@@ -15,11 +15,11 @@ To store configuration for the project, create a `config.py` file and a `config.
 
 Add the following settings in your `config.py` and `config.py.dist`:
 
-`API_URL = ""`
-`SQLALCHEMY_URL = ""`
-`DEBUG = True`
-`PI_BASE_URL = '/'`
-`PI_ALLOWED_NETWORKS = ['127.0.0.1/32']`
+    API_URL = ""
+    SQLALCHEMY_URL = ""
+    DEBUG = True
+    PI_BASE_URL = '/'
+    PI_ALLOWED_NETWORKS = ['127.0.0.1/32']
 
 Set `API_URL` to your PlugIT client API. If you're using the _Simple Django client_ you can use `http://127.0.0.1:8000/plugIt/ebuio_api/`.
 
