@@ -23,7 +23,7 @@ urlpatterns += patterns(
     url(r'^ebuio_api/orga/(?P<orgaPk>[\-0-9]*)$', 'api_orga'),
     url(r'^ebuio_api/members/$', 'api_get_project_members'),
 
-    url(r'^ebuio_api/mail/)$', 'api_send_mail'),
+    url(r'^ebuio_api/mail/$', 'api_send_mail'),
 
     url(r'^(?P<query>.*)$', 'main'),
 )
