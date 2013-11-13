@@ -21,13 +21,13 @@ class Command(BaseCommand):
         from Crypto.Cipher import AES
 
         
-        cox = POP3(settings.INCOMING_MAIL_HOST)
-        cox.user(settings.INCOMING_MAIL_USER)
-        cox.pass_(settings.INCOMING_MAIL_PASSWORD)
+        pop_connection = POP3(settings.INCOMING_MAIL_HOST)
+        pop_connection.user(settings.INCOMING_MAIL_USER)
+        pop_connection.pass_(settings.INCOMING_MAIL_PASSWORD)
         
-        numMessages = len(cox.list()[1])
+        numMessages = len(pop_connection.list()[1])
         for i in range(numMessages):
-            data ='\n'.join(cox.retr(i+1)[1])
+            data ='\n'.join(pop_connection.retr(i+1)[1])
             msg = email.message_from_string(data)
 
             ebuid = re.search(r'\-.IOId:([^ ]+)$', msg['Subject'])
@@ -67,6 +67,6 @@ class Command(BaseCommand):
 
                 if plugIt.newMail(data, payload):
                     print "Ok", msg['Subject']
-                    cox.dele(i+1)
-        cox.quit()
+                    pop_connection.dele(i+1)
+        pop_connection.quit()
     
