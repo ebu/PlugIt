@@ -577,7 +577,7 @@ def api_send_mail(request, key=None, hproPk=None):
     if not check_api_key(request, key, hproPk):
         raise Http404
 
-    sender = request.POST['sender'] or settings.EBUIO_SENDER
+    sender = request.POST['sender'] or settings.MAIL_SENDER
     dests = request.POST.getlist('dests')
     subject = request.POST['subject']
     message = request.POST['message']
@@ -596,7 +596,7 @@ def api_send_mail(request, key=None, hproPk=None):
         base64_key = base64.b64encode(encrypted_key)
 
         subject = subject + ' - IOId:' +  base64_key
-        sender = settings.EBUIO_SENDER
+        sender = settings.MAIL_SENDER
 
     if not settings.PIAPI_STANDALONE:
         (_, _, hproject) = getPlugItObject(hproPk)

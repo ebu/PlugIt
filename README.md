@@ -188,4 +188,4 @@ A small python class (PlugItAPI) is available in plugit_api.py, methods are also
 
 It's possible to send mail using the API. All users reply to the mail, if keeping the same subject and send will a response_id will be send back to the PlugIt server using the /mail call. The response_id is secured in the subject and can be trusted (users cannot generate generic response_id).
 
-The management task check_mail is used to check mails and should be runned inside a cron job on the PlugIt client. Relevent configuration (`INCOMING_MAIL` and `EBUIO_SENDER`) should also be correct.
+The management task check_mail is used to check mails and should be runned inside a cron job on the PlugIt client. Relevent configuration (`INCOMING_MAIL` and `MAIL_SENDER`) should also be correct.

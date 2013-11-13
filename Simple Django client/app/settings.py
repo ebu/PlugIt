@@ -182,7 +182,7 @@ FILE_UPLOAD_HANDLERS = ("django.core.files.uploadhandler.TemporaryFileUploadHand
 
 LOGIN_REDIRECT_URL = '/'
 
-EBUIO_SENDER = 'no-reply@ebu.io'
+MAIL_SENDER = 'no-reply@ebu.io'
 
 EBUIO_MAIL_SECRET_HASH = 'CHANGE_ME'
 EBUIO_MAIL_SECRET_KEY = 'CHANGE_ME'
