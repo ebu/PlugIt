@@ -62,7 +62,7 @@ class Command(BaseCommand):
 
                 payload = msg.get_payload()
 
-                if isinstance(payload, list):
+                if isinstance(payload, list):  # If this is a multi-part mail, take the first part
                     payload = payload[0]
 
                 if plugIt.newMail(data, payload):
