@@ -54,6 +54,16 @@ class PlugItAPI(object):
 
         return retour
 
+    def send_mail(self, sender, subject, recipients, message, response_id=None):
+        """Send an email using EBUio features. If response_id is set, replies will be send back to the PlugIt server."""
+
+        params = {'sender': sender, 'subject': subject, 'dests': recipients, 'message': message }
+
+        if response_id:
+            params['response_id'] = response_id
+
+        return self._request('mail/', postParams=params, verb='POST')
+
 
 class User(object):
     """Represent an user"""
