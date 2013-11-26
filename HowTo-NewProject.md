@@ -35,26 +35,13 @@ We're going to use [Alembic](https://pypi.python.org/pypi/alembic) to manage dif
 
 You need to setup your database: decide the type of the database (mysql, sqlite, etc.), create it and if needed, create a user. Then, setup the `SQLALCHEMY_URL` option in your `config.py` file with all information needed. Example: `mysql://myuser:mypassword@localhost/mydatabase` or `sqlite:///database.sq3`.
 
-Then, edit the `utils.py` file to create the `get_db` function that is going to return the SQLAlchemy object to access the database:
-
-    from flask import Flask
-    from flask.ext.sqlalchemy import SQLAlchemy
-    import config
-    def get_db():
-        """Return the database"""
-
-        app = Flask(__name__)
-        app.config['SQLALCHEMY_DATABASE_URI'] = config.SQLALCHEMY_URL
-        db = SQLAlchemy(app)
-
-        return db
+Then, edit the `plugIt/__init__.py` and uncomment the 3 lines to load the database using the flask object. Edit `utils.py` and do the same (3 lines)
 
 ## models.py
 
 Create a `models.py` file. You will implement your models here. At the beginning of the file, import database-related objects:
 
-    from utils import get_db
-    db = get_db()
+    from utils import db
 
 And create your models after. Example:
 
