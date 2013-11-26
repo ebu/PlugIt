@@ -37,6 +37,9 @@ nosetests.xml
 #Dabase
 Simple Flask server/poll.db
 
+#COnfig
+Simple Flask server/config.py
+
 # Mac
 
 .sass-cache
