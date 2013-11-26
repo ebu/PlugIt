@@ -37,7 +37,7 @@ nosetests.xml
 #Dabase
 Simple Flask server/poll.db
 
-#COnfig
+#Config
 Simple Flask server/config.py
 
 # Mac
