@@ -51,7 +51,7 @@ def plugitInclude(parser, token):
 def plugitGetUser(pk):
     if settings.PIAPI_STANDALONE:
         from plugIt.views import generate_user
-        user = generate_user(pk=pk)
+        user = generate_user(pk=str(pk))
     
     else:
         from users.models import TechUser
