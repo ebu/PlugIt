@@ -159,7 +159,12 @@ To run the flask server with apache, a wsgi is used. As an example, here is a ba
     import os
     os.chdir('/folder/to/your/project')
 
-    from server import app as application
+    from plugit import routes
+    import actions
+    from plugit import app as application
+
+    routes.load_routes(application, actions)
+
 
 Example: apache configuration you may use:
 
