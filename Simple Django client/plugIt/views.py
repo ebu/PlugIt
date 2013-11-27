@@ -286,6 +286,9 @@ def main(request, query, hproPk=None):
             value = None
             if hasattr(request.user, prop) and prop in settings.PIAPI_USERDATA:
                 value = getattr(request.user, prop)
+            else:
+                raise Exception('requested user attribute "%s", '
+                                'does not exist or requesting is not allowed' % prop)
 
             # Add informations to get or post parameters, depending on the current method
             if request.method == 'POST':
