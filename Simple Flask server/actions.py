@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import sqlite3
-from utils import action, cache, only_logged_user, only_member_user, user_info, json_only, PlugItRedirect, PlugItSendFile
+from plugit.utils import action, cache, only_logged_user, only_member_user, user_info, json_only, PlugItRedirect, PlugItSendFile
 
 ### Basic sample service: polls
 # Anonymous users can see polls
