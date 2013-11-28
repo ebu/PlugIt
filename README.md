@@ -5,7 +5,7 @@ PlugIt is a framework enhancing the portability and integration of web services 
 
 We use this framework at EBU to access web services on the EBU.io platform.
 
-***This is a draft of the protocol and implementation. Except issues (and report them) !***
+***This is a draft of the protocol and implementation. Expect issues (and report them) !***
 
 ## License
 
