@@ -48,7 +48,8 @@ def getPlugItObject(hproPk):
 
     from hprojects.models import HostedProject
     hproject = get_object_or_404(HostedProject, pk=hproPk)
-    if hproject.plugItURI == '':
+
+    if hproject.plugItURI == '' and not hproject.runURI:
         raise Http404
     plugIt = PlugIt(hproject.plugItURI)
     baseURI = reverse('plugIt.views.main', args=(hproject.pk, ''))
@@ -82,7 +83,7 @@ def generate_user(mode=None, pk=None):
         user.ebuio_admin = False
 
     user.ebuio_orga_member = user.ebuio_member
-    user.ebuio_orga_admin = user.ebuio_admin        
+    user.ebuio_orga_admin = user.ebuio_admin
 
     return user
 
@@ -97,84 +98,24 @@ class SimpleUser():
     pass
 
 
-def main(request, query, hproPk=None):
+def gen404(request, baseURI, reason):
+    """Return a 404 error"""
+    return HttpResponseNotFound(render_to_response('plugIt/404.html', {'reason': reason, 'ebuio_baseUrl': baseURI, 'ebuio_userMode': request.session.get('plugit-standalone-usermode', 'ano')}, context_instance=RequestContext(request)))
 
-    def gen404(reason):
-        """Return a 404 error"""
-        return HttpResponseNotFound(render_to_response('plugIt/404.html', {'reason': reason, 'ebuio_baseUrl':  baseURI, 'ebuio_userMode': request.session.get('plugit-standalone-usermode', 'ano')}, context_instance=RequestContext(request)))
 
-    def gen403(reason):
-        """Return a 403 error"""
-        return HttpResponseNotFound(render_to_response('plugIt/403.html', {'reason': reason, 'ebuio_baseUrl':  baseURI, 'ebuio_userMode': request.session.get('plugit-standalone-usermode', 'ano')}, context_instance=RequestContext(request)))
+def gen403(request, baseURI, reason, project=None):
+    """Return a 403 error"""
+    orgas = None
 
     if not settings.PIAPI_STANDALONE:
-        (plugIt, baseURI, hproject) = getPlugItObject(hproPk)
-    else:
-        global plugIt, baseURI
+        from organizations.models import Organization
+        orgas = Organization.objects.order_by('name').all()
 
-        # Check if settings are ok
-        if settings.PIAPI_ORGAMODE and settings.PIAPI_REALUSERS:
-            return gen404("Configuration error. PIAPI_ORGAMODE and PIAPI_REALUSERS both set to True !")
+    return HttpResponseNotFound(render_to_response('plugIt/403.html', {'reason': reason, 'orgas': orgas, 'ebuio_baseUrl': baseURI, 'ebuio_userMode': request.session.get('plugit-standalone-usermode', 'ano'), 'ebuio_project': project}, context_instance=RequestContext(request)))
 
-    # Get meta
-    meta = plugIt.getMeta(query)
 
-    if not meta:
-        return gen404('meta')
-
-    ## If standalone mode, change the current user and orga mode based on parameters
-    if settings.PIAPI_STANDALONE:
-
-        if not settings.PIAPI_REALUSERS:
-            currentUserMode = request.session.get('plugit-standalone-usermode', 'ano')
-
-            request.user = generate_user(mode=currentUserMode)
-
-            orgaMode = settings.PIAPI_ORGAMODE
-
-            currentOrga = SimpleOrga()
-            currentOrga.name = request.session.get('plugit-standalone-organame', 'EBU')
-            currentOrga.pk = request.session.get('plugit-standalone-orgapk', '-1')
-        else:
-            request.user.ebuio_member = request.user.is_staff
-            request.user.ebuio_admin = request.user.is_superuser
-            orgaMode = None
-
-    else:
-        request.user.ebuio_member = hproject.isMemberRead(request.user)
-        request.user.ebuio_admin = hproject.isMemberWrite(request.user)
-        orgaMode = hproject.plugItOrgaMode
-
-        if orgaMode:
-
-            # List available orgas
-            if request.user.is_authenticated():
-                availableOrga = request.user.getOrgas()
-            else:
-                availableOrga = []
-
-            if not availableOrga:
-                return gen403('no_orga_in_orgamode')
-
-            # Find the current orga
-            currentOrgaId = request.session.get('plugit-orgapk-' + str(hproject.pk), None)
-
-            if currentOrgaId is None:
-                (tmpOrga, _) = availableOrga[0]
-                currentOrgaId = tmpOrga.pk
-
-            from organizations.models import Organization
-            realCurrentOrga = get_object_or_404(Organization, pk=currentOrgaId)
-
-            # Build the current orga
-            currentOrga = SimpleOrga()
-
-            currentOrga.pk = realCurrentOrga.pk
-            currentOrga.name = realCurrentOrga.name
-
-            # Get rights
-            request.user.ebuio_orga_member = realCurrentOrga.isMember(request.user)
-            request.user.ebuio_orga_admin = realCurrentOrga.isOwner(request.user)
+def get_cache_key(request, meta, orgaMode, currentOrga):
+    """Return the cache key to use"""
 
     # Caching
     cacheKey = None
@@ -197,7 +138,7 @@ def main(request, query, hproPk=None):
             if 'cache_by_user' in meta:
                 useUser = meta['cache_by_user']
 
-            cacheKey = 'plutit-data-'
+            cacheKey = '-'
 
             # Add user info if needed
             if useUser:
@@ -213,42 +154,53 @@ def main(request, query, hproPk=None):
             # Add current template (if the template changed, cache must be invalided)
             cacheKey += meta['template_tag']
 
-    # Access
+    return cacheKey
 
-    # User must be logged ?
+
+def check_rights(request, meta):
+    """Check if the user can access the page"""
+     # User must be logged ?
     if ('only_logged_user' in meta and meta['only_logged_user']):
         if not request.user.is_authenticated():
-            return gen403('only_logged_user')
+            return gen403(request, baseURI, 'only_logged_user')
 
     # User must be member of the project ?
     if ('only_memeber_user' in meta and meta['only_memeber_user']):
         if not request.user.ebuio_member:
-            return gen403('only_memeber_user')
+            return gen403(request, baseURI, 'only_memeber_user')
 
     # User must be administrator of the project ?
     if ('only_admin_user' in meta and meta['only_admin_user']):
         if not request.user.ebuio_admin:
-            return gen403('only_admin_user')
+            return gen403(request, baseURI, 'only_admin_user')
 
     # User must be member of the orga ?
     if ('only_orga_memeber_user' in meta and meta['only_orga_memeber_user']):
         if not request.user.ebuio_orga_member:
-            return gen403('only_orga_memeber_user')
+            return gen403(request, baseURI, 'only_orga_memeber_user')
 
     # User must be administrator of the orga ?
     if ('only_orga_admin_user' in meta and meta['only_orga_admin_user']):
         if not request.user.ebuio_orga_admin:
-            return gen403('only_orga_admin_user')
+            return gen403(request, baseURI, 'only_orga_admin_user')
 
+
+def find_in_cache(cacheKey):
+    """Check if the content exists in cache and return it"""
     # If we have to use cache, we try to find the result in cache
-    if cacheKey is not None:
-        result = cache.get(cacheKey, None)
+    if cacheKey:
+        result = cache.get('plugit-result-' + cacheKey, None)
+        context = cache.get('plugit-context-' + cacheKey, None)
 
         #We found a result, we can return it
-        if result is not None:
-            return HttpResponse(result)
+        if result and context:
+            return (result, context)
+    return (None, None)
 
-    # Build parameters
+
+def build_base_parameters(request):
+    """Build the list of parameters to forward from the post and get parameters"""
+
     getParameters = {}
     postParameters = {}
     files = {}
@@ -278,6 +230,16 @@ def main(request, query, hproPk=None):
             if v[:6] != 'ebuio_':
                 files[v] = request.FILES[v]  # .chunks()
 
+    return (getParameters, postParameters, files)
+
+
+def build_user_requested_parameters(request, meta):
+    """Build the list of parameters requested by the plugit server"""
+
+    postParameters = {}
+    getParameters = {}
+    files = {}
+
     # Add parameters requested by the server
     if 'user_info' in meta:
         for prop in meta['user_info']:
@@ -296,6 +258,15 @@ def main(request, query, hproPk=None):
             else:
                 getParameters['ebuio_u_' + prop] = value
 
+    return (getParameters, postParameters, files)
+
+
+def build_orga_parameters(request, orgaMode, currentOrga):
+
+    postParameters = {}
+    getParameters = {}
+    files = {}
+
     # If orga mode, add the current orga pk
     if orgaMode:
         if request.method == 'POST':
@@ -303,11 +274,61 @@ def main(request, query, hproPk=None):
         else:
             getParameters['ebuio_orgapk'] = currentOrga.pk
 
-    # Do the action
-    data = plugIt.doAction(query, request.method, getParameters, postParameters, files)
+    return (getParameters, postParameters, files)
+
+
+def build_parameters(request, meta, orgaMode, currentOrga):
+    """Return the list of get, post and file parameters to send"""
+
+    postParameters = {}
+    getParameters = {}
+    files = {}
+
+    def update_parameters(data):
+        tmp_getParameters, tmp_postParameters, tmp_files = data
+
+        getParameters.update(tmp_getParameters)
+        postParameters.update(tmp_postParameters)
+        files.update(tmp_files)
+
+    update_parameters(build_base_parameters(request))
+    update_parameters(build_user_requested_parameters(request, meta))
+    update_parameters(build_orga_parameters(request, orgaMode, currentOrga))
+
+    return (getParameters, postParameters, files)
+
+
+def build_extra_headers(request, proxyMode, orgaMode, currentOrga):
+    """Build the list of extra headers"""
+
+    things_to_add = {}
+
+    # If in proxymode, add needed infos to headers
+    if proxyMode:
+
+        things_to_add = {}
+
+        # User
+        for prop in settings.PIAPI_USERDATA:
+            if hasattr(request.user, prop):
+                things_to_add['user_' + prop] = getattr(request.user, prop)
+
+        # Orga
+        if orgaMode:
+            things_to_add['orga_pk'] = currentOrga.pk
+            things_to_add['orga_name'] = currentOrga.name
+
+        # General
+        things_to_add['base_url'] = baseURI
+
+    return things_to_add
+
+
+def handle_special_cases(request, data, baseURI, meta):
+    """Handle sepcial cases for returned values by the doAction function"""
 
     if data is None:
-        return gen404('data')
+        return gen404(request, baseURI, 'data')
 
     if data.__class__.__name__ == 'PlugItRedirect':
         url = data.url
@@ -322,76 +343,294 @@ def main(request, query, hproPk=None):
 
         return response
 
-    # Get template, if needed
-    if not('json_only' in meta and meta['json_only']):
+    if data.__class__.__name__ == 'PlugItNoTemplate':
+        response = HttpResponse(data.content)
+        return response
 
-        templateContent = plugIt.getTemplate(query, meta)
-
-        if not templateContent:
-            return gen404('template')
-
-    if 'json_only' in meta and meta['json_only']:  # Just send the json back
+    if meta.get('json_only', None):  # Just send the json back
         result = json.dumps(data)
 
         return HttpResponse(result)
-    else:
 
-        # Return only wanted properties about the user
-        data['ebuio_u'] = SimpleUser()
-        for prop in settings.PIAPI_USERDATA:
-            if hasattr(request.user, prop):
-                setattr(data['ebuio_u'], prop, getattr(request.user, prop))
 
-        data['ebuio_u'].id = str(data['ebuio_u'].pk)
-
-        # Add current path
-        data['ebuio_baseUrl'] = baseURI
-
-        # Add userMode
-        if settings.PIAPI_STANDALONE:
-            data['ebuio_userMode'] = request.session.get('plugit-standalone-usermode', 'ano')
-            data['ebuio_realUsers'] = settings.PIAPI_REALUSERS
-        else:
-            data['ebuio_hpro_name'] = hproject.name
-            data['ebuio_hpro_pk'] = hproject.pk
-            from app.utils import create_secret
-            data['ebuio_hpro_key'] = create_secret(str(hproject.pk), hproject.name, str(request.user.pk))
-
-        # Add orga mode and orga
-        data['ebuio_orgamode'] = orgaMode
-
-        if orgaMode:
-            data['ebuio_orga'] = currentOrga
-
-            # If not standalone mode, list the available orgas
-            if not settings.PIAPI_STANDALONE:
-                data['ebuio_orgas'] = []
-                for (orga, _) in availableOrga:
-                    tmpOrga = SimpleOrga()
-                    tmpOrga.pk = orga.pk
-                    tmpOrga.name = orga.name
-                    data['ebuio_orgas'].append(tmpOrga)
-
-        # Render it
-        template = Template(templateContent)
-        context = Context(data)
-
-        # Add csrf information to the contact
-        context.update(csrf(request))
-
-        # Add media urls
-        context.update({'MEDIA_URL': settings.MEDIA_URL, 'STATIC_URL': settings.STATIC_URL})
-
-        result = template.render(context)
-
-    # Cache the result for future uses if requested
-    if cacheKey is not None:
-        cache.set(cacheKey, result, meta['cache_time'])
+def build_final_response(request, meta, result, hproject, proxyMode, context):
+    """Build the final response to send back to the browser"""
 
     if 'no_template' in meta and meta['no_template']:  # Just send the json back
         return HttpResponse(result)
 
+    #render the template into the whole page
+    if not settings.PIAPI_STANDALONE:
+        return render_to_response('plugIt/' + hproject.get_plugItTemplate_display(), {"project": hproject, "plugit_content": result, 'context': context}, context_instance=RequestContext(request))
+
+    if proxyMode:  # Force inclusion inside template
+        return render_to_response('plugIt/base.html', {'plugit_content': result}, context_instance=RequestContext(request))
+
     return HttpResponse(result)
+
+
+def render_data(context, templateContent, proxyMode, rendered_data):
+    """Render the template"""
+
+    if proxyMode:
+
+        # Update csrf_tokens
+        rendered_data = rendered_data.replace('{~__PLUGIT_CSRF_TOKEN__~}', unicode(context['csrf_token']))
+
+        result = rendered_data  # Render in proxy mode
+    else:
+        # Render it
+        template = Template(templateContent)
+        result = template.render(context)
+
+    return result
+
+
+def cache_if_needed(cacheKey, result, context, meta):
+    """Cache the result, if needed"""
+
+    if cacheKey:
+
+        # This will be a method in django 1.7
+        flat_context = {}
+        for d in context.dicts:
+            flat_context.update(d)
+
+        del flat_context['csrf_token']
+
+        cache.set('plugit-result-' + cacheKey, result, meta['cache_time'])
+        cache.set('plugit-context-' + cacheKey, flat_context, meta['cache_time'])
+
+
+def build_context(request, data, hproject, orgaMode, currentOrga, availableOrga):
+    # Return only wanted properties about the user
+
+    data['ebuio_u'] = SimpleUser()
+
+    for prop in settings.PIAPI_USERDATA:
+        if hasattr(request.user, prop):
+            setattr(data['ebuio_u'], prop, getattr(request.user, prop))
+
+    data['ebuio_u'].id = str(data['ebuio_u'].pk)
+
+    # Add current path
+    data['ebuio_baseUrl'] = baseURI
+
+    # Add userMode
+    if settings.PIAPI_STANDALONE:
+        data['ebuio_userMode'] = request.session.get('plugit-standalone-usermode', 'ano')
+        data['ebuio_realUsers'] = settings.PIAPI_REALUSERS
+    else:
+        data['ebuio_hpro_name'] = hproject.name
+        data['ebuio_hpro_pk'] = hproject.pk
+        from app.utils import create_secret
+        data['ebuio_hpro_key'] = create_secret(str(hproject.pk), hproject.name, str(request.user.pk))
+
+    # Add orga mode and orga
+    data['ebuio_orgamode'] = orgaMode
+
+    if orgaMode:
+        data['ebuio_orga'] = currentOrga
+
+        # If not standalone mode, list the available orgas
+        if not settings.PIAPI_STANDALONE:
+            data['ebuio_orgas'] = []
+            for (orga, _) in availableOrga:
+                tmpOrga = SimpleOrga()
+                tmpOrga.pk = orga.pk
+                tmpOrga.name = orga.name
+                data['ebuio_orgas'].append(tmpOrga)
+
+    context = Context(data)
+
+    # Add csrf information to the contact
+    context.update(csrf(request))
+
+    # Add media urls
+    context.update({'MEDIA_URL': settings.MEDIA_URL, 'STATIC_URL': settings.STATIC_URL})
+
+    return context
+
+
+def get_template(request, query, meta, proxyMode):
+    """Return (if needed) the template to use"""
+
+    templateContent = None
+
+    if not proxyMode:
+
+        templateContent = plugIt.getTemplate(query, meta)
+
+        if not templateContent:
+            return (None, gen404(request, baseURI, 'template'))
+
+    return (templateContent, None)
+
+def get_current_orga(request, hproject, availableOrga):
+    """Return the current orga to use"""
+
+     # Find the current orga
+    currentOrgaId = request.session.get('plugit-orgapk-' + str(hproject.pk), None)
+
+    if currentOrgaId is None:
+        (tmpOrga, _) = availableOrga[0]
+        currentOrgaId = tmpOrga.pk
+
+    from organizations.models import Organization
+    realCurrentOrga = get_object_or_404(Organization, pk=currentOrgaId)
+
+    return realCurrentOrga
+
+
+def update_session(request, session_to_set, hproPk):
+    """Update the session with users-realted values"""
+
+    for key, value in session_to_set.items():
+        request.session['plugit_' + str(hproPk) + '_' +  key] = value
+
+def get_current_session(request, hproPk):
+    """Get the current session value"""
+
+    retour = {}
+
+    base_key = 'plugit_' + str(hproPk) + '_'
+
+    for key, value in request.session.iteritems():
+        if key.startswith(base_key):
+            retour[key[len(base_key):]] = value
+
+    return retour
+
+
+def main(request, query, hproPk=None):
+
+    if not settings.PIAPI_STANDALONE:
+        (plugIt, baseURI, hproject) = getPlugItObject(hproPk)
+    else:
+        global plugIt, baseURI
+
+        # Check if settings are ok
+        if settings.PIAPI_ORGAMODE and settings.PIAPI_REALUSERS:
+            return gen404(request, baseURI, "Configuration error. PIAPI_ORGAMODE and PIAPI_REALUSERS both set to True !")
+
+        hproject = None
+
+    orgaMode = None
+    currentOrga = None
+    availableOrga = []
+
+
+    ## If standalone mode, change the current user and orga mode based on parameters
+    if settings.PIAPI_STANDALONE:
+
+        if not settings.PIAPI_REALUSERS:
+            currentUserMode = request.session.get('plugit-standalone-usermode', 'ano')
+
+            request.user = generate_user(mode=currentUserMode)
+
+            orgaMode = settings.PIAPI_ORGAMODE
+
+            currentOrga = SimpleOrga()
+            currentOrga.name = request.session.get('plugit-standalone-organame', 'EBU')
+            currentOrga.pk = request.session.get('plugit-standalone-orgapk', '-1')
+        else:
+            request.user.ebuio_member = request.user.is_staff
+            request.user.ebuio_admin = request.user.is_superuser
+
+        proxyMode = settings.PIAPI_PROXYMODE
+
+    else:
+        request.user.ebuio_member = hproject.isMemberRead(request.user)
+        request.user.ebuio_admin = hproject.isMemberWrite(request.user)
+        orgaMode = hproject.plugItOrgaMode
+        proxyMode = hproject.plugItProxyMode
+
+        if orgaMode:
+
+            # List available orgas
+            if request.user.is_authenticated():
+                availableOrga = request.user.getOrgas()
+
+            if not availableOrga:
+                return gen403(request, baseURI, 'no_orga_in_orgamode', hproject)
+           
+            # Build the current orga
+            realCurrentOrga = get_current_orga(request, hproject, availableOrga)
+
+            currentOrga = SimpleOrga()
+
+            currentOrga.pk = realCurrentOrga.pk
+            currentOrga.name = realCurrentOrga.name
+
+            # Get rights
+            request.user.ebuio_orga_member = realCurrentOrga.isMember(request.user)
+            request.user.ebuio_orga_admin = realCurrentOrga.isOwner(request.user)
+
+    # Get meta, if not in proxy mode
+    if not proxyMode:
+        meta = plugIt.getMeta(query)
+
+        if not meta:
+            return gen404(request, baseURI, 'meta')
+    else:
+        meta = {}
+
+    cacheKey = get_cache_key(request, meta, orgaMode, currentOrga)
+
+    # Check access rights
+    error = check_rights(request, meta)
+
+    if error:
+        return error
+
+    # Check cache
+    (cache, context) = find_in_cache(cacheKey)
+
+    if cache:
+        return build_final_response(request, meta, cache, hproject, proxyMode, context)
+
+    # Build parameters
+    getParameters, postParameters, files = build_parameters(request, meta, orgaMode, currentOrga)
+
+    # Bonus headers
+    things_to_add = build_extra_headers(request, proxyMode, orgaMode, currentOrga)
+
+    current_session = get_current_session(request, hproPk)
+
+    # Do the action
+    (data, session_to_set) = plugIt.doAction(query, request.method, getParameters, postParameters, files, things_to_add, proxyMode=proxyMode, session=current_session)
+
+    update_session(request, session_to_set, hproPk)
+
+    # Handle special case (redirect, etc..)
+    spe_cases = handle_special_cases(request, data, baseURI, meta)
+    if spe_cases:
+        return spe_cases
+
+    # Save data for proxyMode
+    if proxyMode:
+        rendered_data = data
+        data = {}
+    else:
+        rendered_data = None
+
+    # Get template
+    (templateContent, templateError) = get_template(request, query, meta, proxyMode)
+
+    if templateError:
+        return templateError
+
+    # Build the context
+    context = build_context(request, data, hproject, orgaMode, currentOrga, availableOrga)
+
+    # Render the result
+    result = render_data(context, templateContent, proxyMode, rendered_data)
+
+    # Cache the result for future uses if requested
+    cache_if_needed(cacheKey, result, context, meta)
+
+    # Return the final response
+    return build_final_response(request, meta, result, hproject, proxyMode, context)
 
 
 @cache_control(public=True, max_age=3600)
@@ -410,6 +649,7 @@ def media(request, path, hproPk=None):
 
     response = HttpResponse(media)
     response['Content-Type'] = contentType
+    response['Content-Length'] = len(media)
 
     return response
 
@@ -460,6 +700,16 @@ def check_api_key(request, key, hproPk):
         return False
 
     return hproject.plugItApiKey == key
+
+
+def home(request, hproPk):
+    """ Route the request to runURI if defined otherwise go to plugIt """
+
+    (plugIt, baseURI, hproject) = getPlugItObject(hproPk)
+    if hproject.runURI:
+        return HttpResponseRedirect(hproject.runURI)
+    else:
+        return main(request, '', hproPk)
 
 
 def api_home(request, key=None, hproPk=None):
@@ -588,23 +838,22 @@ def api_send_mail(request, key=None, hproPk=None):
     if 'response_id' in request.POST:
 
         from Crypto.Cipher import AES
-        
+
         key = hproPk + ':' + request.POST['response_id']
-        
+
         hash_key = hashlib.sha512(key + settings.EBUIO_MAIL_SECRET_HASH).hexdigest()[30:42]
 
         encrypter = AES.new(((settings.EBUIO_MAIL_SECRET_KEY) * 32)[:32], AES.MODE_CFB, '87447JEUPEBU4hR!')
         encrypted_key = encrypter.encrypt(hash_key + ':' + key)
 
-        base64_key = base64.b64encode(encrypted_key)
+        base64_key = base64.urlsafe_b64encode(encrypted_key)
 
-        subject = subject + ' ----------------------- [' +  base64_key + ']'
-        sender = settings.MAIL_SENDER
+        #subject = subject + ' ----------------------- [' + base64_key + ']'
+        sender = settings.MAIL_SENDER.replace('@', '+' + base64_key + '@')
 
     # if not settings.PIAPI_STANDALONE:
     #     (_, _, hproject) = getPlugItObject(hproPk)
     #     subject = '[EBUIo:' + smart_str(hproject.name) + '] ' + subject
-
 
     send_mail(subject, message, sender, dests, fail_silently=False)
 

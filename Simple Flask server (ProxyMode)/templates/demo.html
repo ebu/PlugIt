@@ -1,0 +1,38 @@
+<h2>PlugIt ProxyMode Demo</h2>
+
+<h3>Mode</h3>
+<p>
+    Mode is <b>{{mode}}</b><br />
+
+    <a href="{{base_url}}">Switch to GET</a>
+    <form action="{{base_url}}post" method="POST">
+        <input type="hidden" name="csrfmiddlewaretoken" value="{~__PLUGIT_CSRF_TOKEN__~}"/>
+        <input type="submit" value="Switch to POST">
+    </form>
+
+</p>
+
+<h3>Redirect</h3>
+
+<a href="{{base_url}}redirect_me">Test redirection</a>
+
+<h3>No template</h3>
+
+<a href="{{base_url}}no_template">No template</a>
+
+<h3>Data</h3>
+<p>
+    Data coming from EBUio:
+
+    <table class="table table-bordered table-striped table-hover table-condensed" style="width: 400px;">
+        <thead>
+            <tr><th>Key</th><th>Value</th></tr>
+        </thead>
+        <tbody>
+            {% for key, value in headers.items() %}
+                <tr><td>{{key}}</td><td>{{value}}</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+</p>

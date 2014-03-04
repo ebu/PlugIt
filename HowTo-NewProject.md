@@ -23,7 +23,7 @@ Add the following settings in your `config.py` and `config.py.dist`:
 
 Set `API_URL` to your PlugIT client API. If you're using the _Simple Django client_ you can use `http://127.0.0.1:8000/plugIt/ebuio_api/`.
 
-## Submodules
+## Python modules
 
 If your project has multiple parts, it's better to have different modules for code organization. If your application is simple, just implement your actions in `actions.py`. Otherwise, create different folders/python modules (e.g.: `mkdir users && touch users/__init__.py`) and just import them into `actions.py` (e.g.: `from users.actions import *`). You can then create an `actions.py` file in each directory and implement your actions as usual.
 

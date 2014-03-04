@@ -123,6 +123,18 @@ def add_unique_postfix(fn):
     return None
 
 
+def get_session_from_request(request):
+
+    retour = {}
+
+    for key, value in request.headers.items():
+        if key.startswith('X-Plugitsession-'):
+            retour[key[16:]] = value
+
+    return retour
+
+
+
 # Class
 
 class PlugItRedirect():
@@ -140,6 +152,13 @@ class PlugItSendFile():
         self.filename = filename
         self.as_attachment = as_attachment
         self.attachment_filename = attachment_filename
+
+
+class PlugItSetSession():
+    """Object to return normal value, but set elements in the session"""
+    def __init__(self, base, things_to_set={}):
+        self.base = base
+        self.things_to_set = things_to_set
 
 
 def addressInNetwork(ip, net):

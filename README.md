@@ -190,3 +190,45 @@ A small python class (PlugItAPI) is available in plugit_api.py, methods are also
 It's possible to send mail using the API. All users reply to the mail, if keeping the same subject and send will a response_id will be send back to the PlugIt server using the /mail call. The response_id is secured in the subject and can be trusted (users cannot generate generic response_id).
 
 The management task check_mail is used to check mails and should be runned inside a cron job on the PlugIt client. Relevent configuration (`INCOMING_MAIL` and `MAIL_SENDER`) should also be correct.
+
+
+## ProxyMode
+
+*ProxyMode* is a special mode and has main differences with normal PlugIt behavior.
+
+In proxyMode, there is no rendering done by the PlugIt client, and no methods (`/meta/`, `/template/`, `/action/`) to implement. The client just forward the call from the user request to your server.
+
+The PlugIt server should send back the HTML content who will be displayed to the client. Except for the inclusion of the result inside the plugIt webpage, nothing is else is done.
+
+### Parameters
+
+The PlugIt client will send informations about the client and the request using HTTP headers. All headers begin by `X-Plugit-`.
+
+
+### CSRF
+
+EBUio need the presence of a CSRF token on each POST request (as implemented by django) for security issues.
+
+The plugIt client parse the response of the plugIt server and replace the special token `{~__PLUGIT_CSRF_TOKEN__~}` by the current CSRF token.
+
+If you want to make a post request, use the following snipet in your form:
+
+`<input type="hidden" name="csrfmiddlewaretoken" value="{~__PLUGIT_CSRF_TOKEN__~}"/>`
+
+### Redirects
+
+Redirect are handled as usual, using the `EbuIo-PlugIt-Redirect` header.
+
+### Medias
+
+Medias are handled as usual, using the special `/media/` path.
+
+### No template
+
+If you need to send back the result from the plugIt server directly to the client, without a template, you can set the `EbuIo-PlugIt-Redirect` header (to any value).
+
+## Session
+
+It's possible to set value in the user session, using the `ebuio-plugit-setsession-<key>` header. The plugit client will send back requests with the `X-Plugitsession-<key>` value.
+
+Using the Simple Flask server utils, it's possble to return a `PlugItSetSession` object, builded with the value to return (who can be anything normal to return, like a PlugItRedirect or a standart dict) and a dict of key/value to set in the user session. The `get_session_from_request` helper function can also be used on a flask request object to extract a dict of key/value from the current user session.

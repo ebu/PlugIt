@@ -4,7 +4,6 @@ from django.core.management.base import BaseCommand
 
 
 from django.conf import settings
-import requests
 from poplib import POP3
 import email
 import re
@@ -13,6 +12,7 @@ import hashlib
 from plugIt.views import getPlugItObject
 from plugIt.plugIt import PlugIt
 
+
 class Command(BaseCommand):
     args = ''
     help = 'Check mails and forward them to PlugIt servers if needed'
@@ -20,53 +20,78 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         from Crypto.Cipher import AES
 
-        
         pop_connection = POP3(settings.INCOMING_MAIL_HOST)
         pop_connection.user(settings.INCOMING_MAIL_USER)
         pop_connection.pass_(settings.INCOMING_MAIL_PASSWORD)
-        
+
         numMessages = len(pop_connection.list()[1])
         for i in range(numMessages):
-            data ='\n'.join(pop_connection.retr(i+1)[1])
+            data = '\n'.join(pop_connection.retr(i+1)[1])
             msg = email.message_from_string(data)
 
-            ebuid = re.search(r'.\-{23}.\[([^ ]+)\]$', msg['Subject'])
+            # Extract part after the + in the email (notifications+<ID>@ebu.io)
+            ebuid = re.search(r'^.*\+(.*)@.*$', msg['To'].replace('\r', '').replace('\n', ''))
+
             if ebuid:
 
                 try:
                     base64encrypted_ebuid = ebuid.group(1)
 
-                    encrypted_ebuid = base64.b64decode(base64encrypted_ebuid)
+                    encrypted_ebuid = base64.urlsafe_b64decode(base64encrypted_ebuid)
 
                     decrypter = AES.new(((settings.EBUIO_MAIL_SECRET_KEY) * 32)[:32], AES.MODE_CFB, '87447JEUPEBU4hR!')
 
                     decrypted_ebuid = decrypter.decrypt(encrypted_ebuid)
                 except Exception as e:
-                    print "Error with", msg['Subject'], e
+                    print "Error with", msg['To'], e
                     continue
 
-                (hash, data) = decrypted_ebuid.split(':', 1)
+                try:
+                    (hash, data) = decrypted_ebuid.split(':', 1)
+                except ValueError:
+                    (hash, data) = (None, '')
 
                 expected_hash = hashlib.sha512(data + settings.EBUIO_MAIL_SECRET_HASH).hexdigest()[30:42]  # Substring to avoid long strings
 
                 if expected_hash != hash:
-                    print "Error with", msg['Subject'], "Unexpected hash !"
+                    print "Error with", msg['To'], "Unexpected hash !"
                     continue
+
+                if 'x-auto-response-suppress' in msg \
+                   or msg.get('Auto-Submitted', 'no') != 'no'  \
+                   or 'Auto-Autorespond' in msg \
+                   or 'auto-submitted' in msg \
+                   or msg.get('precedence', None) in ['auto_reply', 'bluk', 'junk'] \
+                   or msg.get('x-precedence', None) in ['auto_reply', 'bluk', 'junk']:
+                        print "AutoResponse, dropped", msg['Subject']
+                        pop_connection.dele(i+1)
+                        continue
 
                 (projectid, data) = data.split(':', 1)
 
                 if settings.PIAPI_STANDALONE:
                     plugIt = PlugIt(settings.PIAPI_STANDALONE_URI)
                 else:
-                    (plugIt, _, _) = getPlugItObject(projectid)
 
-                payload = msg.get_payload()
+                    if projectid == settings.DISCUSSION_ID:  # Special case for EBUIo/Discussions
+                        from discuss.utils import mail_get_post
+                        plugIt = mail_get_post(data)
 
-                if isinstance(payload, list):  # If this is a multi-part mail, take the first part
-                    payload = payload[0]
+                    else:
+                        plugIt, _, _ = getPlugItObject(projectid)
+
+                def get_first_text_part(msg):
+                    maintype = msg.get_content_maintype()
+                    if maintype == 'multipart':
+                        for part in msg.get_payload():
+                            if part.get_content_maintype() == 'text':
+                                return part.get_payload(decode=True)
+                    elif maintype == 'text':
+                        return msg.get_payload(decode=True)
+
+                payload = get_first_text_part(msg)
 
                 if plugIt.newMail(data, payload):
                     print "Ok", msg['Subject']
                     pop_connection.dele(i+1)
         pop_connection.quit()
-    

@@ -29,16 +29,25 @@ class PlugIt():
             if not self.checkVersion():
                 raise Exception("Not a correct PlugIt API version !")
 
-    def doQuery(self, url, method='GET', getParmeters=None, postParameters=None, files=None):
+    def doQuery(self, url, method='GET', getParmeters=None, postParameters=None, files=None, extraHeaders={}, session={}):
         """Send a request to the server and return the result"""
+
+        # Build headers
+        headers = {}
+
+        for key, value in extraHeaders.iteritems():
+            headers['X-Plugit-' + key] = value
+
+        for key, value in session.iteritems():
+            headers['X-Plugitsession-' + key] = value
 
         if method == 'POST':
             if not files:
-                r = requests.post(self.baseURI + '/' + url, params=getParmeters, data=postParameters, stream=True)
+                r = requests.post(self.baseURI + '/' + url, params=getParmeters, data=postParameters, stream=True, headers=headers)
             else:
                 # Special way, for big files
                 # Requests is not usable: https://github.com/shazow/urllib3/issues/51
-                
+
                 from poster.encode import multipart_encode, MultipartParam
                 from poster.streaminghttp import register_openers
                 import urllib2
@@ -59,7 +68,9 @@ class PlugIt():
                 for f in files:
                     data.append((f, MultipartParam(f, fileobj=open(files[f].temporary_file_path(), 'rb'), filename=files[f].name)))
 
-                datagen, headers = multipart_encode(data)
+                datagen, headers_multi = multipart_encode(data)
+
+                headers.update(headers_multi)
 
                 # Create the Request object
                 request = urllib2.Request(self.baseURI + '/' + url, datagen, headers)
@@ -70,7 +81,7 @@ class PlugIt():
 
                 r = Response()
                 r.status_code = re.getcode()
-                r.headers = re.info()
+                r.headers = dict(re.info())
                 r.encoding = "application/json"
                 r.raw = re.read()
                 r._content = r.raw
@@ -79,7 +90,7 @@ class PlugIt():
 
         else:
             # Call the function based on the method.
-            r = getattr(requests, method.lower())(self.baseURI + '/' + url, params=getParmeters, stream=True)
+            r = requests.request(method.upper(), self.baseURI + '/' + url, params=getParmeters, stream=True, headers=headers, allow_redirects=True)
 
         return r
 
@@ -117,7 +128,6 @@ class PlugIt():
             return data['result'] == 'Ok'
 
         return False
-
 
     def getMedia(self, uri):
         """Return a tuple with a media and his content-type. Don't cache anything !"""
@@ -183,8 +193,11 @@ class PlugIt():
 
         return template
 
-    def doAction(self, uri, method='GET', getParmeters=None, postParameters=None, files=None):
-        r = self.doQuery('action/' + uri, method=method, getParmeters=getParmeters, postParameters=postParameters, files=files)
+    def doAction(self, uri, method='GET', getParmeters=None, postParameters=None, files=None, extraHeaders={}, proxyMode=False, session={}):
+
+        base_url = 'action/' if not proxyMode else ''
+
+        r = self.doQuery(base_url + uri, method=method, getParmeters=getParmeters, postParameters=postParameters, files=files, extraHeaders=extraHeaders, session=session)
 
         class PlugItRedirect():
             """Object to perform a redirection"""
@@ -199,28 +212,48 @@ class PlugIt():
                 self.content_type = content_type
                 self.content_disposition = content_disposition
 
+        class PlugItNoTemplate():
+            """Object to display content without a template"""
+            def __init__(self, content):
+                self.content = content
+
         if r.status_code == 200:  # Get the content if there is not problem. If there is, template will stay to None
             # {} is parsed as None (but should be an empty object)
 
-            if 'EbuIo-PlugIt-Redirect' in r.headers:
+            # Build list of elem to set from session
+            session_to_set = {}
+
+            for (key, value) in r.headers.iteritems():
+                attr = 'ebuio-plugit-setsession-'
+                if key.startswith(attr):
+                    session_to_set[key[len(attr):]] = value
+
+            if 'ebuio-plugit-redirect' in r.headers:
                 no_prefix = False
 
-                if 'EbuIo-PlugIt-Redirect-NoPrefix' in r.headers:
-                    no_prefix = r.headers['EbuIo-PlugIt-Redirect-NoPrefix'] == 'True'
+                if 'ebuio-plugit-redirect-noprefix' in r.headers:
+                    no_prefix = r.headers['ebuio-plugit-redirect-noprefix'] == 'True'
 
-                return PlugItRedirect(r.headers['EbuIo-PlugIt-Redirect'], no_prefix)
+                return (PlugItRedirect(r.headers['ebuio-plugit-redirect'], no_prefix), session_to_set)
 
-            if 'EbuIo-PlugIt-ItAFile' in r.headers:
+            if 'ebuio-plugit-itafile' in r.headers:
 
-                if 'Content-Disposition' in r.headers:
-                    content_disposition = r.headers['Content-Disposition']
+                if 'content-disposition' in r.headers:
+                    content_disposition = r.headers['content-disposition']
                 else:
                     content_disposition = ''
 
-                return PlugItFile(r.content, r.headers['Content-Type'], content_disposition)
+                return (PlugItFile(r.content, r.headers['Content-Type'], content_disposition), session_to_set)
+
+            if proxyMode and 'ebuio-plugit-notemplate' in r.headers:
+                return (PlugItNoTemplate(r.content), session_to_set)
+
+            if proxyMode:
+                return (r.content, session_to_set)
 
             if r.content == "{}":
-                return {}
-            return r.json()
+                return ({}, session_to_set)
+
+            return (r.json(), session_to_set)
         else:
-            return None
+            return (None, {})
