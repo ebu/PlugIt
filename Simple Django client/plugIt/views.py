@@ -858,3 +858,24 @@ def api_send_mail(request, key=None, hproPk=None):
     send_mail(subject, message, sender, dests, fail_silently=False)
 
     return HttpResponse(json.dumps({}), content_type="application/json")
+
+
+def api_orgas(request, key=None, hproPk=None):
+    """Return the list of organizations pk"""
+
+    if not check_api_key(request, key, hproPk):
+        raise Http404
+
+    list_orgas = []
+
+    if settings.PIAPI_STANDALONE:
+        list_orgas = [-1, -2, -3, -4]
+
+    else:
+        from organizations.models import Organization
+
+        list_orgas = [orga.pk for orga in Organization.objects.all()]
+
+    retour = {'data': list_orgas}
+
+    return HttpResponse(json.dumps(retour), content_type="application/json")

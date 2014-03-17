@@ -1,6 +1,6 @@
-from flask       import jsonify, request, make_response, send_from_directory, send_file
+from flask import jsonify, request, make_response, send_from_directory, send_file
 from flask.views import View
-from datetime    import datetime, timedelta
+from datetime import datetime, timedelta
 
 from utils import check_ip, md5Checksum, PlugItRedirect, PlugItSendFile, PlugItSetSession
 
@@ -23,7 +23,7 @@ class MetaView(View):
         # Template information
         objResponse['template_tag'] = ("" if self.action.pi_api_template == "" else
                                        md5Checksum('templates/' + self.action.pi_api_template))
-        
+
         for attribute in (u'only_logged_user', u'only_member_user', u'only_admin_user',
                           u'only_orga_member_user', u'only_orga_admin_user',  # User restrictions
                           u'cache_time', u'cache_by_user',                    # Cache information

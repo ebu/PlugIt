@@ -2,6 +2,7 @@
 
 import requests
 
+
 class PlugItAPI(object):
     """Main instance to access plugit api"""
 
@@ -23,6 +24,15 @@ class PlugItAPI(object):
             u.__dict__.update(r.json())
             return u
         return None
+
+    def get_orgas(self):
+        """Return the list of pk for all orgas"""
+
+        r = self._request('orgas/')
+        if not r:
+            return None
+
+        return r.json()['data']
 
     def get_orga(self, orgaPk):
         """Return an organization speficied with orgaPk"""
@@ -57,7 +67,7 @@ class PlugItAPI(object):
     def send_mail(self, sender, subject, recipients, message, response_id=None):
         """Send an email using EBUio features. If response_id is set, replies will be send back to the PlugIt server."""
 
-        params = {'sender': sender, 'subject': subject, 'dests': recipients, 'message': message }
+        params = {'sender': sender, 'subject': subject, 'dests': recipients, 'message': message}
 
         if response_id:
             params['response_id'] = response_id
@@ -67,6 +77,7 @@ class PlugItAPI(object):
 
 class User(object):
     """Represent an user"""
+
 
 class Orga(object):
     """Represent an organization"""
