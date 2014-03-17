@@ -32,7 +32,16 @@ class PlugItAPI(object):
         if not r:
             return None
 
-        return r.json()['data']
+        retour = []
+
+        for data in r.json()['data']:
+            o = Orga()
+            o.__dict__.update(data)
+            o.pk = o.id
+
+            retour.append(o)
+
+        return retour
 
     def get_orga(self, orgaPk):
         """Return an organization speficied with orgaPk"""

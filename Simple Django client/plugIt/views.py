@@ -486,7 +486,8 @@ def update_session(request, session_to_set, hproPk):
     """Update the session with users-realted values"""
 
     for key, value in session_to_set.items():
-        request.session['plugit_' + str(hproPk) + '_' +  key] = value
+        request.session['plugit_' + str(hproPk) + '_' + key] = value
+
 
 def get_current_session(request, hproPk):
     """Get the current session value"""
@@ -518,7 +519,6 @@ def main(request, query, hproPk=None):
     orgaMode = None
     currentOrga = None
     availableOrga = []
-
 
     ## If standalone mode, change the current user and orga mode based on parameters
     if settings.PIAPI_STANDALONE:
@@ -553,7 +553,7 @@ def main(request, query, hproPk=None):
 
             if not availableOrga:
                 return gen403(request, baseURI, 'no_orga_in_orgamode', hproject)
-           
+
             # Build the current orga
             realCurrentOrga = get_current_orga(request, hproject, availableOrga)
 
@@ -869,12 +869,12 @@ def api_orgas(request, key=None, hproPk=None):
     list_orgas = []
 
     if settings.PIAPI_STANDALONE:
-        list_orgas = [-1, -2, -3, -4]
+        list_orgas = [{'id': -1, 'name': 'EBU'}, {'id': -2, 'name': 'RTS'}, {'id': -3, 'name': 'BBC'}, {'id': -4, 'name': 'CNN'}]
 
     else:
         from organizations.models import Organization
 
-        list_orgas = [orga.pk for orga in Organization.objects.all()]
+        list_orgas = [{'id': orga.pk, 'name': orga.name} for orga in Organization.objects.all()]
 
     retour = {'data': list_orgas}
 
