@@ -135,9 +135,14 @@ class PlugIt():
         r = self.doQuery('media/' + uri)
 
         if r.status_code == 200:
-            return (r.content, r.headers['content-type'])
+            content_type = 'application/octet-stream'
+
+            if 'content-type' in r.headers:
+                content_type = r.headers['content-type']
+
+            return (r.content, content_type)
         else:
-            return None
+            return (None, None)
 
     def getMeta(self, uri):
         """Return meta information about an action. Cache the result as specified by the server"""
