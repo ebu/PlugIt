@@ -175,9 +175,9 @@ def check_rights(request, meta):
             return gen403(request, baseURI, 'only_admin_user')
 
     # User must be member of the orga ?
-    if ('only_orga_memeber_user' in meta and meta['only_orga_memeber_user']):
+    if ('only_orga_member_user' in meta and meta['only_orga_member_user']):
         if not request.user.ebuio_orga_member:
-            return gen403(request, baseURI, 'only_orga_memeber_user')
+            return gen403(request, baseURI, 'only_orga_member_user')
 
     # User must be administrator of the orga ?
     if ('only_orga_admin_user' in meta and meta['only_orga_admin_user']):
