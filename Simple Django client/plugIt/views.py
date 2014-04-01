@@ -165,9 +165,9 @@ def check_rights(request, meta):
             return gen403(request, baseURI, 'only_logged_user')
 
     # User must be member of the project ?
-    if ('only_memeber_user' in meta and meta['only_memeber_user']):
+    if ('only_member_user' in meta and meta['only_member_user']):
         if not request.user.ebuio_member:
-            return gen403(request, baseURI, 'only_memeber_user')
+            return gen403(request, baseURI, 'only_member_user')
 
     # User must be administrator of the project ?
     if ('only_admin_user' in meta and meta['only_admin_user']):
