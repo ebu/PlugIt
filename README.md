@@ -225,7 +225,7 @@ Medias are handled as usual, using the special `/media/` path.
 
 ### No template
 
-If you need to send back the result from the plugIt server directly to the client, without a template, you can set the `EbuIo-PlugIt-Redirect` header (to any value).
+If you need to send back the result from the plugIt server directly to the client, without a template, you can set the `EbuIo-PlugIt-NoTemplate` header (to any value).
 
 ## Session
 
