@@ -34,7 +34,7 @@ import json
 import hashlib
 import base64
 
-from django.core.mail import send_mail
+from django.core.mail import EmailMessage
 
 
 # Standalone mode: Load the main plugit interface
@@ -47,12 +47,24 @@ def getPlugItObject(hproPk):
     """Return the plugit object and the baseURI to use if not in standalone mode"""
 
     from hprojects.models import HostedProject
-    hproject = get_object_or_404(HostedProject, pk=hproPk)
+
+    try:
+        hproject = HostedProject.objects.get(pk=hproPk)
+    except (HostedProject.DoesNotExist, ValueError):
+        try:
+            hproject = HostedProject.objects.get(plugItCustomUrlKey=hproPk)
+        except HostedProject.DoesNotExist:
+            raise Http404
 
     if hproject.plugItURI == '' and not hproject.runURI:
         raise Http404
     plugIt = PlugIt(hproject.plugItURI)
-    baseURI = reverse('plugIt.views.main', args=(hproject.pk, ''))
+
+    # Test if we should use custom key
+    if hasattr(hproject, 'plugItCustomUrlKey') and hproject.plugItCustomUrlKey:
+        baseURI = reverse('plugIt.views.main', args=(hproject.plugItCustomUrlKey, ''))
+    else:
+        baseURI = reverse('plugIt.views.main', args=(hproject.pk, ''))
 
     return (plugIt, baseURI, hproject)
 
@@ -106,12 +118,28 @@ def gen404(request, baseURI, reason):
 def gen403(request, baseURI, reason, project=None):
     """Return a 403 error"""
     orgas = None
+    public_ask = False
 
     if not settings.PIAPI_STANDALONE:
         from organizations.models import Organization
-        orgas = Organization.objects.order_by('name').all()
 
-    return HttpResponseNotFound(render_to_response('plugIt/403.html', {'reason': reason, 'orgas': orgas, 'ebuio_baseUrl': baseURI, 'ebuio_userMode': request.session.get('plugit-standalone-usermode', 'ano'), 'ebuio_project': project}, context_instance=RequestContext(request)))
+        if project and project.plugItLimitOrgaJoinable:
+            orgas = project.plugItOrgaJoinable.order_by('name').all()
+        else:
+            orgas = Organization.objects.order_by('name').all()
+
+        rorgas = []
+
+        # Find and exclude the visitor orga
+        for o in orgas:
+            if str(o.pk) == settings.VISITOR_ORGA_PK:
+                public_ask = True
+            else:
+                rorgas.append(o)
+
+        orgas = rorgas
+
+    return HttpResponseNotFound(render_to_response('plugIt/403.html', {'reason': reason, 'orgas': orgas, 'public_ask': public_ask, 'ebuio_baseUrl': baseURI, 'ebuio_userMode': request.session.get('plugit-standalone-usermode', 'ano'), 'ebuio_project': project}, context_instance=RequestContext(request)))
 
 
 def get_cache_key(request, meta, orgaMode, currentOrga):
@@ -159,7 +187,7 @@ def get_cache_key(request, meta, orgaMode, currentOrga):
 
 def check_rights(request, meta):
     """Check if the user can access the page"""
-     # User must be logged ?
+    # User must be logged ?
     if ('only_logged_user' in meta and meta['only_logged_user']):
         if not request.user.is_authenticated():
             return gen403(request, baseURI, 'only_logged_user')
@@ -466,6 +494,7 @@ def get_template(request, query, meta, proxyMode):
 
     return (templateContent, None)
 
+
 def get_current_orga(request, hproject, availableOrga):
     """Return the current orga to use"""
 
@@ -709,6 +738,10 @@ def home(request, hproPk):
     if hproject.runURI:
         return HttpResponseRedirect(hproject.runURI)
     else:
+        # Check if a custom url key is used
+        if hasattr(hproject, 'plugItCustomUrlKey') and hproject.plugItCustomUrlKey:
+            return HttpResponseRedirect(reverse('plugIt.views.main', args=(hproject.plugItCustomUrlKey, '')))
+
         return main(request, '', hproPk)
 
 
@@ -835,6 +868,8 @@ def api_send_mail(request, key=None, hproPk=None):
     subject = request.POST['subject']
     message = request.POST['message']
 
+    headers = {}
+
     if 'response_id' in request.POST:
 
         from Crypto.Cipher import AES
@@ -849,13 +884,18 @@ def api_send_mail(request, key=None, hproPk=None):
         base64_key = base64.urlsafe_b64encode(encrypted_key)
 
         #subject = subject + ' ----------------------- [' + base64_key + ']'
-        sender = settings.MAIL_SENDER.replace('@', '+' + base64_key + '@')
+
+        #sender = settings.MAIL_SENDER.replace('@', '+' + base64_key + '@')
+        headers = {'Reply-To': settings.MAIL_SENDER.replace('@', '+' + base64_key + '@')}
 
     # if not settings.PIAPI_STANDALONE:
     #     (_, _, hproject) = getPlugItObject(hproPk)
     #     subject = '[EBUIo:' + smart_str(hproject.name) + '] ' + subject
 
-    send_mail(subject, message, sender, dests, fail_silently=False)
+    msg = EmailMessage(subject, message, sender, dests, headers=headers)
+    msg.send(fail_silently=False)
+
+    #send_mail(subject, message, sender, dests, fail_silently=False)
 
     return HttpResponse(json.dumps({}), content_type="application/json")
 
@@ -879,3 +919,62 @@ def api_orgas(request, key=None, hproPk=None):
     retour = {'data': list_orgas}
 
     return HttpResponse(json.dumps(retour), content_type="application/json")
+
+
+@csrf_exempt
+def api_ebuio_forum(request, key=None, hproPk=None):
+    """Create a topic on the forum of the ioproject. EBUIo only !"""
+
+    if not check_api_key(request, key, hproPk):
+        raise Http404
+
+    if settings.PIAPI_STANDALONE:
+        return HttpResponse(json.dumps({'error': 'no-on-ebuio'}), content_type="application/json")
+
+    (_, _, hproject) = getPlugItObject(hproPk)
+
+    error = ''
+
+    subject = request.POST.get('subject')
+    author_pk = request.POST.get('author')
+    message = request.POST.get('message')
+    tags = request.POST.get('tags', '')
+
+    if not subject:
+        error = 'no-subject'
+    if not author_pk:
+        error = 'no-author'
+    else:
+        try:
+            from users.models import TechUser
+            author = TechUser.objects.get(pk=author_pk)
+        except TechUser.DoesNotExist:
+            error = 'author-no-found'
+
+    if not message:
+        error = 'no-message'
+
+    if error:
+        return HttpResponse(json.dumps({'error': error}), content_type="application/json")
+
+    # Create the topic
+    from discuss.models import Post, PostTag
+
+    if tags:
+        real_tags = []
+        for tag in tags.split(','):
+            (pt, __) = PostTag.objects.get_or_create(tag=tag)
+            real_tags.append(str(pt.pk))
+
+        tags = ','.join(real_tags)
+
+    post = Post(content_object=hproject, who=author, score=0, title=subject, text=message)
+    post.save()
+
+    from app.tags_utils import update_object_tag
+    update_object_tag(post, PostTag, tags)
+
+    post.send_email()
+
+    # Return the URL
+    return HttpResponse(json.dumps({'result': 'ok', 'url': settings.EBUIO_BASE_URL + reverse('hprojects.views.forum_topic', args=(hproject.pk, post.pk))}), content_type="application/json")

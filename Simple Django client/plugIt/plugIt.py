@@ -40,6 +40,9 @@ class PlugIt():
 
         for key, value in session.iteritems():
             headers['X-Plugitsession-' + key] = value
+            if 'Cookie' not in headers:
+                headers['Cookie'] = ''
+            headers['Cookie'] += key + '=' + value + '; '
 
         if method == 'POST':
             if not files:

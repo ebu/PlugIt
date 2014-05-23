@@ -83,6 +83,13 @@ class PlugItAPI(object):
 
         return self._request('mail/', postParams=params, verb='POST')
 
+    def ebuio_forum(self, subject, author, message, tags=''):
+        """Create a topic on the EBUIo forum. Return the url to the topic or an error"""
+
+        params = {'subject': subject, 'author': author, 'message': message, 'tags': tags}
+
+        return self._request('ebuio/forum/', postParams=params, verb='POST').json()
+
 
 class User(object):
     """Represent an user"""

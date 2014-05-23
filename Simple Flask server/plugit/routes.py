@@ -1,31 +1,27 @@
 from params import PI_BASE_URL
 from views import *
 
-def load_routes(app,actions):
+def load_routes(app, actions):
 
     @app.route(PI_BASE_URL + "ping")
     def ping():
         """The ping method: Just return the data provided"""
-    
+
         if not check_ip(request):
             return
-    
+
         return jsonify(data=request.args.get('data', ''))
-    
-    
+
     @app.route(PI_BASE_URL + "version")
     def version():
         """The version method: Return current information about the version"""
         return jsonify(result='Ok', version=PI_API_VERSION, protocol=PI_API_NAME)
-
 
     @app.route(PI_BASE_URL + "mail", methods=['POST'])
     def mail():
         """The mail method: Process mail handling"""
 
         data = request.form['response_id'].split(':')
-
-
 
         return jsonify(result='Ok')
 
