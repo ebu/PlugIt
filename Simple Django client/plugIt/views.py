@@ -401,9 +401,10 @@ def render_data(context, templateContent, proxyMode, rendered_data):
     """Render the template"""
 
     if proxyMode:
-
         # Update csrf_tokens
-        rendered_data = rendered_data.replace('{~__PLUGIT_CSRF_TOKEN__~}', unicode(context['csrf_token']))
+        csrf = unicode(context['csrf_token'])
+        tag = u'{~__PLUGIT_CSRF_TOKEN__~}'
+        rendered_data = unicode(rendered_data, 'utf-8').replace(tag, csrf)
 
         result = rendered_data  # Render in proxy mode
     else:
