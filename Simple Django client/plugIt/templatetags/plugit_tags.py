@@ -16,7 +16,7 @@ class PlugItIncludeNode(Node):
             # Import objects form the view
             from plugIt.views import plugIt, baseURI
         else:
-            # Import object using the function in the view 
+            # Import object using the function in the view
             from plugIt.views import getPlugItObject
 
             # Check the secret
@@ -52,7 +52,7 @@ def plugitGetUser(pk):
     if settings.PIAPI_STANDALONE:
         from plugIt.views import generate_user
         user = generate_user(pk=str(pk))
-    
+
     else:
         from users.models import TechUser
         try:
@@ -72,3 +72,7 @@ def plugitGetUser(pk):
     user_cleaned.id = str(user_cleaned.pk)
 
     return user_cleaned
+
+@register.filter
+def url_target_blank(text):
+    return text.replace('<a ', '<a target="_blank" ')
