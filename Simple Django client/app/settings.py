@@ -12,11 +12,11 @@ MANAGERS = ADMINS
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.',  # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
-        'NAME': '',                       # Or path to database file if using sqlite3.
+        'ENGINE': 'django.db.backends.mysql',  # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
+        'NAME': 'djclient_db',                       # Or path to database file if using sqlite3.
         # The following settings are not used with sqlite3:
-        'USER': '',
-        'PASSWORD': '',
+        'USER': 'djclient_user',
+        'PASSWORD': 'djclient_password',
         'HOST': '',                       # Empty for localhost through domain sockets or '127.0.0.1' for localhost through TCP.
         'PORT': '',                       # Set to empty string for default.
     }
@@ -166,8 +166,9 @@ PIAPI_STANDALONE = True
 PIAPI_STANDALONE_URI = 'http://127.0.0.1:5000'
 PIAPI_BASEURI = '/plugIt/'
 PIAPI_USERDATA = ['username', 'id', 'pk', 'first_name', 'last_name', 'email', 'ebuio_member', 'ebuio_admin', 'ebuio_orga_member', 'ebuio_orga_admin']
+# to fake organizations:
 PIAPI_ORGAMODE = False  # Don't active this with PIAPI_REALUSERS !
-PIAPI_REALUSERS = False  # Don't active this with PIAPI_ORGAMODE !
+PIAPI_REALUSERS = True  # Don't active this with PIAPI_ORGAMODE !
 
 PIAPI_PROXYMODE = False
 
@@ -194,3 +195,5 @@ INCOMING_MAIL_PASSWORD = ''
 INCOMING_MAIL_HOST = ''
 
 DISCUSSION_ID = 'I-D'
+
+AUTH_USER_MODEL = 'plugIt.OrgaUser'
