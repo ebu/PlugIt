@@ -712,7 +712,7 @@ def setOrga(request, hproPk=None):
         if request.user.is_superuser or orga.isMember(request.user) or orga.isOwner(request.user):
             request.session['plugit-orgapk-' + str(hproject.pk)] = orga.pk
 
-        return HttpResponse('')
+    return HttpResponse('')
 
 
 def check_api_key(request, key, hproPk):
