@@ -112,7 +112,12 @@ class SimpleUser():
 
 def gen404(request, baseURI, reason):
     """Return a 404 error"""
-    return HttpResponseNotFound(render_to_response('plugIt/404.html', {'reason': reason, 'ebuio_baseUrl': baseURI, 'ebuio_userMode': request.session.get('plugit-standalone-usermode', 'ano')}, context_instance=RequestContext(request)))
+    return HttpResponseNotFound(render_to_response('plugIt/404.html', 
+                                                   {'reason': reason, 
+                                                    'ebuio_baseUrl': baseURI, 
+                                                    'ebuio_userMode': request.session.get('plugit-standalone-usermode', 'ano'),
+                                                    'ebuio_realUsers':settings.PIAPI_REALUSERS}, 
+                                                   context_instance=RequestContext(request)))
 
 
 def gen403(request, baseURI, reason, project=None):
@@ -139,7 +144,15 @@ def gen403(request, baseURI, reason, project=None):
 
         orgas = rorgas
 
-    return HttpResponseNotFound(render_to_response('plugIt/403.html', {'reason': reason, 'orgas': orgas, 'public_ask': public_ask, 'ebuio_baseUrl': baseURI, 'ebuio_userMode': request.session.get('plugit-standalone-usermode', 'ano'), 'ebuio_project': project}, context_instance=RequestContext(request)))
+    return HttpResponseNotFound(render_to_response('plugIt/403.html', 
+                                                   {'reason': reason, 
+                                                    'orgas': orgas, 
+                                                    'public_ask': public_ask, 
+                                                    'ebuio_baseUrl': baseURI, 
+                                                    'ebuio_userMode': request.session.get('plugit-standalone-usermode', 'ano'), 
+                                                    'ebuio_project': project,
+                                                    'ebuio_realUsers':settings.PIAPI_REALUSERS}, 
+                                                   context_instance=RequestContext(request)))
 
 
 def get_cache_key(request, meta, orgaMode, currentOrga):
@@ -204,12 +217,12 @@ def check_rights(request, meta):
 
     # User must be member of the orga ?
     if ('only_orga_member_user' in meta and meta['only_orga_member_user']):
-        if not request.user.ebuio_orga_member:
+        if hasattr(request.user, 'ebuio_orga_member') and not request.user.ebuio_orga_member:
             return gen403(request, baseURI, 'only_orga_member_user')
-
+ 
     # User must be administrator of the orga ?
     if ('only_orga_admin_user' in meta and meta['only_orga_admin_user']):
-        if not request.user.ebuio_orga_admin:
+        if hasattr(request.user, 'ebuio_orga_admin') and not request.user.ebuio_orga_admin:
             return gen403(request, baseURI, 'only_orga_admin_user')
 
 
@@ -301,6 +314,7 @@ def build_orga_parameters(request, orgaMode, currentOrga):
             postParameters['ebuio_orgapk'] = currentOrga.pk
         else:
             getParameters['ebuio_orgapk'] = currentOrga.pk
+        
 
     return (getParameters, postParameters, files)
 
@@ -566,7 +580,13 @@ def main(request, query, hproPk=None):
         else:
             request.user.ebuio_member = request.user.is_staff
             request.user.ebuio_admin = request.user.is_superuser
-
+            
+            # fpm
+            request.user.ebuio_orga_member = request.user.ebuio_member
+            request.user.ebuio_orga_admin = request.user.ebuio_admin
+            
+            
+            
         proxyMode = settings.PIAPI_PROXYMODE
 
     else:
