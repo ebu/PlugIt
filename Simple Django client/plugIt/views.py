@@ -309,7 +309,8 @@ def build_orga_parameters(request, orgaMode, currentOrga):
     files = {}
 
     # If orga mode, add the current orga pk
-    if orgaMode:
+    #if orgaMode:
+    if True:
         if request.method == 'POST':
             postParameters['ebuio_orgapk'] = currentOrga.pk
         else:
@@ -585,6 +586,14 @@ def main(request, query, hproPk=None):
             request.user.ebuio_orga_member = request.user.ebuio_member
             request.user.ebuio_orga_admin = request.user.ebuio_admin
             
+            # fpm
+            orgaMode = settings.PIAPI_ORGAMODE
+            currentOrga = SimpleOrga()
+            if hasattr(request.user, 'organization'): 
+                currentOrga.name = request.user.organization.name
+                currentOrga.pk = request.user.organization.pk
+            else:
+                currentOrga.pk = 0
             
             
         proxyMode = settings.PIAPI_PROXYMODE
