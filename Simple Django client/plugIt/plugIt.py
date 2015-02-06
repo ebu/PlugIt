@@ -31,7 +31,8 @@ class PlugIt():
 
     def doQuery(self, url, method='GET', getParmeters=None, postParameters=None, files=None, extraHeaders={}, session={}):
         """Send a request to the server and return the result"""
-
+        from urlparse import urljoin
+        
         # Build headers
         headers = {}
 
@@ -46,7 +47,7 @@ class PlugIt():
 
         if method == 'POST':
             if not files:
-                r = requests.post(self.baseURI + '/' + url, params=getParmeters, data=postParameters, stream=True, headers=headers)
+                r = requests.post(urljoin(self.baseURI, url), params=getParmeters, data=postParameters, stream=True, headers=headers)
             else:
                 # Special way, for big files
                 # Requests is not usable: https://github.com/shazow/urllib3/issues/51
@@ -76,7 +77,7 @@ class PlugIt():
                 headers.update(headers_multi)
 
                 # Create the Request object
-                request = urllib2.Request(self.baseURI + '/' + url, datagen, headers)
+                request = urllib2.Request(urljoin(self.baseURI, url), datagen, headers)
 
                 re = urllib2.urlopen(request)
 
@@ -93,7 +94,7 @@ class PlugIt():
 
         else:
             # Call the function based on the method.
-            r = requests.request(method.upper(), self.baseURI + '/' + url, params=getParmeters, stream=True, headers=headers, allow_redirects=True)
+            r = requests.request(method.upper(), urljoin(self.baseURI, url), params=getParmeters, stream=True, headers=headers, allow_redirects=True)
 
         return r
 
