@@ -128,6 +128,9 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
     'django.contrib.admin',
     'plugIt',
+    'organizations',
+    'users',
+    'hprojects',
 )
 
 # A sample logging configuration. The only tangible logging
@@ -162,15 +165,20 @@ LOGGING = {
 # Make this unique, and don't share it with anybody.
 SECRET_KEY = 'The game. Please also replace this string.'
 
+# when PIAPI_STANDALONE=False: uri, baseuri, orgamode, proxymode
+# are taken from Django database (hprojects)
 PIAPI_STANDALONE = True
+
+# when PIAPI_STANDALONE = True:
 PIAPI_STANDALONE_URI = 'http://127.0.0.1:5000'
 PIAPI_BASEURI = '/plugIt/'
 PIAPI_USERDATA = ['username', 'id', 'pk', 'first_name', 'last_name', 'email', 'ebuio_member', 'ebuio_admin', 'ebuio_orga_member', 'ebuio_orga_admin']
-# to fake organizations:
-PIAPI_ORGAMODE = False  # Don't active this with PIAPI_REALUSERS !
-PIAPI_REALUSERS = True  # Don't active this with PIAPI_ORGAMODE !
-
+PIAPI_ORGAMODE = True  # Don't active this with PIAPI_REALUSERS !
+PIAPI_REALUSERS = False  # Don't active this with PIAPI_ORGAMODE !
 PIAPI_PROXYMODE = False
+
+# pk of the entry in Organization dedicated to Visitors
+VISITOR_ORGA_PK = 1
 
 CACHES = {
     'default': {
@@ -196,4 +204,4 @@ INCOMING_MAIL_HOST = ''
 
 DISCUSSION_ID = 'I-D'
 
-AUTH_USER_MODEL = 'plugIt.OrgaUser'
+AUTH_USER_MODEL = 'users.OrgaUser'
