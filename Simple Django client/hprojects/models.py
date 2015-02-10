@@ -20,8 +20,7 @@ class HostedProject(models.Model):
     write_members = models.ManyToManyField(OrgaUser, null=True, related_name='write_hostedprojects')
 
     TEMPLATE_CHOICES = (
-                        ('ba','base.html'),
-                        ('to','toto.html'),
+                        ('rd','radiodns.html'),
                         )
     plugItTemplate = models.CharField(max_length=2, choices=TEMPLATE_CHOICES)
     
