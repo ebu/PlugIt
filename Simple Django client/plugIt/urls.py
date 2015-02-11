@@ -34,7 +34,7 @@ if settings.PIAPI_STANDALONE:
 else:
     urlpatterns += patterns(
         'plugIt.views',
-        url(r'^media/(?P<path>.*)$', 'media'),
+        url(r'^(?P<hproPk>[\-0-9]*)/media/(?P<path>.*)$', 'media'),
         
         url(r'^(?P<hproPk>[\-0-9]*)/ebuio_setUser$', 'setUser'),
         url(r'^(?P<hproPk>[\-0-9]*)/ebuio_setOrga$', 'setOrga'),
