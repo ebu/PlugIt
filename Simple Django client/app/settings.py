@@ -187,7 +187,8 @@ CACHES = {
     }
 }
 
-SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
+#SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
+SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
 
 FILE_UPLOAD_HANDLERS = ("django.core.files.uploadhandler.TemporaryFileUploadHandler",)
 
@@ -205,3 +206,4 @@ INCOMING_MAIL_HOST = ''
 DISCUSSION_ID = 'I-D'
 
 AUTH_USER_MODEL = 'users.OrgaUser'
+
