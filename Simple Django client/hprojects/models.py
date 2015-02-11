@@ -29,3 +29,6 @@ class HostedProject(models.Model):
     
     def isMemberWrite(self, user):
         return user in self.write_members.all()
+
+    def __unicode__(self):
+        return u'%s' % (self.name)
