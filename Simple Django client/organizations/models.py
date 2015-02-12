@@ -7,8 +7,8 @@ class Organization(models.Model):
     name = models.CharField(max_length=10)
     codops = models.CharField(max_length=10)
 
-    members = models.ManyToManyField(OrgaUser, null=True, related_name='member_organizations')
-    owners = models.ManyToManyField(OrgaUser, null=True, related_name='owner_organizations')
+    members = models.ManyToManyField(OrgaUser, blank=True, null=True, related_name='member_organizations')
+    owners = models.ManyToManyField(OrgaUser, blank=True, null=True, related_name='owner_organizations')
 
     def isMember(self, user):
         return user in self.members.all()
