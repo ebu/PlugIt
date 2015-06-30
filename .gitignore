@@ -45,3 +45,8 @@ Simple Flask server/config.py
 .sass-cache
 .DS_Store
 
+dist
+
+*.iml
+
+MANIFEST

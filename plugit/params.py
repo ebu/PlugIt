@@ -21,4 +21,8 @@ PI_ALLOWED_NETWORKS = config.PI_ALLOWED_NETWORKS
 
 # API version parameters
 PI_API_VERSION = '1'
-PI_API_NAME = 'EBUio-PlugIt'
+
+if 'PI_API_NAME' in dir(config):
+    PI_API_NAME = config.PI_API_NAME
+else:
+    PI_API_NAME = 'plugit-sample'
