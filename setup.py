@@ -4,7 +4,7 @@ from setuptools import setup
 setup(
     name = "plugit",
     packages = ["plugit"],
-    version = "0.0.1rc0",
+    version = "0.2.0rc1",
     license = "BSD",
     description = "PlugIt is a framework enhancing the portability and integration of web services requiring a user interface.",
     author = "EBU Technology & Innovation",
