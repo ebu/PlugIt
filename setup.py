@@ -1,8 +1,10 @@
-from distutils.core import setup
+from setuptools import setup
+# from distutils.core import setup
+
 setup(
     name = "plugit",
     packages = ["plugit"],
-    version = "0.0.1b",
+    version = "0.0.1rc0",
     license = "BSD",
     description = "PlugIt is a framework enhancing the portability and integration of web services requiring a user interface.",
     author = "EBU Technology & Innovation",
