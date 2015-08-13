@@ -94,10 +94,13 @@ class PlugItAPI(object):
     def forum_topic_get_by_tag_for_user(self, tag=None, author=None):
         """Get all forum topics with a specific tag"""
 
-        if not tag or not author:
+        if not tag:
             return None
 
-        r = self._request('ebuio/forum/search/bytag/' + tag + '?u=' + author)
+        if author:
+            r = self._request('ebuio/forum/search/bytag/' + tag + '?u=' + author)
+        else:
+            r = self._request('ebuio/forum/search/bytag/' + tag)
         if not r:
             return None
 
