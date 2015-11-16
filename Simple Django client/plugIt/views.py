@@ -868,6 +868,7 @@ def api_send_mail(request, key=None, hproPk=None):
     dests = request.POST.getlist('dests')
     subject = request.POST['subject']
     message = request.POST['message']
+    html_message = request.POST['html_message']
 
     headers = {}
 
@@ -894,6 +895,8 @@ def api_send_mail(request, key=None, hproPk=None):
     #     subject = '[EBUIo:' + smart_str(hproject.name) + '] ' + subject
 
     msg = EmailMessage(subject, message, sender, dests, headers=headers)
+    if html_message:
+        msg.content_subtype = "html"  # Main content is now text/html
     msg.send(fail_silently=False)
 
     #send_mail(subject, message, sender, dests, fail_silently=False)
