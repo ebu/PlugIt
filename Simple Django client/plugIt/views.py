@@ -76,22 +76,19 @@ def generate_user(mode=None, pk=None):
     user = None
 
     if mode == 'log' or pk == "-1":
-        user = DUser(pk=-1, username='Logged', first_name='Logged', last_name='Hector',
-                     email='logeedin@plugit-standalone.ebuio')
+        user = DUser(pk=-1, username='Logged', first_name='Logged', last_name='Hector', email='logeedin@plugit-standalone.ebuio')
         user.gravatar = 'https://www.gravatar.com/avatar/ebuio1?d=retro'
         user.ebuio_member = False
         user.ebuio_admin = False
         user.subscription_labels = []
     elif mode == 'mem' or pk == "-2":
-        user = DUser(pk=-2, username='Member', first_name='Member', last_name='Luc',
-                     email='memeber@plugit-standalone.ebuio')
+        user = DUser(pk=-2, username='Member', first_name='Member', last_name='Luc', email='memeber@plugit-standalone.ebuio')
         user.gravatar = 'https://www.gravatar.com/avatar/ebuio2?d=retro'
         user.ebuio_member = True
         user.ebuio_admin = False
         user.subscription_labels = []
     elif mode == 'adm' or pk == "-3":
-        user = DUser(pk=-3, username='Admin', first_name='Admin', last_name='Charles',
-                     email='admin@plugit-standalone.ebuio')
+        user = DUser(pk=-3, username='Admin', first_name='Admin', last_name='Charles', email='admin@plugit-standalone.ebuio')
         user.gravatar = 'https://www.gravatar.com/avatar/ebuio3?d=retro'
         user.ebuio_member = True
         user.ebuio_admin = True

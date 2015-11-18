@@ -171,7 +171,7 @@ PIAPI_USERDATA = ['username', 'id', 'pk', 'first_name', 'last_name', 'email', 'e
 PIAPI_ORGAMODE = True  # Don't active this with PIAPI_REALUSERS !
 PIAPI_REALUSERS = False  # Don't active this with PIAPI_ORGAMODE !
 PIAPI_PLUGITMENUACTION = 'menubar'
-PIAPI_PLUGITTEMPLATE = 'plugItBase-menu.html' # One out of 'plugItBase.html', 'plugit_protected_leftmenu_light.html'
+PIAPI_PLUGITTEMPLATE = 'plugItBase-menu.html' # One out of 'plugItBase.html', 'plugItBase-menu.html'
 
 PIAPI_PROXYMODE = False
 
