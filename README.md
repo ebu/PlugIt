@@ -79,6 +79,51 @@ The user can change the organization based on his list of organizations. It's po
 
 only_*_user are for the current project, only_orga_*_user for the current organization.
 
+### Providing a Application menu on the left hand side
+
+The PlugIt API allows your application to provide a left hand side menu. In order to use it, you will need to define or 
+change a few settings:
+
+    PIAPI_PLUGITMENUACTION = 'menubar'
+    PIAPI_PLUGITTEMPLATE = 'plugItBase-menu.html'
+    
+*`PIAPI_PLUGITMENUACTION` : the block name in which your application returns the menu and the action name to call to get
+only the menu back from your application
+*'PIAPI_PLUGITTEMPLATE' : the PlugIt Proxy comes with a predefined template which displays a menu. Change this setting
+to `plugItBase-menu.html`.
+
+#### Tags and structure of the menu and page
+
+Your menu should look something like the following code to pick up the predefined CSS styles. Of course you can define
+you own.
+
+    <div class="menu-section">
+        <h3>Menu Section</h3>
+        <ul>
+            <li><a href="/plugIt/url1/">My Option 1</a></li>
+            <li><a href="/plugIt/url2/">My Option 2</a></li>
+            <li><a href="/plugIt/url3/">My Option 3 Provider</a></li>
+        </ul>
+    </div>
+    <div class="menu-section">
+            <h3>Another Section</h3>
+    ...
+
+If additionally you need a row on top of the pages to contain title and page functions, use the following structure:
+
+    <div class="menubar">
+        <div class="page-title">
+            Page Title :: Sub Page
+            <small class="hidden-xs"> </small>
+        </div>
+        <div id="page-functions" class="pull-right">
+            <button type="button" class="btn btn-default" >
+                Button Function
+            </button>
+            <a href="/plugIt/linktootherpage" class="btn btn-primary">Add a new station</a>
+        </div>
+    </div>
+
 ### actions.py
 The user can implement his actions in the actions.py file. Each action is a defined like this
 
