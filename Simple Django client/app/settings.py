@@ -12,11 +12,11 @@ MANAGERS = ADMINS
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.',  # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
-        'NAME': '',                       # Or path to database file if using sqlite3.
+        'ENGINE': 'django.db.backends.mysql',  # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
+        'NAME': 'djclient_db',                       # Or path to database file if using sqlite3.
         # The following settings are not used with sqlite3:
-        'USER': '',
-        'PASSWORD': '',
+        'USER': 'djclient_user',
+        'PASSWORD': 'djclient_password',
         'HOST': '',                       # Empty for localhost through domain sockets or '127.0.0.1' for localhost through TCP.
         'PORT': '',                       # Set to empty string for default.
     }
@@ -123,11 +123,14 @@ INSTALLED_APPS = (
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
-    'django.contrib.sites',
+    #'django.contrib.sites',
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.admin',
     'plugIt',
+    'organizations',
+    'users',
+    'hprojects',
 )
 
 # A sample logging configuration. The only tangible logging
@@ -162,14 +165,20 @@ LOGGING = {
 # Make this unique, and don't share it with anybody.
 SECRET_KEY = 'The game. Please also replace this string.'
 
+# when PIAPI_STANDALONE=False: uri, baseuri, orgamode, proxymode
+# are taken from Django database (hprojects)
 PIAPI_STANDALONE = True
+
+# when PIAPI_STANDALONE = True:
 PIAPI_STANDALONE_URI = 'http://127.0.0.1:5000'
 PIAPI_BASEURI = '/plugIt/'
 PIAPI_USERDATA = ['username', 'id', 'pk', 'first_name', 'last_name', 'email', 'ebuio_member', 'ebuio_admin', 'ebuio_orga_member', 'ebuio_orga_admin']
-PIAPI_ORGAMODE = False  # Don't active this with PIAPI_REALUSERS !
+PIAPI_ORGAMODE = True  # Don't active this with PIAPI_REALUSERS !
 PIAPI_REALUSERS = False  # Don't active this with PIAPI_ORGAMODE !
-
 PIAPI_PROXYMODE = False
+
+# pk of the entry in Organization dedicated to Visitors
+VISITOR_ORGA_PK = 1
 
 CACHES = {
     'default': {
@@ -178,7 +187,8 @@ CACHES = {
     }
 }
 
-SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
+#SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
+SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
 
 FILE_UPLOAD_HANDLERS = ("django.core.files.uploadhandler.TemporaryFileUploadHandler",)
 
@@ -194,3 +204,6 @@ INCOMING_MAIL_PASSWORD = ''
 INCOMING_MAIL_HOST = ''
 
 DISCUSSION_ID = 'I-D'
+
+AUTH_USER_MODEL = 'users.OrgaUser'
+

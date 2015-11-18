@@ -2,7 +2,7 @@
 <!DOCTYPE html>
     <html>
         <head>
-            <title>{% block title %}{% endblock %} :: PlugIt -Standalone mode</title>
+            <title>{% block title %}{% endblock %}</title>
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
             <link href="/media/css/bootstrap.min.css" rel="stylesheet" media="screen">
@@ -27,27 +27,37 @@
 
                 }
 
-                 function ebuio_setOrga(name, pk) {
+                function ebuio_setOrga(name, pk) {
 
                     $.ajax({
                         url: "{{ebuio_baseUrl}}ebuio_setOrga?name=" + name + "&pk=" + pk,
                     }).done(function() {
                          location.reload();
                     });
-
+                    
                 }
+                
+                function ebuio_setOrga1(orga_pk) {
+
+                    $.ajax({
+                        url: "{{ebuio_baseUrl}}ebuio_setOrga?orga=" + orga_pk,
+                    }).done(function() {
+                         location.reload();
+                    });
+                    
+                }
+                 
+                 
             </script>
 
             <div class="container">
-
                 <div class="masthead">
-                    
                     <div class="navbar">
                       <div class="navbar-inner">
                         <div class="container">
                           <ul class="nav">
 
-                            <a class="brand" href="{{ebuio_baseUrl}}">PlugIt - Standalone mode</a>
+                            <a class="brand" href="{{ebuio_baseUrl}}">PlugIt</a>
 
                             {% if ebuio_realUsers %}
 
@@ -89,10 +99,16 @@
                                         <b class="caret"></b>
                                     </a>
                                     <ul class="dropdown-menu">
+                                    	{% if ebuio_orgas %}
+                                    		{% for orga in ebuio_orgas %}
+                                    		<li {% if ebuio_orga.pk == orga.pk %}class="active"{% endif %}><a href="#" onclick="ebuio_setOrga1('{{orga.pk}}');">{{orga.name}}</a></li>
+                                    		{% endfor %}
+                                    	{% else %}
                                         <li {% if ebuio_orga.pk == '-1' %}class="active"{% endif %}><a href="#" onclick="ebuio_setOrga('EBU', '-1');">{% trans "EBU" %}</a></li>
                                         <li {% if ebuio_orga.pk == '-2' %}class="active"{% endif %}><a href="#" onclick="ebuio_setOrga('RTS', '-2');">{% trans "RTS" %}</a></li>
                                         <li {% if ebuio_orga.pk == '-3' %}class="active"{% endif %}><a href="#" onclick="ebuio_setOrga('BBC', '-3');">{% trans "BBC" %}</a></li>
                                         <li {% if ebuio_orga.pk == '-4' %}class="active"{% endif %}><a href="#" onclick="ebuio_setOrga('CNN', '-4');">{% trans "CNN" %}</a></li>
+                                        {% endif %}
                                     </ul>
                                 </li>
                             {% endif %}

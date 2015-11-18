@@ -65,7 +65,6 @@ def getPlugItObject(hproPk):
         baseURI = reverse('plugIt.views.main', args=(hproject.plugItCustomUrlKey, ''))
     else:
         baseURI = reverse('plugIt.views.main', args=(hproject.pk, ''))
-
     return (plugIt, baseURI, hproject)
 
 
@@ -112,7 +111,18 @@ class SimpleUser():
 
 def gen404(request, baseURI, reason):
     """Return a 404 error"""
-    return HttpResponseNotFound(render_to_response('plugIt/404.html', {'reason': reason, 'ebuio_baseUrl': baseURI, 'ebuio_userMode': request.session.get('plugit-standalone-usermode', 'ano')}, context_instance=RequestContext(request)))
+    #fpm
+    if settings.PIAPI_STANDALONE:
+        real_users = settings.PIAPI_REALUSERS
+    else:
+        real_users = True
+    
+    return HttpResponseNotFound(render_to_response('plugIt/404.html', 
+                                                   {'reason': reason, 
+                                                    'ebuio_baseUrl': baseURI, 
+                                                    'ebuio_userMode': request.session.get('plugit-standalone-usermode', 'ano'),
+                                                    'ebuio_realUsers': real_users}, 
+                                                   context_instance=RequestContext(request)))
 
 
 def gen403(request, baseURI, reason, project=None):
@@ -138,8 +148,22 @@ def gen403(request, baseURI, reason, project=None):
                 rorgas.append(o)
 
         orgas = rorgas
+        
+        #fpm
+        real_users = True
+    #fpm
+    else:
+        real_users = settings.PIAPI_REALUSERS
 
-    return HttpResponseNotFound(render_to_response('plugIt/403.html', {'reason': reason, 'orgas': orgas, 'public_ask': public_ask, 'ebuio_baseUrl': baseURI, 'ebuio_userMode': request.session.get('plugit-standalone-usermode', 'ano'), 'ebuio_project': project}, context_instance=RequestContext(request)))
+    return HttpResponseNotFound(render_to_response('plugIt/403.html', 
+                                                   {'reason': reason, 
+                                                    'orgas': orgas, 
+                                                    'public_ask': public_ask, 
+                                                    'ebuio_baseUrl': baseURI, 
+                                                    'ebuio_userMode': request.session.get('plugit-standalone-usermode', 'ano'), 
+                                                    'ebuio_project': project,
+                                                    'ebuio_realUsers': real_users}, 
+                                                   context_instance=RequestContext(request)))
 
 
 def get_cache_key(request, meta, orgaMode, currentOrga):
@@ -204,12 +228,12 @@ def check_rights(request, meta):
 
     # User must be member of the orga ?
     if ('only_orga_member_user' in meta and meta['only_orga_member_user']):
-        if not request.user.ebuio_orga_member:
+        if hasattr(request.user, 'ebuio_orga_member') and not request.user.ebuio_orga_member:
             return gen403(request, baseURI, 'only_orga_member_user')
-
+ 
     # User must be administrator of the orga ?
     if ('only_orga_admin_user' in meta and meta['only_orga_admin_user']):
-        if not request.user.ebuio_orga_admin:
+        if hasattr(request.user, 'ebuio_orga_admin') and not request.user.ebuio_orga_admin:
             return gen403(request, baseURI, 'only_orga_admin_user')
 
 
@@ -301,6 +325,7 @@ def build_orga_parameters(request, orgaMode, currentOrga):
             postParameters['ebuio_orgapk'] = currentOrga.pk
         else:
             getParameters['ebuio_orgapk'] = currentOrga.pk
+        
 
     return (getParameters, postParameters, files)
 
@@ -454,6 +479,8 @@ def build_context(request, data, hproject, orgaMode, currentOrga, availableOrga)
         data['ebuio_hpro_pk'] = hproject.pk
         from app.utils import create_secret
         data['ebuio_hpro_key'] = create_secret(str(hproject.pk), hproject.name, str(request.user.pk))
+        
+        data['ebuio_realUsers'] = True
 
     # Add orga mode and orga
     data['ebuio_orgamode'] = orgaMode
@@ -499,7 +526,7 @@ def get_template(request, query, meta, proxyMode):
 def get_current_orga(request, hproject, availableOrga):
     """Return the current orga to use"""
 
-     # Find the current orga
+    # Find the current orga
     currentOrgaId = request.session.get('plugit-orgapk-' + str(hproject.pk), None)
 
     if currentOrgaId is None:
@@ -566,7 +593,11 @@ def main(request, query, hproPk=None):
         else:
             request.user.ebuio_member = request.user.is_staff
             request.user.ebuio_admin = request.user.is_superuser
-
+            
+            # fpm
+            request.user.ebuio_orga_member = request.user.ebuio_member
+            request.user.ebuio_orga_admin = request.user.ebuio_admin            
+            
         proxyMode = settings.PIAPI_PROXYMODE
 
     else:
@@ -698,11 +729,11 @@ def setUser(request):
 def setOrga(request, hproPk=None):
     """Change the current orga"""
 
+
     if settings.PIAPI_STANDALONE:
         request.session['plugit-standalone-organame'] = request.GET.get('name')
         request.session['plugit-standalone-orgapk'] = request.GET.get('pk')
     else:
-
         (_, _, hproject) = getPlugItObject(hproPk)
 
         from organizations.models import Organization
@@ -712,7 +743,7 @@ def setOrga(request, hproPk=None):
         if request.user.is_superuser or orga.isMember(request.user) or orga.isOwner(request.user):
             request.session['plugit-orgapk-' + str(hproject.pk)] = orga.pk
 
-        return HttpResponse('')
+    return HttpResponse('')
 
 
 def check_api_key(request, key, hproPk):
@@ -798,14 +829,19 @@ def api_orga(request, orgaPk, key=None, hproPk=None):
 
     if settings.PIAPI_STANDALONE:
         retour['pk'] = orgaPk
+        
         if orgaPk == "-1":
             retour['name'] = 'EBU'
+            retour['codops'] = 'co_ebu'
         if orgaPk == "-2":
             retour['name'] = 'RTS'
+            retour['codops'] = 'co_rts'
         if orgaPk == "-3":
             retour['name'] = 'BBC'
+            retour['codops'] = 'co_bbc'
         if orgaPk == "-4":
             retour['name'] = 'CNN'
+            retour['codops'] = 'co_cnn'
 
     else:
         from organizations.models import Organization
@@ -814,6 +850,7 @@ def api_orga(request, orgaPk, key=None, hproPk=None):
 
         retour['pk'] = orga.pk
         retour['name'] = orga.name
+        retour['codops'] = orga.codops
 
     return HttpResponse(json.dumps(retour), content_type="application/json")
 
