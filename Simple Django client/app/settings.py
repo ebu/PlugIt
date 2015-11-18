@@ -26,6 +26,8 @@ DATABASES = {
 from os.path import abspath, dirname, join, normpath
 DJANGO_ROOT = dirname(abspath(__file__)) + '/../'
 
+# Default Test Runner, necessary since Django 1.6
+TEST_RUNNER = 'django.test.runner.DiscoverRunner'
 
 # Hosts/domain names that are valid for this site; required if DEBUG is False
 # See https://docs.djangoproject.com/en/1.5/ref/settings/#allowed-hosts
