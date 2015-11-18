@@ -89,12 +89,33 @@ class PlugItAPI(object):
 
         return self._request('mail/', postParams=params, verb='POST')
 
-    def ebuio_forum(self, subject, author, message, tags=''):
-        """Create a topic on the EBUIo forum. Return the url to the topic or an error"""
+
+    def forum_create_topic(self, subject, author, message, tags=""):
+        """Create a topic using EBUio features."""
 
         params = {'subject': subject, 'author': author, 'message': message, 'tags': tags}
 
-        return self._request('ebuio/forum/', postParams=params, verb='POST').json()
+        return self._request('ebuio/forum/', postParams=params, verb='POST')
+
+    def forum_topic_get_by_tag_for_user(self, tag=None, author=None):
+        """Get all forum topics with a specific tag"""
+
+        if not tag:
+            return None
+
+        if author:
+            r = self._request('ebuio/forum/search/bytag/' + tag + '?u=' + author)
+        else:
+            r = self._request('ebuio/forum/search/bytag/' + tag)
+        if not r:
+            return None
+
+        retour = []
+
+        for data in r.json()['data']:
+            retour.append(data)
+
+        return retour
 
 
 class User(object):
