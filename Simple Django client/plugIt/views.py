@@ -424,7 +424,8 @@ def build_final_response(request, meta, result, menu, hproject, proxyMode, conte
     if proxyMode:  # Force inclusion inside template
         return render_to_response('plugIt/base.html',
                                   {'plugit_content': result,
-                                   "plugit_menu": menu},
+                                   "plugit_menu": menu,
+                                   'context': context},
                                   context_instance=RequestContext(request))
 
     renderPlugItTemplate = 'plugItBase.html'
