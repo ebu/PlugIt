@@ -36,7 +36,11 @@ class PlugIt():
         headers = {}
 
         for key, value in extraHeaders.iteritems():
-            headers['X-Plugit-' + key] = value
+            # Fixes #197 for values with utf-8 chars to be passed into plugit
+            if isinstance(value, basestring):
+                headers['X-Plugit-' + key] = value.encode('utf-8')
+            else:
+                headers['X-Plugit-' + key] = value
 
         for key, value in session.iteritems():
             headers['X-Plugitsession-' + key] = value

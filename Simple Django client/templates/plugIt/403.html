@@ -1,4 +1,4 @@
-{% extends "plugIt/base.html" %}
+{% extends "plugIt/plugItBase.html" %}
 {% load i18n %}
 
 {% block title %}
@@ -9,7 +9,7 @@
 	<h1>{% trans "403 Error" %}</h1>
 
 	<p>
-		{% blocktrans with reason as reason %}
+		{% blocktrans with context.reason as reason %}
 			You don't have rights to view this page. Internal reason. {{reason}}
 		{% endblocktrans %}
 	</p>

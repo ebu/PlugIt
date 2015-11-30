@@ -26,6 +26,8 @@ DATABASES = {
 from os.path import abspath, dirname, join, normpath
 DJANGO_ROOT = dirname(abspath(__file__)) + '/../'
 
+# Default Test Runner, necessary since Django 1.6
+TEST_RUNNER = 'django.test.runner.DiscoverRunner'
 
 # Hosts/domain names that are valid for this site; required if DEBUG is False
 # See https://docs.djangoproject.com/en/1.5/ref/settings/#allowed-hosts
@@ -166,8 +168,10 @@ PIAPI_STANDALONE = True
 PIAPI_STANDALONE_URI = 'http://127.0.0.1:5000'
 PIAPI_BASEURI = '/plugIt/'
 PIAPI_USERDATA = ['username', 'id', 'pk', 'first_name', 'last_name', 'email', 'ebuio_member', 'ebuio_admin', 'ebuio_orga_member', 'ebuio_orga_admin']
-PIAPI_ORGAMODE = False  # Don't active this with PIAPI_REALUSERS !
+PIAPI_ORGAMODE = True  # Don't active this with PIAPI_REALUSERS !
 PIAPI_REALUSERS = False  # Don't active this with PIAPI_ORGAMODE !
+PIAPI_PLUGITMENUACTION = 'menubar'
+PIAPI_PLUGITTEMPLATE = 'plugItBase-menu.html' # One out of 'plugItBase.html', 'plugItBase-menu.html'
 
 PIAPI_PROXYMODE = False
 
