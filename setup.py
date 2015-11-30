@@ -1,6 +1,9 @@
 from setuptools import setup
 # from distutils.core import setup
 
+
+
+
 setup(
     name = "plugit",
     packages = ["plugit"],
@@ -23,11 +26,5 @@ setup(
         "Topic :: Software Development :: Libraries :: Python Modules",
         "Topic :: Internet :: WWW/HTTP :: HTTP Servers",
         ],
-    long_description = """\
-PlugIt
--------------------------------------
-
-PlugIt is a framework enhancing the portability and integration of web services requiring a user interface.
-
-"""
+    long_description = open("README.md").read() + "\n\n"
 )
