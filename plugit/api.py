@@ -1,6 +1,20 @@
 """Tools to access the PlugIt API"""
 
 import requests
+import warnings
+
+
+def deprecated(func):
+    """This is a decorator which can be used to mark functions
+    as deprecated. It will result in a warning being emitted
+    when the function is used."""
+    def new_func(*args, **kwargs):
+        warnings.warn("Call to deprecated function {}.".format(func.__name__), category=DeprecationWarning)
+        return func(*args, **kwargs)
+    new_func.__name__ = func.__name__
+    new_func.__doc__ = func.__doc__
+    new_func.__dict__.update(func.__dict__)
+    return new_func
 
 
 class PlugItAPI(object):
@@ -15,7 +29,7 @@ class PlugItAPI(object):
         return getattr(requests, verb.lower())(self.url + uri, params=params, data=postParams, stream=True)
 
     def get_user(self, userPk):
-        """Return an user speficied with userPk"""
+        """Returns the user specified with the user's Pk or UUID"""
         r = self._request('user/' + userPk)
         if r:
             # Set base properties and copy data inside the user
@@ -24,6 +38,14 @@ class PlugItAPI(object):
             u.__dict__.update(r.json())
             return u
         return None
+
+    def get_subscription_labels(self, userPk):
+        """Returns a list with all the labels the user is subscribed to"""
+        r = self._request('subscriptions/' + userPk)
+        if r:
+            s = r.json()
+            return s
+        return []
 
     def get_orgas(self):
         """Return the list of pk for all orgas"""
@@ -45,7 +67,7 @@ class PlugItAPI(object):
 
     def get_orga(self, orgaPk):
         """Return an organization speficied with orgaPk"""
-        r = self._request('orga/' + orgaPk)
+        r = self._request('orga/' + str(orgaPk))
         if r:
             # Set base properties and copy data inside the orga
             o = Orga()
@@ -64,7 +86,6 @@ class PlugItAPI(object):
         retour = []
 
         for data in r.json()['members']:
-
             # Base properties
             u = User()
             u.__dict__.update(data)
@@ -89,6 +110,9 @@ class PlugItAPI(object):
 
         return self._request('mail/', postParams=params, verb='POST')
 
+    @deprecated
+    def ebuio_forum(self, subject, author, message, tags=''):
+        return self.forum_create_topic(subject, author, message, tags).json()
 
     def forum_create_topic(self, subject, author, message, tags=""):
         """Create a topic using EBUio features."""

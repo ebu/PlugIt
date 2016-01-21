@@ -26,8 +26,9 @@ class MetaView(View):
 
         for attribute in (u'only_logged_user', u'only_member_user', u'only_admin_user',
                           u'only_orga_member_user', u'only_orga_admin_user',  # User restrictions
-                          u'cache_time', u'cache_by_user',                    # Cache information
-                          u'user_info', u'json_only', 'no_template'):         # Requested user infos + JSON-only
+                          u'cache_time', u'cache_by_user',  # Cache information
+                          u'user_info', u'public', u'json_only', u'xml_only',
+                          u'no_template'):  # Requested user infos + JSON-only
             if hasattr(self.action, u'pi_api_' + attribute):
                 objResponse[attribute] = getattr(self.action, u'pi_api_' + attribute)
 

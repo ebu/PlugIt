@@ -76,10 +76,26 @@ def user_info(props):
     return real_decorator
 
 
+def public():
+    """Decorator to specify the action as public page."""
+    def real_decorator(function):
+        function.pi_api_public = True
+        return function
+    return real_decorator
+
+
 def json_only():
     """Decorator to specify the action return json that should be send directly to the browser."""
     def real_decorator(function):
         function.pi_api_json_only = True
+        return function
+    return real_decorator
+
+
+def xml_only():
+    """Decorator to specify the action return json that should be send directly to the browser."""
+    def real_decorator(function):
+        function.pi_api_xml_only = True
         return function
     return real_decorator
 
