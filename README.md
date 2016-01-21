@@ -141,8 +141,10 @@ It's possible to use various additional decorators to specify how the meta about
 * `@only_orga_member_user()`: Make action available only for members of the current orga
 * `@only_orga_admin_user()`: Make action available only for admins of the current orga
 * `@cache(time=0, byUser=None)`: Specify how and how long the action should be cached
+* `@address_in_networks(networks=['0.0.0.0/0',])` : Specify the networks in which the remote ip must be
 * `@user_info(props=[])`: Specify the list of properties requested about the user
-* `@json_only`: Specify the action return only json 
+* `@json_only`: Specify the action return only json
+* `@xml_only`: Specify the action return only xml (Response to have structure {'xml':'..'})
 * `@no_template`: Specify no master template should be used
 
 Again, the server.py file take care of responding to /meta/, /template/ and /action/ call. The function in actions.py will be called when needed. The request is passed as the first parameters to actions.
@@ -195,7 +197,10 @@ This call returns information about a specific action. The server must reply wit
 
 * template_tag : String. The current version of the template. This value must change if the template associated with the action change.
 * json_only : Boolean. Optional, default to False. If set to True, return the json directly to the browser, without using a template.
+* xml_only : Boolean. Optional, default to False. If set to True, return the xml directly to the browser, without using a template. (Requires {'xml':''} reply)
 * no_template : Boolean. Optional, default to False. If set to True, return the template directly to the browser, without using a master template.
+* public : Boolean, Optional, default to False. If set to True, the page is public even if the site runs in Orga Mode or other security
+* address_in_networks: Array of network in which the remote ip must be to allow access to the page
 * only_logged_user : Boolean. Optional, default to False. True if the user must be authenticated on EBUio to call the action.
 * only_member_user : Boolean. Optional, default to False.  True if the user must be in the project group on EBUio to call the action.
 * only_admin_user : Boolean. Optional, default to False.  True if the user must be an administrator of the project on EBUio to call the action.
