@@ -30,7 +30,7 @@ class PlugItAPI(object):
 
     def get_user(self, userPk):
         """Returns the user specified with the user's Pk or UUID"""
-        r = self._request('user/' + userPk)
+        r = self._request('user/' + str(userPk))
         if r:
             # Set base properties and copy data inside the user
             u = User()
