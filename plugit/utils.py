@@ -106,7 +106,7 @@ def json_only():
 
 
 def xml_only():
-    """Decorator to specify the action return json that should be send directly to the browser."""
+    """Decorator to specify the action return xml that should be send directly to the browser."""
     def real_decorator(function):
         function.pi_api_xml_only = True
         return function
