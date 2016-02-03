@@ -5,7 +5,7 @@ from django.template import RequestContext
 from django.template.loader_tags import BlockNode, ExtendsNode
 from django.core.context_processors import csrf
 from django.views.decorators.csrf import csrf_exempt
-from django.http import Http404, HttpResponse, HttpResponseForbidden, HttpResponseNotFound
+from django.http import Http404, HttpResponse, HttpResponseForbidden, HttpResponseNotFound, JsonResponse
 from django.utils.encoding import smart_str
 from django.conf import settings
 from django.contrib.admin.views.decorators import staff_member_required
@@ -29,6 +29,7 @@ from django.core.context_processors import csrf
 from django.core.cache import cache
 
 from django.contrib.auth.models import User as DUser, AnonymousUser
+from users.models import TechUser
 
 import json
 import hashlib
@@ -76,19 +77,22 @@ def generate_user(mode=None, pk=None):
     user = None
 
     if mode == 'log' or pk == "-1":
-        user = DUser(pk=-1, username='Logged', first_name='Logged', last_name='Hector', email='logeedin@plugit-standalone.ebuio')
+        user = DUser(pk=-1, username='Logged', first_name='Logged', last_name='Hector',
+                     email='logeedin@plugit-standalone.ebuio')
         user.gravatar = 'https://www.gravatar.com/avatar/ebuio1?d=retro'
         user.ebuio_member = False
         user.ebuio_admin = False
         user.subscription_labels = []
     elif mode == 'mem' or pk == "-2":
-        user = DUser(pk=-2, username='Member', first_name='Member', last_name='Luc', email='memeber@plugit-standalone.ebuio')
+        user = DUser(pk=-2, username='Member', first_name='Member', last_name='Luc',
+                     email='memeber@plugit-standalone.ebuio')
         user.gravatar = 'https://www.gravatar.com/avatar/ebuio2?d=retro'
         user.ebuio_member = True
         user.ebuio_admin = False
         user.subscription_labels = []
     elif mode == 'adm' or pk == "-3":
-        user = DUser(pk=-3, username='Admin', first_name='Admin', last_name='Charles', email='admin@plugit-standalone.ebuio')
+        user = DUser(pk=-3, username='Admin', first_name='Admin', last_name='Charles',
+                     email='admin@plugit-standalone.ebuio')
         user.gravatar = 'https://www.gravatar.com/avatar/ebuio3?d=retro'
         user.ebuio_member = True
         user.ebuio_admin = True
@@ -121,10 +125,10 @@ class SimpleUser():
 def gen404(request, baseURI, reason):
     """Return a 404 error"""
     return HttpResponseNotFound(
-        render_to_response('plugIt/404.html', {'context': {'reason': reason, 'ebuio_baseUrl': baseURI,
-                                                           'ebuio_userMode': request.session.get(
-                                                               'plugit-standalone-usermode', 'ano')}},
-                           context_instance=RequestContext(request)))
+            render_to_response('plugIt/404.html', {'context': {'reason': reason, 'ebuio_baseUrl': baseURI,
+                                                               'ebuio_userMode': request.session.get(
+                                                                       'plugit-standalone-usermode', 'ano')}},
+                               context_instance=RequestContext(request)))
 
 
 def gen403(request, baseURI, reason, project=None):
@@ -155,8 +159,8 @@ def gen403(request, baseURI, reason, project=None):
                                                                                    'public_ask': public_ask,
                                                                                    'ebuio_baseUrl': baseURI,
                                                                                    'ebuio_userMode': request.session.get(
-                                                                                       'plugit-standalone-usermode',
-                                                                                       'ano'),
+                                                                                           'plugit-standalone-usermode',
+                                                                                           'ano'),
                                                                                    'ebuio_project': project}},
                                                    context_instance=RequestContext(request)))
 
@@ -204,7 +208,7 @@ def get_cache_key(request, meta, orgaMode, currentOrga):
     return cacheKey
 
 
-def check_rights(request, meta):
+def check_rights_and_access(request, meta):
     """Check if the user can access the page"""
     # User must be logged ?
     if ('only_logged_user' in meta and meta['only_logged_user']):
@@ -230,6 +234,46 @@ def check_rights(request, meta):
     if ('only_orga_admin_user' in meta and meta['only_orga_admin_user']):
         if not request.user.ebuio_orga_admin:
             return gen403(request, baseURI, 'only_orga_admin_user')
+
+    # Remote IP must be in range ?
+    if ('address_in_networks' in meta):
+        if not is_requestaddress_in_networks(request, meta['address_in_networks']):
+            return gen403(request, baseURI, 'address_in_networks')
+
+
+def is_requestaddress_in_networks(request, networks):
+    """Helper method to check if the remote real ip of a request is in a network"""
+    from ipware.ip import get_real_ip, get_ip
+
+    # Get the real IP, i.e. no reverse proxy, no nginx
+    ip = get_real_ip(request)
+    if not ip:
+        ip = get_ip(request)
+        if not ip:
+            return False
+
+    # For all networks
+    for network in networks:
+        if is_address_in_network(ip, network):
+            return True
+
+    return False
+
+
+def is_address_in_network(ip, net):
+    """Is an address in a network"""
+    # http://stackoverflow.com/questions/819355/how-can-i-check-if-an-ip-is-in-a-network-in-python
+    import socket
+    import struct
+    ipaddr = struct.unpack('=L', socket.inet_aton(ip))[0]
+    netaddr, bits = net.split('/')
+    if int(bits) == 0:
+        return True
+    net = struct.unpack('=L', socket.inet_aton(netaddr))[0]
+
+    mask = ((2L << int(bits) - 1) - 1)
+
+    return (ipaddr & mask) == (net & mask)
 
 
 def find_in_cache(cacheKey):
@@ -315,7 +359,7 @@ def build_orga_parameters(request, orgaMode, currentOrga):
     files = {}
 
     # If orga mode, add the current orga pk
-    if orgaMode:
+    if orgaMode and currentOrga:
         if request.method == 'POST':
             postParameters['ebuio_orgapk'] = currentOrga.pk
         else:
@@ -396,9 +440,15 @@ def handle_special_cases(request, data, baseURI, meta):
         return response
 
     if meta.get('json_only', None):  # Just send the json back
-        result = json.dumps(data)
+        # Return application/json if requested
+        if 'HTTP_ACCEPT' in request.META and request.META['HTTP_ACCEPT'].find('json') != -1:
+            return JsonResponse(data)
 
+        result = json.dumps(data)
         return HttpResponse(result)
+
+    if meta.get('xml_only', None):  # Just send the xml back
+        return HttpResponse(data['xml'], content_type='application/xml')
 
 
 def build_final_response(request, meta, result, menu, hproject, proxyMode, context):
@@ -437,7 +487,6 @@ def build_final_response(request, meta, result, menu, hproject, proxyMode, conte
                                "plugit_menu": menu,
                                'context': context},
                               context_instance=RequestContext(request))
-    # return HttpResponse(result)
 
 
 def _get_node(template, context, name):
@@ -524,15 +573,16 @@ def build_context(request, data, hproject, orgaMode, currentOrga, availableOrga)
     if orgaMode:
         data['ebuio_orga'] = currentOrga
 
-        # List the available orgas
-        data['ebuio_orgas'] = []
-        for (orga, _) in availableOrga:
-            tmpOrga = SimpleOrga()
-            tmpOrga.pk = orga.pk
-            tmpOrga.name = orga.name
-            tmpOrga.ebu_codops = orga.ebu_codops
+        # If not standalone mode, list the available orgas
+        if not settings.PIAPI_STANDALONE:
+            data['ebuio_orgas'] = []
+            for (orga, _) in availableOrga:
+                tmpOrga = SimpleOrga()
+                tmpOrga.pk = orga.pk
+                tmpOrga.name = orga.name
+                tmpOrga.ebu_codops = orga.ebu_codops
 
-            data['ebuio_orgas'].append(tmpOrga)
+                data['ebuio_orgas'].append(tmpOrga)
 
     context = Context(data)
 
@@ -611,7 +661,10 @@ def get_current_session(request, hproPk):
 
 def main(request, query, hproPk=None, returnMenuOnly=False):
     """ Main method called for main page"""
-    if settings.PIAPI_STANDALONE:
+    if not settings.PIAPI_STANDALONE:
+        (plugIt, baseURI, hproject) = getPlugItObject(hproPk)
+        hproject.update_last_access(request.user)
+    else:
         global plugIt, baseURI
 
         # Check if settings are ok
@@ -620,9 +673,6 @@ def main(request, query, hproPk=None, returnMenuOnly=False):
                           "Configuration error. PIAPI_ORGAMODE and PIAPI_REALUSERS both set to True !")
 
         hproject = None
-    else:
-        (plugIt, baseURI, hproject) = getPlugItObject(hproPk)
-        hproject.update_last_access(request.user)
 
     # Check for SSL Requirements and redirect to ssl if necessary
     if hproject and hproject.plugItRequiresSsl:
@@ -654,6 +704,7 @@ def main(request, query, hproPk=None, returnMenuOnly=False):
             request.user.ebuio_admin = request.user.is_superuser
             request.user.subscription_labels = _get_subscription_labels(request.user, hproject)
 
+        orgaMode = False
         proxyMode = settings.PIAPI_PROXYMODE
         plugItMenuAction = settings.PIAPI_PLUGITMENUACTION
 
@@ -668,23 +719,34 @@ def main(request, query, hproPk=None, returnMenuOnly=False):
         proxyMode = hproject.plugItProxyMode
         plugItMenuAction = hproject.plugItMenuAction
 
-        if orgaMode:
-            # List available orgas
-            if request.user.is_authenticated():
-                # If orga limited only output the necessary orgas to which the user has access
-                if hproject and hproject.plugItLimitOrgaJoinable:
-                    # Get List of Plugit Available Orgas first
-                    projectOrgaIds = hproject.plugItOrgaJoinable.order_by('name').values_list('pk', flat=True)
-                    for (orga, isAdmin) in request.user.getOrgas(distinct=True):
-                        if orga.pk in projectOrgaIds:
-                            availableOrga.append((orga, isAdmin))
+    # Get meta, if not in proxy mode
+    if not proxyMode:
+        meta = plugIt.getMeta(query)
 
-                else:
-                    availableOrga = request.user.getOrgas(distinct=True)
+        if not meta:
+            return gen404(request, baseURI, 'meta')
+    else:
+        meta = {}
 
-            if not availableOrga:
+    if orgaMode:
+        # List available orgas
+        if request.user.is_authenticated():
+            # If orga limited only output the necessary orgas to which the user has access
+            if hproject and hproject.plugItLimitOrgaJoinable:
+                # Get List of Plugit Available Orgas first
+                projectOrgaIds = hproject.plugItOrgaJoinable.order_by('name').values_list('pk', flat=True)
+                for (orga, isAdmin) in request.user.getOrgas(distinct=True):
+                    if orga.pk in projectOrgaIds:
+                        availableOrga.append((orga, isAdmin))
+
+            else:
+                availableOrga = request.user.getOrgas(distinct=True)
+
+        if not availableOrga:
+            # TODO HERE TO CHANGE PUBLIC
+            if not meta.get('public', None):  # Page is not public, raise 403
                 return gen403(request, baseURI, 'no_orga_in_orgamode', hproject)
-
+        else:
             # Build the current orga
             realCurrentOrga = get_current_orga(request, hproject, availableOrga)
 
@@ -698,19 +760,10 @@ def main(request, query, hproPk=None, returnMenuOnly=False):
             request.user.ebuio_orga_member = realCurrentOrga.isMember(request.user)
             request.user.ebuio_orga_admin = realCurrentOrga.isOwner(request.user)
 
-    # Get meta, if not in proxy mode
-    if not proxyMode:
-        meta = plugIt.getMeta(query)
-
-        if not meta:
-            return gen404(request, baseURI, 'meta')
-    else:
-        meta = {}
-
     cacheKey = get_cache_key(request, meta, orgaMode, currentOrga)
 
     # Check access rights
-    error = check_rights(request, meta)
+    error = check_rights_and_access(request, meta)
 
     if error:
         return error
@@ -1042,7 +1095,7 @@ def api_get_project_members(request, key=None, hproPk=True):
     return HttpResponse(json.dumps({'members': liste}), content_type="application/json")
 
 
-def generic_send_mail(sender, dests, subject, message, key, html_message=False, origin=''):
+def generic_send_mail(sender, dests, subject, message, key, origin='', html_message=False):
     """Generic mail sending function"""
 
     # If no EBUIO Mail settings have been set, then no e-mail shall be sent
@@ -1075,7 +1128,7 @@ def generic_send_mail(sender, dests, subject, message, key, html_message=False, 
             pass
     else:
         logger.debug(
-            "E-Mail notification not sent, since no EBUIO_MAIL_SECRET_KEY and EBUIO_MAIL_SECRET_HASH set in settingsLocal.py.")
+                "E-Mail notification not sent, since no EBUIO_MAIL_SECRET_KEY and EBUIO_MAIL_SECRET_HASH set in settingsLocal.py.")
 
 
 @csrf_exempt
@@ -1096,7 +1149,7 @@ def api_send_mail(request, key=None, hproPk=None):
     else:
         key = None
 
-    generic_send_mail(sender, dests, subject, message, key, html_message, 'PlugIt API (%s)' % (hproPk or 'StandAlone',))
+    generic_send_mail(sender, dests, subject, message, key, 'PlugIt API (%s)' % (hproPk or 'StandAlone',), html_message)
 
     return HttpResponse(json.dumps({}), content_type="application/json")
 
@@ -1110,7 +1163,7 @@ def api_orgas(request, key=None, hproPk=None):
     list_orgas = []
 
     if settings.PIAPI_STANDALONE:
-        list_orgas = [{'id': -1, 'name': 'EBU', 'codops': 'EBU'},
+        list_orgas = [{'id': -1, 'name': 'EBU', 'codops': 'ZZEBU'},
                       {'id': -2, 'name': 'RTS', 'codops': 'CHRTS'},
                       {'id': -3, 'name': 'BBC', 'codops': 'GBEBU'},
                       {'id': -4, 'name': 'CNN', 'codops': 'USCNN'}]
@@ -1208,17 +1261,16 @@ def api_ebuio_forum_get_topics_by_tag_for_user(request, key=None, hproPk=None, t
 
     # We get the user and we check his rights
     author_pk = request.GET.get('u')
-    if not author_pk:
-        user = generate_user(mode='ano')
-        if user is None:
-            raise Http404
-    else:
+    if author_pk.isdigit():
         try:
             from users.models import TechUser
-
             user = TechUser.objects.get(pk=author_pk)
         except TechUser.DoesNotExist:
             error = 'user-no-found'
+            user = generate_user(mode='ano')
+    else:
+        user = generate_user(mode='ano')
+
     if not hproject.discuss_can_display_posts(user):
         raise Http404
 
@@ -1229,7 +1281,6 @@ def api_ebuio_forum_get_topics_by_tag_for_user(request, key=None, hproPk=None, t
     # We get the posts (only topics ones-the parent) related to the project and to the tag.
     # We dont' take the deleted ones.
     from discuss.models import Post, PostTag
-
     posts = Post.objects.filter(is_deleted=False).filter(object_id=hproPk).filter(tags__tag=tag).order_by('-when')
 
     # We convert the posts list to json

@@ -46,7 +46,7 @@ class PlugIt():
             headers['X-Plugitsession-' + key] = value
             if 'Cookie' not in headers:
                 headers['Cookie'] = ''
-            headers['Cookie'] += key + '=' + value + '; '
+            headers['Cookie'] += key + '=' + str(value) + '; '
 
         if method == 'POST':
             if not files:

@@ -1,31 +1,26 @@
 # -*- coding: utf-8 -*-
 
 from django.conf.urls import patterns, url
+from django.conf import settings
 
-urlpatterns = patterns(
-    '',
+urlpatterns = patterns('plugIt.views',)
 
-    url(r'^ebuio_logout$', 'django.contrib.auth.views.logout', {'next_page': '/'}),
-    url(r'^ebuio_login$', 'django.contrib.auth.views.login'),
+if settings.PIAPI_STANDALONE:
+    # If in standalone mode add the default routes for media and EBU.io user mgmt
+    urlpatterns += patterns('plugIt.views',
+        # Media patterns
+        url(r'^media/(?P<path>.*)$', 'media'),
 
-)
+        # EBU.io Specific Patterns
+        url(r'^ebuio_logout$', 'django.contrib.auth.views.logout', {'next_page': '/'}),
+        url(r'^ebuio_login$', 'django.contrib.auth.views.login'),
+        url(r'^ebuio_setUser$', 'setUser'),
+        url(r'^ebuio_setOrga$', 'setOrga'),
+   )
 
-urlpatterns += patterns(
-    'plugIt.views',
+urlpatterns += patterns('plugIt.views',
 
-    # Regular patterns
-    url(r'^media/(?P<path>.*)$', 'media'),
-    url(r'^ebuio_setUser$', 'setUser'),
-    url(r'^ebuio_setOrga$', 'setOrga'),
-
-    # url(r'^ebuio_api/$', 'api_home'),
-    # url(r'^ebuio_api/user/(?P<userPk>[\-0-9]*)$', 'api_user'),
-    # url(r'^ebuio_api/orgas/$', 'api_orgas'),
-    # url(r'^ebuio_api/orga/(?P<orgaPk>[\-0-9]*)$', 'api_orga'),
-    # url(r'^ebuio_api/members/$', 'api_get_project_members'),
-    # url(r'^ebuio_api/mail/$', 'api_send_mail'),
-
-    # Additional patterns with key and hProject-Pk
+    # Default PlugIt Patterns
     url(r'^(?P<key>[0-9a-zA-Z]*)/(?P<hproPk>-?[0-9]*)/$', 'api_home'),
     url(r'^(?P<key>[0-9a-zA-Z]*)/(?P<hproPk>-?[0-9]*)/user/(?P<userPk>-?[0-9]*)$', 'api_user'),
     url(r'^(?P<key>[0-9a-zA-Z]*)/(?P<hproPk>-?[0-9]*)/user/(?P<userUuid>[0-9a-z\-]*)$', 'api_user_uuid'),
@@ -42,11 +37,22 @@ urlpatterns += patterns(
     url(r'^(?P<hproPk>[0-9a-zA-Z_\-]*)/media/(?P<path>.*)$', 'media'),
     url(r'^(?P<hproPk>[0-9a-zA-Z_\-]*)/_ebuio_setOrga$', 'setOrga'),
 
-    # url(r'^(?P<hproPk>[0-9a-zA-Z_\-]*)/(?P<query>.*)$', 'main'),
-    # url(r'^(?P<hproPk>[0-9a-zA-Z_\-]*)$', 'home'),
-    # url(r'^(?P<key>[0-9a-zA-Z]*)$', 'home'),
-
-    # Final Route
-    url(r'^(?P<query>.*)$', 'main'),
-
 )
+
+if settings.PIAPI_STANDALONE:
+    # If in standalone mode add the final main rule
+    urlpatterns += patterns('plugIt.views',
+        # Final Route for Standalone
+        url(r'^(?P<query>.*)$', 'main'),
+    )
+else:
+    # If not add main for the project and home
+    urlpatterns += patterns('plugIt.views',
+
+        # Main Pattern
+        url(r'^(?P<hproPk>[0-9a-zA-Z_\-]*)/(?P<query>.*)$', 'main'),
+
+        # Home Patterns
+        url(r'^(?P<hproPk>[0-9a-zA-Z_\-]*)$', 'home'),
+        url(r'^(?P<key>[0-9a-zA-Z]*)$', 'home'),
+    )
