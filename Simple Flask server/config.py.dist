@@ -8,3 +8,5 @@ DEBUG = True
 PI_BASE_URL = '/'
 
 PI_ALLOWED_NETWORKS = ['127.0.0.1/32']
+
+PI_API_NAME = 'plugit-sample'

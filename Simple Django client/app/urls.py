@@ -17,4 +17,7 @@ urlpatterns = patterns('',
     url(r'^plugIt/', include('plugIt.urls')),
 
     (r'^' + settings.MEDIA_URL[1:] + '(?P<path>.*)$', 'django.views.static.serve', {'document_root': settings.MEDIA_ROOT}),  # Never use this in prod !
+
+    # Default to PlugIt
+    url(r'', include('plugIt.urls')), # plugit
 )

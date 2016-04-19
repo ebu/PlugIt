@@ -79,6 +79,51 @@ The user can change the organization based on his list of organizations. It's po
 
 only_*_user are for the current project, only_orga_*_user for the current organization.
 
+### Providing a Application menu on the left hand side
+
+The PlugIt API allows your application to provide a left hand side menu. In order to use it, you will need to define or 
+change a few settings:
+
+    PIAPI_PLUGITMENUACTION = 'menubar'
+    PIAPI_PLUGITTEMPLATE = 'plugItBase-menu.html'
+    
+*`PIAPI_PLUGITMENUACTION` : the block name in which your application returns the menu and the action name to call to get
+only the menu back from your application
+*'PIAPI_PLUGITTEMPLATE' : the PlugIt Proxy comes with a predefined template which displays a menu. Change this setting
+to `plugItBase-menu.html`.
+
+#### Tags and structure of the menu and page
+
+Your menu should look something like the following code to pick up the predefined CSS styles. Of course you can define
+you own.
+
+    <div class="menu-section">
+        <h3>Menu Section</h3>
+        <ul>
+            <li><a href="/plugIt/url1/">My Option 1</a></li>
+            <li><a href="/plugIt/url2/">My Option 2</a></li>
+            <li><a href="/plugIt/url3/">My Option 3 Provider</a></li>
+        </ul>
+    </div>
+    <div class="menu-section">
+            <h3>Another Section</h3>
+    ...
+
+If additionally you need a row on top of the pages to contain title and page functions, use the following structure:
+
+    <div class="menubar">
+        <div class="page-title">
+            Page Title :: Sub Page
+            <small class="hidden-xs"> </small>
+        </div>
+        <div id="page-functions" class="pull-right">
+            <button type="button" class="btn btn-default" >
+                Button Function
+            </button>
+            <a href="/plugIt/linktootherpage" class="btn btn-primary">Add a new station</a>
+        </div>
+    </div>
+
 ### actions.py
 The user can implement his actions in the actions.py file. Each action is a defined like this
 
@@ -96,8 +141,10 @@ It's possible to use various additional decorators to specify how the meta about
 * `@only_orga_member_user()`: Make action available only for members of the current orga
 * `@only_orga_admin_user()`: Make action available only for admins of the current orga
 * `@cache(time=0, byUser=None)`: Specify how and how long the action should be cached
+* `@address_in_networks(networks=['0.0.0.0/0',])` : Specify the networks in which the remote ip must be
 * `@user_info(props=[])`: Specify the list of properties requested about the user
-* `@json_only`: Specify the action return only json 
+* `@json_only`: Specify the action return only json
+* `@xml_only`: Specify the action return only xml (Response to have structure {'xml':'..'})
 * `@no_template`: Specify no master template should be used
 
 Again, the server.py file take care of responding to /meta/, /template/ and /action/ call. The function in actions.py will be called when needed. The request is passed as the first parameters to actions.
@@ -150,7 +197,10 @@ This call returns information about a specific action. The server must reply wit
 
 * template_tag : String. The current version of the template. This value must change if the template associated with the action change.
 * json_only : Boolean. Optional, default to False. If set to True, return the json directly to the browser, without using a template.
+* xml_only : Boolean. Optional, default to False. If set to True, return the xml directly to the browser, without using a template. (Requires {'xml':''} reply)
 * no_template : Boolean. Optional, default to False. If set to True, return the template directly to the browser, without using a master template.
+* public : Boolean, Optional, default to False. If set to True, the page is public even if the site runs in Orga Mode or other security
+* address_in_networks: Array of network in which the remote ip must be to allow access to the page
 * only_logged_user : Boolean. Optional, default to False. True if the user must be authenticated on EBUio to call the action.
 * only_member_user : Boolean. Optional, default to False.  True if the user must be in the project group on EBUio to call the action.
 * only_admin_user : Boolean. Optional, default to False.  True if the user must be an administrator of the project on EBUio to call the action.

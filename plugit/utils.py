@@ -60,10 +60,23 @@ def only_orga_admin_user():
 
 
 def cache(time=0, byUser=None):
-    """Decorator to specify the number of seconds the result should be cached, and if cache can be shared between users"""
+    """Decorator to specify the number of seconds the result should be cached, and if cache can be shared between users
+    :param time:   Cache timeout in seconds
+    :param byUser: False by default, if true, cache is shared among users
+    """
     def real_decorator(function):
         function.pi_api_cache_time = time
         function.pi_api_cache_by_user = byUser
+        return function
+    return real_decorator
+
+
+def address_in_networks(networks):
+    """Decorator to specify networks an Remote IP must be in to be allowed access to the page
+    :param networks: List of networks in which the IP must be to allow request
+    """
+    def real_decorator(function):
+        function.pi_api_address_in_networks = networks
         return function
     return real_decorator
 
@@ -76,10 +89,26 @@ def user_info(props):
     return real_decorator
 
 
+def public():
+    """Decorator to specify the action as public page."""
+    def real_decorator(function):
+        function.pi_api_public = True
+        return function
+    return real_decorator
+
+
 def json_only():
     """Decorator to specify the action return json that should be send directly to the browser."""
     def real_decorator(function):
         function.pi_api_json_only = True
+        return function
+    return real_decorator
+
+
+def xml_only():
+    """Decorator to specify the action return xml that should be send directly to the browser."""
+    def real_decorator(function):
+        function.pi_api_xml_only = True
         return function
     return real_decorator
 
