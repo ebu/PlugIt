@@ -50,3 +50,5 @@ dist
 *.iml
 
 MANIFEST
+
+examples/simple_server/poll.db

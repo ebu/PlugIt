@@ -2,102 +2,101 @@
 
 {% block title %}Details :: SimplePools{% endblock %}
 
-{% block content %} 
-	<style>
-			/**
-		 * Progress bars with centered text
-		 */
-		.progress {
-		    position: relative;
-		}
+{% block content %}
+    <style>
+        /**
+ * Progress bars with centered text
+ */
+        .progress {
+            position: relative;
+        }
 
-		.bar {
-		    z-index: 1;
-		    position: absolute;
-		}
+        .bar {
+            z-index: 1;
+            position: absolute;
+        }
 
-		.progress span {
-		    position: absolute;
-		    top: 0;
-		    z-index: 2;
-		    color: black;
-		    text-align: center;
-		    width: 100%;
-		}
+        .progress span {
+            position: absolute;
+            top: 0;
+            z-index: 2;
+            color: black;
+            text-align: center;
+            width: 100%;
+        }
 
-		/* Remove table lines */
-		.table-no-border td {
-			border-top: none !important;
+        /* Remove table lines */
+        .table-no-border td {
+            border-top: none !important;
 
-		}
-	</style>
-
-
-	<h2>SimplePolls: {{name}}</h2>
-
-	<p class="well well-small">
-		This page show the details of the poll {{name}}.
-	</p>
-
-	{% if description %}
-		{{description}}
-	{% endif %}
-
-	<h3>Results</h3>
-
-	<table class="table table-condensed table-no-border" style="text-align: center;">
+        }
+    </style>
 
 
-		{% for resp in responses %}
+    <h2>SimplePolls: {{ name }}</h2>
 
-			<tr>
-				<td style="width: 75%;">
-				    <div class="progress">
-			    		<div class="bar" style="width: {% widthratio resp.nbVotes totalVotes 100 %}%;"></div>
-			    		<span>{{resp.title}}</span>
-			    	</div>
-			    </td>
+    <p class="well well-small">
+        This page show the details of the poll {{ name }}.
+    </p>
 
-				<td>
-					{{resp.nbVotes}}/{{totalVotes}}
-				</td>
+    {% if description %}
+        {{ description }}
+    {% endif %}
 
-		    	{% if ebuio_u.is_authenticated %}
-		    		<td>
-		    			<button class="btn btn-small {% if votedFor == resp.id %}btn-info{% endif %}" onclick="window.location = '{{ebuio_baseUrl}}vote/{{id}}/{{resp.id}}';">Vote!</button>
-		    		</td>
-		    	{% endif %}
+    <h3>Results</h3>
 
-		    </tr>
+    <table class="table table-condensed table-no-border" style="text-align: center;">
 
-		{% endfor %}
+        {% for resp in responses %}
+            <tr>
+                <td style="width: 75%;">
+                    <div class="progress">
+                        <div class="bar" style="width: {% widthratio resp.nbVotes totalVotes 100 %}%;"></div>
+                        <span>{{ resp.title }}</span>
+                    </div>
+                </td>
 
-	</table>
-		
+                <td>
+                    {{ resp.nbVotes }}/{{ totalVotes }}
+                </td>
 
-	{% if ebuio_u.ebuio_admin %}
-		{# if the user is an admin, show votes #}
-		<h3>Votes</h3>
-		<table class="table table-striped table-bordered table-condensed">
-			<thead>
-				<tr>
-					<th>Response</th>
-					<th>User</th>
-				</tr>
+                {% if ebuio_u.username %}
+                    <td>
+                        <button class="btn btn-small {% if votedFor == resp.id %}btn-info{% endif %}"
+                                onclick="window.location = '{{ ebuio_baseUrl }}vote/{{ id }}/{{ resp.id }}';">Vote!
+                        </button>
+                    </td>
+                {% endif %}
 
-				{% for resp in responses %}
-					{% for vote in resp.votes %}
-						<tr>
-							<td><b>{% if forloop.first %}{{resp.title}}{% endif %}</b></td>
-							<td>{{vote}}</td>
-						</tr>
-					{% endfor %}
-				{% endfor %}
-		</table>
+            </tr>
+        {% endfor %}
 
-	{% endif %}
+    </table>
 
-	<a class="btn btn-default" style="float: right;" href="{{ebuio_baseUrl}}">Return to the list</a>
+
+    {% if ebuio_u.ebuio_admin %}
+        {# if the user is an admin, show votes #}
+        <h3>Votes</h3>
+        <table class="table table-striped table-bordered table-condensed">
+            <thead>
+            <tr>
+                <th>Response</th>
+                <th>User</th>
+            </tr>
+
+            {% for resp in responses %}
+                {% for vote in resp.votes %}
+                    <tr>
+                        <td><b>{% if forloop.first %}{{ resp.title }}{% endif %}</b></td>
+                        <td>{{ vote }}</td>
+                    </tr>
+                {% endfor %}
+            {% endfor %}
+        </table>
+
+    {% endif %}
+
+    <a class="btn btn-default" style="float: right;" href="{{ ebuio_baseUrl }}">Return to the list</a>
 
 {% endblock %}
 
