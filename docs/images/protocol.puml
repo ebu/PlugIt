@@ -1,0 +1,80 @@
+@startuml
+
+skinparam monochrome true
+
+participant User_Agent as UA
+
+participant PlugIt_Proxy as P
+participant PlugIt_Service_1 as S1
+database DB_1 as DB1
+database DB_Proxy as DBP
+
+UA --> P: GET /service1/home
+P --> S1: GET /[key]/meta/home
+P <-- S1: 200 Ok (application/json)
+
+note left
+
+**Cache returned data**
+
+{
+  'cache_time': 42,
+  'cache_by_user': True,
+  'template_tag': '5d55b01dbfc859385cbc9fd2f5d99e2a',
+  'user_info': [
+    'username',
+    'email',
+    'last_name'
+  ],
+  'only_logged_user': True
+}
+
+end note
+
+P --> S1: GET /[key]/template/home
+P <-- S1: 200 Ok (text/plain)
+
+note left
+**Cache the jinja template**
+
+{% extends "plugIt/base.html" %}
+ 
+ {% block title %}Home :: SimplePoll{% endblock %}
+
+ {% block content %}
+ 	<h2>SimplePoll</h2>
+
+ 	<p class="well well-small">
+// ...
+end note
+
+P <--> DBP: RETRIEVE user_info specified by the /meta call
+P --> S1: GET /[key]/action/home
+S1 <--> DB1: Service-specific query
+
+P <-- S1: 200 Ok (application/json)
+
+note left
+**1. Get the data of the page**
+ {
+   "description": "1",
+   "id": 2,
+   "name": "t",
+  "responses": [
+    {
+      "id": 5,
+      "nbVotes": 0,
+      "title": "asdasdf",
+      "votes": []
+    }
+  ],
+  "totalVotes": 3,
+  "votedFor": 0
+}
+**2. Render the template with the data**
+end note
+
+
+UA <-- P: 200 Ok (html)
+
+@enduml

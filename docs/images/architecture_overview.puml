@@ -1,0 +1,32 @@
+@startuml
+title PlugIt Framework \nArchitecture Overview \n
+
+skinparam monochrome true
+
+cloud Internet as I
+
+frame "Internal Network" as S {
+
+node "PlugIt Proxy" as P
+node "PlugIt Service 1" as S1
+node "PlugIt Service 2" as S2
+node "PlugIt Service 3" as S3
+
+database DB_Proxy as DBP
+database "DB 1" as DB1
+database "DB 2" as DB2
+database "DB 3" as DB3
+
+I -down-> P
+P -right- DBP
+P <..down-> S1
+P <..down-> S2
+P <..down-> S3
+S1 -down- DB1
+S2 -down- DB2
+S3 -down- DB3
+
+legend right
+  -- PlugIt Protocol
+endlegend
+@enduml
