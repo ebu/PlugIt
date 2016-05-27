@@ -1,13 +1,14 @@
-HowTo
+How to create a New PlugIt Service
 =====
 
-The point of this document is to explain how to create a basic PlugIt project, with submodules, a database and deployments scripts.
+This page explains how to create a basic PlugIt project, with submodules, a database and deployments scripts.
 
 # Basic setup
 
 ## Copy files from base project
 
-First, copy files from `Simple Flask server` folder. This ensure you have latest version of different files. Remove everything in `actions.py` and all files in `media/` and `templates` folder.
+First, copy files from `examples/simple_service` folder. This ensure you have the latest version of different files. 
+Remove everything in `actions.py` and all files in `media/` and `templates` folder.
 
 ## Create a config.py
 
@@ -21,21 +22,30 @@ Add the following settings in your `config.py` and `config.py.dist`:
     PI_BASE_URL = '/'
     PI_ALLOWED_NETWORKS = ['127.0.0.1/32']
 
-Set `API_URL` to your PlugIT client API. If you're using the _Simple Django client_ you can use `http://127.0.0.1:8000/plugIt/ebuio_api/`.
+Set `API_URL` to your PlugIt Proxy API. If you're using the _standalone_proxy_ you can use `http://127.0.0.1:5000/plugIt/`.
 
-## Python modules
+## Multiple actions modules
 
-If your project has multiple parts, it's better to have different modules for code organization. If your application is simple, just implement your actions in `actions.py`. Otherwise, create different folders/python modules (e.g.: `mkdir users && touch users/__init__.py`) and just import them into `actions.py` (e.g.: `from users.actions import *`). You can then create an `actions.py` file in each directory and implement your actions as usual.
+If your project has multiple parts, it's better to have different modules for code organization. 
+If your application is simple, just implement your actions in `actions.py`. 
+Otherwise, create different folders/python modules (e.g.: `mkdir users && touch users/__init__.py`) and just import them into `actions.py` 
+(e.g.: `from users.actions import *`). You can then create an `actions.py` file in each directory and implement your actions as usual.
 
 # Database
 
 The database will be handled by [SQLAlchemy](http://www.sqlalchemy.org/). You can read the documentation for details on the website.
 
-We're going to use [Alembic](https://pypi.python.org/pypi/alembic) to manage different versions of the database. Each time you modify the model, a file with be generated with commands to upgrade the database, allowing easy update of them for everyone working on your projects (including the production server ;)).
+We're going to use [Alembic](https://pypi.python.org/pypi/alembic) to manage different versions of the database. Each time you modify the model, a file with be generated with commands to upgrade the database, allowing easy update of them for everyone working on your projects (including the production server).
 
-You need to setup your database: decide the type of the database (mysql, sqlite, etc.), create it and if needed, create a user. Then, setup the `SQLALCHEMY_URL` option in your `config.py` file with all information needed. Example: `mysql://myuser:mypassword@localhost/mydatabase` or `sqlite:///database.sq3`.
+You need to setup your database: decide the type of the database (mysql, sqlite, etc.), create it and if needed, create a user. 
+Then, setup the `SQLALCHEMY_URL` option in your `config.py` file with all information needed. 
+Example: `mysql://myuser:mypassword@localhost/mydatabase` or `sqlite:///database.sq3`.
 
-Then, edit the `plugIt/__init__.py` and uncomment the 3 lines to load the database using the flask object. Edit `utils.py` and do the same (3 lines)
+<!-- 
+TODO: Update to describe the correct behaviour considering the new pip package
+-->
+Then, edit the `plugit/__init__.py` and uncomment the 3 lines to load the database using the flask object. Edit `utils.py` and do the same (3 lines)
+
 
 ## models.py
 
@@ -51,6 +61,9 @@ And create your models after. Example:
 
 ### json property
 
+<!--
+TODO: Find a more elegant solution
+-->
 As data returned by PlugIt actions have to be json, it's useful to add a property to convert your entries directly to json. Add this function at the beginning your `models.py` file:
 
     def to_json(inst, cls, bonusProps=[]):
@@ -85,7 +98,7 @@ and add the property to your models:
         def json(self):
             return to_json(self, self.__class__, [])
 
-All model's fields will be used. If you want to add more information (e.g. custom properties), you can add them to the list (3th parameter) of the `to_json` function.
+All model's fields will be used. If you want to add more information (e.g. custom properties), you can add them to the list (3rd parameter) of the `to_json` function.
 
 ## Alembic 
 
@@ -132,6 +145,7 @@ When alembic is setup you can:
 * Upgrade the database to the latest version:
 `alembic upgrade head`
 
+
 ## Do queries !
 
 You should now be able to use your models to store information in the database. Check the documentation for detailed usage of sqlalchemy, but important queries are:
@@ -143,9 +157,8 @@ You should now be able to use your models to store information in the database. 
 
 Assuming you imported the Table model and created the db object like this: `from models import db, Table`
 
-# Deployment script
 
-You can use deployment script of others projects as a base, e.g. [ebuio-qc](https://github.com/ebu/ebuio-qc/tree/develop/Deployement).
+# Deployment script
 
 You will need to:
 
@@ -189,4 +202,4 @@ Example: apache configuration you may use:
 
     </VirtualHost>
 
-In the `config.py` file you use on your server, don't forget to set `DEBUG  = False`.
+In the `config.py` file you used by the Service, don't forget to set `DEBUG  = False`.

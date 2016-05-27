@@ -1,0 +1,30 @@
+version: '2'
+services:
+
+  simple_service:
+    build: simple_service
+    command: python server.py
+    environment:
+      #- PLUGIT_API_URL=
+      #- PLUGIT_DATABASE=sqlite://test.sqlite
+      - PLUGIT_ALLOWED_NETWORKS=0.0.0.0/0 #comma separated without space
+      - PLUGIT_BASE_URL=/
+      - PLUGIT_DEBUG=1
+    volumes:
+      - ./simple_service/:/code
+    ports:
+      - "5000:5000"
+
+  standalone_proxy:
+    build: standalone_proxy
+    command: python manage.py runserver 0.0.0.0:4000
+    links:
+      - simple_service
+    environment:
+      - TEST=1
+      - PLUGIT_SERVER=http://simple_service:5000
+      - PLUGIT_SERVER_BASEURI=/
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./standalone_proxy/:/code

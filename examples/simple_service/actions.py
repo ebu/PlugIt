@@ -168,6 +168,7 @@ def test(request):
 @action(route="/test_json")
 @json_only()
 def test_json(request):
+
     return {"hello": "Test", "data": request.args.get('data', '')}
 
 
