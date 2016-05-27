@@ -14,21 +14,21 @@ def test(request):
 
 It's possible to use various additional decorators to specify how the meta about the action is generated:
 
-* `@only_logged_user()`: Make action available only for logged users
-* `@only_member_user()`: Make action available only for members users
-* `@only_admin_user()`: Make action available only for admins users
-* `@only_orga_member_user()`: Make action available only for members of the current orga
-* `@only_orga_admin_user()`: Make action available only for admins of the current orga
-* `@cache(time=0, byUser=None)`: Specify how and how long the action should be cached
-* `@address_in_networks(networks=['0.0.0.0/0',])` : Specify the networks in which the remote ip must be
-* `@user_info(props=[])`: Specify the list of properties requested about the user
-* `@json_only`: Specify the action return only json
-* `@xml_only`: Specify the action return only xml (Response to have structure {'xml':'..'})
-* `@no_template`: Specify no master template should be used
+* `@only_logged_user()`: Makes action available only for logged users
+* `@only_member_user()`: Makes action available only for members users
+* `@only_admin_user()`: Makes action available only for admins users
+* `@only_orga_member_user()`: Makes action available only for members of the current orga
+* `@only_orga_admin_user()`: Makes action available only for admins of the current orga
+* `@cache(time=0, byUser=None)`: Specifies how and how long the action should be cached
+* `@address_in_networks(networks=['0.0.0.0/0',])` : Specifies the networks in which the remote ip must be
+* `@user_info(props=[])`: Specifies the list of properties requested about the user
+* `@json_only`: Specifies the action return only json
+* `@xml_only`: Specifies the action return only xml (Response to have structure {'xml':'..'})
+* `@no_template`: Specifies no master template should be used
 
-Again, the server.py file take care of responding to /meta/, /template/ and /action/ call. The function in actions.py will be called when needed. The request is passed as the first parameters to actions.
+Again, the server.py file takes care of responding to /meta/, /template/ and /action/ call. The function in actions.py will be called when needed. The request is passed as the first parameters to actions.
 
-To redirect the user, you can use the object PlugItRedirect in utils: `return PlugItRedirect("/action")` or `return PlugItRedirect("http://google.ch", no_prefix=True)
+To redirect the user, you can use the object PlugItRedirect in utils: `return PlugItRedirect("/action")` or `return PlugItRedirect("http://google.ch", no_prefix=True)`
 
 ### media/
 The media folder contains all media files

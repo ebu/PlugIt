@@ -12,8 +12,8 @@ We use this framework at EBU to access services on the EBU.io platform.
 ## Introduction: Develop once, deploy many.
  
 PlugIt is a framework which allows to combine multiple micro-services through a single experience and user interface while maintaining data and process isolation. 
-It allows developer to design generic services and simply include common services such as User Management, Billing, Email notifications.
-Services can easily be integrated in multiple environment. Using Bootstrap as basis for CSS styling, we can provide a unified User Experience across services. 
+It allows developers to design generic services and simply include common services such as User Management, Billing, Email notifications.
+Services can easily be integrated in multiple environments. Using Bootstrap as basis for CSS styling, we can provide a unified User Experience across services. 
 Global layout updates and core functionality can easily be updated across services.
 In terms of availability, a broken service will not impact the others. 
 Finally, it is possible to roll-out development environment and do shadow deployment per user.
@@ -30,7 +30,7 @@ Finally, it is possible to roll-out development environment and do shadow deploy
 
 ## Architecture overview
 
-The framework is composed of two kind of elements:
+The framework is composed of two kinds of element:
 
 1. **Services** Isolated and portable services providing generic features to the system.
 
@@ -76,7 +76,7 @@ The previous commands should have started two containers:
     $ docker ps
     CONTAINER ID        IMAGE                       COMMAND                  CREATED             STATUS              PORTS                    NAMES
     ??                  examples_standalone_proxy   "python manage.py run"   X minutes ago       Up X minutes        0.0.0.0:4000->4000/tcp   examples_standalone_proxy_1
-    ??                  examples_simple_server      "python server.py"       X minutes ago       Up X minutes        0.0.0.0:5000->5000/tcp   examples_simple_server_1
+    ??                  examples_simple_service     "python server.py"       X minutes ago       Up X minutes        0.0.0.0:5000->5000/tcp   examples_simple_service_1
 
 
 #### PlugIt Proxy: Django client
@@ -86,14 +86,14 @@ Django application and must be versioned in case of modifications in order to pr
 Use the following commands to run the proxy:
 
     cd examples 
-    docker-compose up simple_server
+    docker-compose up simple_service
 
 
 #### PlugIt service: Flask server
 
 The flask server implements a PlugIt service.
 
-`server.py` is the main flask file, providing different call to the framework, generated from actions defined in actions.py. 
+`server.py` is the main flask file, providing different calls to the framework, generated from actions defined in actions.py. 
 
 Use the following commands to run the proxy:
 

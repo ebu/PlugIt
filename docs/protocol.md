@@ -3,7 +3,7 @@ PlugIt Framework Protocol
 
 Each method returns a JSON object, except for /template/ and /media/ calls.
 
-If you use our Flask server, those method are automatically implemented ! See the documentation [here](./plugit_service.md)
+If you use the pip package, those methods are automatically implemented ! See the documentation [here](./plugit_service.md)
 
 ## Protocol overview
 
@@ -59,7 +59,7 @@ It's possible to redirect the client using the header `EbuIo-PlugIt-Redirect`. P
 It's possible to send a file using the header `EbuIo-PlugIt-ItAFile`. The content is send to the user, using the same content-type. If any, the Content-Disposition header is also forwarder.
 
 ### /media/_medianame_
-This call return a specific media on the server side. Each request on EBUio side on /media/* is forwarded to the server and returned to the client. No caching is used, but a 1 hour Cache-Control header is set by EBUio-
+This call return a specific media on the service side. Each request on EBUio side on /media/* is forwarded to the service and returned to the client. No caching is used, but a 1 hour Cache-Control header is set by EBUio-
 
 ## API
 
@@ -69,29 +69,29 @@ A small python class (PlugItAPI) is available in plugit_api.py, methods are also
 
 ### Mails
 
-It's possible to send mail using the API. All users reply to the mail, if keeping the same subject and send will a response_id will be send back to the PlugIt server using the /mail call. The response_id is secured in the subject and can be trusted (users cannot generate generic response_id).
+It's possible to send mail using the API. All users reply to the mail, if keeping the same subject, the response_id will be send back to the PlugIt service using the /mail call. The response_id is secured in the subject and can be trusted (users cannot generate generic response_id).
 
-The management task check_mail is used to check mails and should be runned inside a cron job on the PlugIt client. Relevent configuration (`INCOMING_MAIL` and `MAIL_SENDER`) should also be correct.
+The management task check_mail is used to check mails and should be runned inside a cron job on the PlugIt Service. Relevent configuration (`INCOMING_MAIL` and `MAIL_SENDER`) should also be correct.
 
 
 ### ProxyMode
 
 *ProxyMode* is a special mode and has main differences with normal PlugIt behavior.
 
-In proxyMode, there is no rendering done by the PlugIt client, and no methods (`/meta/`, `/template/`, `/action/`) to implement. The client just forward the call from the user request to your server.
+In proxyMode, there is no rendering done by the PlugIt Proxy, and no methods (`/meta/`, `/template/`, `/action/`) to implement. The Proxy just forward the call from the user request to the service.
 
-The PlugIt server should send back the HTML content who will be displayed to the client. Except for the inclusion of the result inside the plugIt webpage, nothing is else is done.
+The PlugIt Service should send back the HTML content who will be displayed to the client. Except for the inclusion of the result inside the PlugIt webpage, nothing is else is done.
 
 #### Parameters
 
-The PlugIt client will send informations about the client and the request using HTTP headers. All headers begin by `X-Plugit-`.
+The PlugIt Proxy will send information about the client and the request using HTTP headers. All headers begin by `X-Plugit-`.
 
 
 #### CSRF
 
-EBUio need the presence of a CSRF token on each POST request (as implemented by django) for security issues.
+EBUio needs the presence of a CSRF token on each POST request (as implemented by django) for security issues.
 
-The plugIt client parse the response of the plugIt server and replace the special token `{~__PLUGIT_CSRF_TOKEN__~}` by the current CSRF token.
+The PlugIt Proxy parse the response of the PlugIt Service and replace the special token `{~__PLUGIT_CSRF_TOKEN__~}` by the current CSRF token.
 
 If you want to make a post request, use the following snipet in your form:
 
@@ -107,12 +107,12 @@ Medias are handled as usual, using the special `/media/` path.
 
 #### No template
 
-If you need to send back the result from the plugIt server directly to the client, without a template, you can set the `EbuIo-PlugIt-NoTemplate` header (to any value).
+If you need to send back the result from the PlugIt service directly to the client, without a template, you can set the `EbuIo-PlugIt-NoTemplate` header (to any value).
 
 ### Session
 
-It's possible to set value in the user session, using the `ebuio-plugit-setsession-<key>` header. The plugit client will send back requests with the `X-Plugitsession-<key>` value.
+It's possible to set value in the user session, using the `ebuio-plugit-setsession-<key>` header. The PlugIt Service will send back requests with the `X-Plugitsession-<key>` value.
 
-Using the _standalone_proxy_ utils, it's possble to return a `PlugItSetSession` object, builded with the value to return (who can be anything normal to return, like a PlugItRedirect or a standart dict) and a dict of key/value to set in the user session. The `get_session_from_request` helper function can also be used on a flask request object to extract a dict of key/value from the current user session.
+Using the _standalone_proxy_ utils, it's possible to return a `PlugItSetSession` object, built with the value to return (who can be anything normal to return, like a PlugItRedirect or a standard dict) and a dict of key/value to set in the user session. The `get_session_from_request` helper function can also be used on a flask request object to extract a dict of key/value from the current user session.
 
 

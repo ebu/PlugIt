@@ -7,7 +7,7 @@ This page explains how to create a basic PlugIt project, with submodules, a data
 
 ## Copy files from base project
 
-First, copy files from `examples/simple_server` folder. This ensure you have latest version of different files. 
+First, copy files from `examples/simple_service` folder. This ensure you have the latest version of different files. 
 Remove everything in `actions.py` and all files in `media/` and `templates` folder.
 
 ## Create a config.py
@@ -35,7 +35,7 @@ Otherwise, create different folders/python modules (e.g.: `mkdir users && touch 
 
 The database will be handled by [SQLAlchemy](http://www.sqlalchemy.org/). You can read the documentation for details on the website.
 
-We're going to use [Alembic](https://pypi.python.org/pypi/alembic) to manage different versions of the database. Each time you modify the model, a file with be generated with commands to upgrade the database, allowing easy update of them for everyone working on your projects (including the production server ;)).
+We're going to use [Alembic](https://pypi.python.org/pypi/alembic) to manage different versions of the database. Each time you modify the model, a file with be generated with commands to upgrade the database, allowing easy update of them for everyone working on your projects (including the production server).
 
 You need to setup your database: decide the type of the database (mysql, sqlite, etc.), create it and if needed, create a user. 
 Then, setup the `SQLALCHEMY_URL` option in your `config.py` file with all information needed. 
@@ -202,4 +202,4 @@ Example: apache configuration you may use:
 
     </VirtualHost>
 
-In the `config.py` file you use on your server, don't forget to set `DEBUG  = False`.
+In the `config.py` file you used by the Service, don't forget to set `DEBUG  = False`.
