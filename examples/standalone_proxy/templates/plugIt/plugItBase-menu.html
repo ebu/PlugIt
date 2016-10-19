@@ -8,12 +8,22 @@
     <title>{% block title %}{% endblock %} :: PlugIt -Standalone mode</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+    {% block css %}
+    {#  CSS used on a specific page. #}
+    {#  use {{ block.super }} to avoid overwriting #}
     <link href="/media/css/bootstrap.min.css" rel="stylesheet" media="screen">
     <link href="/media/css/ionicons.min.css" rel="stylesheet" media="screen">
     <link href="/media/css/plugIt-standalone.css" rel="stylesheet" media="screen">
+    {% endblock %}
+    
+    
+    {% block javascript %}
+    {#  Javascript used on a specific page. #}
+    {#  use {{ block.super }} to avoid overwriting #}
     <script src="/media/js/jquery-2.1.4.min.js"></script>
     <script src="/media/js/bootstrap.min.js"></script>
-
+    {% endblock %}
+    
     <style>
         body { padding-top: 70px; } /* padding due to navbar top */
     </style>
