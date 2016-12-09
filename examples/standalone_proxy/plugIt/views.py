@@ -101,6 +101,13 @@ def generate_user(mode=None, pk=None):
         user.ebuio_member = False
         user.ebuio_admin = False
         user.subscription_labels = []
+    elif pk >= 0:
+        # Generate an unknown user for compatibility reason in standalone mode
+        user = DUser(pk=pk, username='Logged', first_name='Unknown', last_name='Other User', email='unknown@plugit-standalone.ebuio')
+        user.gravatar = 'https://www.gravatar.com/avatar/unknown?d=retro'
+        user.ebuio_member = False
+        user.ebuio_admin = False
+        user.subscription_labels = []
 
     user.ebuio_orga_member = user.ebuio_member
     user.ebuio_orga_admin = user.ebuio_admin
