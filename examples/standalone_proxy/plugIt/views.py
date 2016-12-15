@@ -887,6 +887,8 @@ def api_user(request, userPk, key=None, hproPk=None):
     if not check_api_key(request, key, hproPk):
         raise Http404
 
+    hproject = None
+
     if settings.PIAPI_STANDALONE:
         if not settings.PIAPI_REALUSERS:
             user = generate_user(pk=userPk)
