@@ -878,8 +878,6 @@ def api_home(request, key=None, hproPk=None):
     if not check_api_key(request, key, hproPk):
         raise Http404
 
-    print '---> key pk', key, hproPk
-
     return render_to_response('plugIt/api.html', {}, context_instance=RequestContext(request))
 
 
