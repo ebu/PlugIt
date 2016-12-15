@@ -878,6 +878,8 @@ def api_home(request, key=None, hproPk=None):
     if not check_api_key(request, key, hproPk):
         raise Http404
 
+    print '---> key pk', key, hproPk
+
     return render_to_response('plugIt/api.html', {}, context_instance=RequestContext(request))
 
 
@@ -887,8 +889,6 @@ def api_user(request, userPk, key=None, hproPk=None):
     if not check_api_key(request, key, hproPk):
         raise Http404
 
-    hproject = None
-
     if settings.PIAPI_STANDALONE:
         if not settings.PIAPI_REALUSERS:
             user = generate_user(pk=userPk)
@@ -896,6 +896,8 @@ def api_user(request, userPk, key=None, hproPk=None):
                 raise Http404
         else:
             user = get_object_or_404(DUser, pk=userPk)
+
+        hproject = None
     else:
         from users.models import TechUser
 
