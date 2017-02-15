@@ -263,7 +263,7 @@ class PlugIt():
             if proxyMode:
                 return (r.content, session_to_set)
 
-            if r.content == "{}":
+            if not r.content or r.content == "{}":
                 return ({}, session_to_set)
 
             return (r.json(), session_to_set)
