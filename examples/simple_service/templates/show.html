@@ -5,8 +5,8 @@
 {% block content %}
     <style>
         /**
- * Progress bars with centered text
- */
+         * Progress bars with centered text
+        */
         .progress {
             position: relative;
         }
@@ -28,10 +28,8 @@
         /* Remove table lines */
         .table-no-border td {
             border-top: none !important;
-
         }
     </style>
-
 
     <h2>SimplePolls: {{ name }}</h2>
 
@@ -62,15 +60,14 @@
 
                 {% if ebuio_u.username %}
                     <td>
-                        <button class="btn btn-small {% if votedFor == resp.id %}btn-info{% endif %}"
-                                onclick="window.location = '{{ ebuio_baseUrl }}vote/{{ id }}/{{ resp.id }}';">Vote!
+                        <button class="btn btn-small {% if votedFor == resp.id %}btn-info{% endif %}" onclick="window.location = '{{ ebuio_baseUrl }}vote/{{ id }}/{{ resp.id }}';">
+                            Vote!
                         </button>
                     </td>
                 {% endif %}
 
             </tr>
         {% endfor %}
-
     </table>
 
 

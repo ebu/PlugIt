@@ -11,7 +11,7 @@ admin.autodiscover()
 
 urlpatterns = patterns('',
 
-	url(r'^admin/', include(admin.site.urls)),
+    url(r'^admin/', include(admin.site.urls)),
 
     (r'^$', RedirectView.as_view(url='/plugIt/')),
     url(r'^plugIt/', include('plugIt.urls')),
@@ -19,5 +19,5 @@ urlpatterns = patterns('',
     (r'^' + settings.MEDIA_URL[1:] + '(?P<path>.*)$', 'django.views.static.serve', {'document_root': settings.MEDIA_ROOT}),  # Never use this in prod !
 
     # Default to PlugIt
-    url(r'', include('plugIt.urls')), # plugit
+    url(r'', include('plugIt.urls')),  # plugit
 )

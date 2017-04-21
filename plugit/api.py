@@ -102,8 +102,8 @@ class PlugItAPI(object):
             'subject': subject,
             'dests': recipients,
             'message': message,
-            'html_message': html_message
-            }
+            'html_message': html_message,
+        }
 
         if response_id:
             params['response_id'] = response_id
