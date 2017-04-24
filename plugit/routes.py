@@ -40,7 +40,7 @@ def load_routes(app, actions):
 
             # Template
             app.add_url_rule(
-                '{}tempalte{}'.format(PI_BASE_URL, obj.pi_api_route),
+                '{}template{}'.format(PI_BASE_URL, obj.pi_api_route),
                 view_func=TemplateView.as_view('template_{}'.format(act), action=obj))
 
             # Action
