@@ -17,7 +17,7 @@ PI_BASE_URL = config.PI_BASE_URL
 # IP allowed to use the PlugIt API.
 PI_ALLOWED_NETWORKS = config.PI_ALLOWED_NETWORKS
 
-## Does not edit code bellow !
+# # Does not edit code bellow !
 
 # API version parameters
 PI_API_VERSION = '1'

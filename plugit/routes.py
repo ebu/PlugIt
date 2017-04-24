@@ -1,5 +1,6 @@
-from params import PI_BASE_URL
-from views import *
+from params import PI_BASE_URL, PI_API_VERSION, PI_API_NAME
+from views import request, check_ip, jsonify, MetaView, TemplateView, ActionView
+
 
 def load_routes(app, actions):
 
@@ -20,9 +21,6 @@ def load_routes(app, actions):
     @app.route(PI_BASE_URL + "mail", methods=['POST'])
     def mail():
         """The mail method: Process mail handling"""
-
-        data = request.form['response_id'].split(':')
-
         return jsonify(result='Ok')
 
     # Register the 3 URLs (meta, template, action) for each actions

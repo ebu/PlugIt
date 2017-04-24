@@ -1,40 +1,29 @@
 # -*- coding: utf-8 -*-
 
-from django.shortcuts import get_object_or_404, render_to_response, redirect
+from django.shortcuts import get_object_or_404, render_to_response
 from django.template import RequestContext
 from django.template.loader_tags import BlockNode, ExtendsNode
 from django.core.context_processors import csrf
 from django.views.decorators.csrf import csrf_exempt
-from django.http import Http404, HttpResponse, HttpResponseForbidden, HttpResponseNotFound, HttpResponseServerError
-from django.utils.encoding import smart_str
+from django.http import Http404, HttpResponse, HttpResponseNotFound
 from django.conf import settings
-from django.contrib.admin.views.decorators import staff_member_required
-from django.contrib.auth.decorators import login_required
-from django.http import HttpResponseRedirect, HttpResponsePermanentRedirect
-from django.db import connections
-from django.core.paginator import InvalidPage, EmptyPage, Paginator
+from django.http import HttpResponseRedirect, HttpResponsePermanentRedirect, HttpResponseForbiden
 from django.core.cache import cache
-from django import forms
 from django.core.urlresolvers import reverse
+from django.views.decorators.cache import cache_control
+from django.template import Context, Template
+from django.contrib.auth.models import User as DUser, AnonymousUser
+from django.core.mail import EmailMessage
 
-from django.db.models import Q
 
 from plugIt import PlugIt
 
-from django.views.decorators.cache import cache_control
-
-from django.template import Context, Template
-from django.core.context_processors import csrf
-
-from django.core.cache import cache
-
-from django.contrib.auth.models import User as DUser, AnonymousUser
 
 import json
 import hashlib
 import base64
 import logging
-from django.core.mail import EmailMessage
+
 
 logger = logging.getLogger(__name__)
 
@@ -129,10 +118,13 @@ class SimpleUser():
 def gen404(request, baseURI, reason):
     """Return a 404 error"""
     return HttpResponseNotFound(
-        render_to_response('plugIt/404.html', {'context': {'reason': reason, 'ebuio_baseUrl': baseURI,
-                                                           'ebuio_userMode': request.session.get(
-                                                               'plugit-standalone-usermode', 'ano')}},
-                           context_instance=RequestContext(request)))
+        render_to_response('plugIt/404.html', {'context':
+            {
+                'reason': reason,
+                'ebuio_baseUrl': baseURI,
+                'ebuio_userMode': request.session.get('plugit-standalone-usermode', 'ano'),
+            }
+        }, context_instance=RequestContext(request)))
 
 
 def gen500(request, baseURI):
@@ -170,14 +162,16 @@ def gen403(request, baseURI, reason, project=None):
 
         orgas = rorgas
 
-    return HttpResponseForbidden(render_to_response('plugIt/403.html', {'context': {'reason': reason, 'orgas': orgas,
-                                                                                   'public_ask': public_ask,
-                                                                                   'ebuio_baseUrl': baseURI,
-                                                                                   'ebuio_userMode': request.session.get(
-                                                                                       'plugit-standalone-usermode',
-                                                                                       'ano'),
-                                                                                   'ebuio_project': project}},
-                                                   context_instance=RequestContext(request)))
+    return HttpResponseForbiden(render_to_response('plugIt/403.html', {'context':
+        {
+            'reason': reason,
+            'orgas': orgas,
+            'public_ask': public_ask,
+            'ebuio_baseUrl': baseURI,
+            'ebuio_userMode': request.session.get('plugit-standalone-usermode', 'ano'),
+            'ebuio_project': project
+        }
+    }, context_instance=RequestContext(request)))
 
 
 def get_cache_key(request, meta, orgaMode, currentOrga):
@@ -657,7 +651,7 @@ def main(request, query, hproPk=None, returnMenuOnly=False):
     plugItMenuAction = None
     availableOrga = []
 
-    ## If standalone mode, change the current user and orga mode based on parameters
+    # If standalone mode, change the current user and orga mode based on parameters
     if settings.PIAPI_STANDALONE:
 
         if not settings.PIAPI_REALUSERS:
@@ -794,6 +788,8 @@ def main(request, query, hproPk=None, returnMenuOnly=False):
 
 
 def _get_subscription_labels(user, hproject):
+    from users.models import TechUser
+
     if isinstance(user, TechUser):
         s = user.getActiveSubscriptionLabels(hproject, False)
         return s
@@ -1242,7 +1238,8 @@ def api_ebuio_forum_get_topics_by_tag_for_user(request, key=None, hproPk=None, t
 
             user = TechUser.objects.get(pk=author_pk)
         except TechUser.DoesNotExist:
-            error = 'user-no-found'
+            user = None
+
     if not hproject.discuss_can_display_posts(user):
         raise Http404
 
@@ -1252,7 +1249,7 @@ def api_ebuio_forum_get_topics_by_tag_for_user(request, key=None, hproPk=None, t
 
     # We get the posts (only topics ones-the parent) related to the project and to the tag.
     # We dont' take the deleted ones.
-    from discuss.models import Post, PostTag
+    from discuss.models import Post
 
     posts = Post.objects.filter(is_deleted=False).filter(object_id=hproPk).filter(tags__tag=tag).order_by('-when')
 

@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
 
+import os
+from os.path import abspath, dirname, join, normpath
+
+
 # Django settings for PlugIt project.
 DEBUG = True
 
@@ -23,7 +27,6 @@ DATABASES = {
 }
 
 
-from os.path import abspath, dirname, join, normpath
 DJANGO_ROOT = dirname(abspath(__file__)) + '/../'
 
 # Default Test Runner, necessary since Django 1.6
@@ -87,16 +90,12 @@ STATICFILES_DIRS = (
 STATICFILES_FINDERS = (
     'django.contrib.staticfiles.finders.FileSystemFinder',
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
-#    'django.contrib.staticfiles.finders.DefaultStorageFinder',
 )
-
-
 
 # List of callables that know how to import templates from various sources.
 TEMPLATE_LOADERS = (
     'django.template.loaders.filesystem.Loader',
     'django.template.loaders.app_directories.Loader',
-#     'django.template.loaders.eggs.Loader',
 )
 
 MIDDLEWARE_CLASSES = (
@@ -161,8 +160,6 @@ LOGGING = {
     }
 }
 
-import os
-
 # Make this unique, and don't share it with anybody.
 SECRET_KEY = 'The game. Please also replace this string.'
 
@@ -173,7 +170,7 @@ PIAPI_USERDATA = ['username', 'id', 'pk', 'first_name', 'last_name', 'email', 'e
 PIAPI_ORGAMODE = True  # Don't active this with PIAPI_REALUSERS !
 PIAPI_REALUSERS = False  # Don't active this with PIAPI_ORGAMODE !
 PIAPI_PLUGITMENUACTION = 'menubar'
-PIAPI_PLUGITTEMPLATE = 'plugItBase-menu.html' # One out of 'plugItBase.html', 'plugItBase-menu.html'
+PIAPI_PLUGITTEMPLATE = 'plugItBase-menu.html'  # One out of 'plugItBase.html', 'plugItBase-menu.html'
 
 PIAPI_PROXYMODE = False
 

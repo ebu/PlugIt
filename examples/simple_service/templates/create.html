@@ -13,9 +13,10 @@
     {% if success %}
 
         <div class="alert alert-success">
-            The poll has been successfully saved. You can <a href="{{ ebuio_baseUrl }}show/{{ id }}">show it</a>, <a
-                href="{{ ebuio_baseUrl }}create/">create a new one</a> or <a href="{{ ebuio_baseUrl }}">return to the
-            list</a>.
+            The poll has been successfully saved.
+             You can <a href="{{ ebuio_baseUrl }}show/{{ id }}">show it</a>,
+             <a href="{{ ebuio_baseUrl }}create/">create a new one</a>
+             or <a href="{{ ebuio_baseUrl }}">return to the list</a>.
         </div>
 
     {% else %}
@@ -76,13 +77,13 @@
 
                     <div class="form-group" id="add-row-before-this">
                         <div class="input-group">
-                            <button class="btn btn-default" type="button" style="margin-left: 170px;"
-                                    onclick="addRow();"><i class="glyphicon glyphicon-plus"></i></button>
+                            <button class="btn btn-default" type="button" style="margin-left: 170px;" onclick="addRow();">
+                                <i class="glyphicon glyphicon-plus"></i>
+                            </button>
                         </div>
                     </div>
 
-                    <input class="btn btn-warning" style="float: right; margin-left: 5px;" value="Cancel" type="button"
-                           onclick="window.location='{{ ebuio_baseUrl }}';">
+                    <input class="btn btn-warning" style="float: right; margin-left: 5px;" value="Cancel" type="button" onclick="window.location='{{ ebuio_baseUrl }}';">
                     <input type="submit" class="btn btn-primary" style="float: right;" value="Save">
                 </div>
             </div>
