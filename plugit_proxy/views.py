@@ -289,13 +289,12 @@ def find_in_cache(cacheKey):
     """Check if the content exists in cache and return it"""
     # If we have to use cache, we try to find the result in cache
     if cacheKey:
-        result = cache.get('plugit-result-' + cacheKey, None)
-        menu = cache.get('plugit-menu-' + cacheKey, None)
-        context = cache.get('plugit-context-' + cacheKey, None)
+
+        data = cache.get('plugit-cache-' + cacheKey, None)
 
         # We found a result, we can return it
-        if result and context:
-            return (result, menu, context)
+        if data:
+            return (data['result'], data['menu'], data['context'])
     return (None, None, None)
 
 
@@ -551,9 +550,9 @@ def cache_if_needed(cacheKey, result, menu, context, meta):
 
         del flat_context['csrf_token']
 
-        cache.set('plugit-result-' + cacheKey, result, meta['cache_time'])
-        cache.set('plugit-menu-' + cacheKey, menu, meta['cache_time'])
-        cache.set('plugit-context-' + cacheKey, flat_context, meta['cache_time'])
+        data = {'result': result, 'menu': menu, 'flat_context': flat_context}
+
+        cache.set('plugit-cache-' + cacheKey, data, meta['cache_time'])
 
 
 def build_context(request, data, hproject, orgaMode, currentOrga, availableOrga):
