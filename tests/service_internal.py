@@ -7,6 +7,8 @@ import sys
 import os
 import uuid
 from werkzeug.exceptions import NotFound
+from werkzeug.routing import Map
+import json
 
 
 class _CallBack():
@@ -21,14 +23,14 @@ class TestBase(unittest.TestCase):
     DUMMY_CONFIG_PATH = os.path.join('tests', 'dummy_config')
 
     @classmethod
-    def setup_class(self):
+    def setup_class(cls):
         """Setup path"""
-        sys.path.append(self.DUMMY_CONFIG_PATH)
+        sys.path.append(cls.DUMMY_CONFIG_PATH)
 
     @classmethod
-    def teardown_class(self):
+    def teardown_class(cls):
         """Remove added value from path"""
-        sys.path.remove(self.DUMMY_CONFIG_PATH)
+        sys.path.remove(cls.DUMMY_CONFIG_PATH)
 
 
 class TestUtils(TestBase):
@@ -128,6 +130,18 @@ class TestUtils(TestBase):
         assert(_tmp.pi_api_cache_time == time)
         assert(_tmp.pi_api_cache_by_user == byUser)
 
+    def test_decorators_address_in_networks(self):
+        """Test the address_in_networks decorator"""
+        from plugit.utils import address_in_networks
+
+        networks = [str(uuid.uuid4())]
+
+        @address_in_networks(networks)
+        def _tmp():
+            pass
+
+        assert(_tmp.pi_api_address_in_networks == networks)
+
     def test_decorators_user_info(self):
         """Test the user_info decorator"""
         from plugit.utils import user_info
@@ -149,6 +163,26 @@ class TestUtils(TestBase):
             pass
 
         assert(_tmp.pi_api_json_only)
+
+    def test_decorators_xml_only(self):
+        """Test the xml_only decorator"""
+        from plugit.utils import xml_only
+
+        @xml_only()
+        def _tmp():
+            pass
+
+        assert(_tmp.pi_api_xml_only)
+
+    def test_decorators_public(self):
+        """Test the public decorator"""
+        from plugit.utils import public
+
+        @public()
+        def _tmp():
+            pass
+
+        assert(_tmp.pi_api_public)
 
     def test_decorators_no_template(self):
         """Test the no_template decorator"""
@@ -413,6 +447,9 @@ class TestViews(TestBase):
         pi_api_cache_by_user = str(uuid.uuid4())
         pi_api_user_info = str(uuid.uuid4())
         pi_api_json_only = str(uuid.uuid4())
+        pi_api_xml_only = str(uuid.uuid4())
+        pi_api_public = str(uuid.uuid4())
+        pi_api_address_in_networks = str(uuid.uuid4())
         pi_api_no_template = str(uuid.uuid4())
 
         props = {
@@ -426,6 +463,9 @@ class TestViews(TestBase):
             'pi_api_cache_by_user': pi_api_cache_by_user,
             'pi_api_user_info': pi_api_user_info,
             'pi_api_json_only': pi_api_json_only,
+            'pi_api_public': pi_api_public,
+            'pi_api_xml_only': pi_api_xml_only,
+            'pi_api_address_in_networks': pi_api_address_in_networks,
             'pi_api_no_template': pi_api_no_template
         }
 
@@ -447,6 +487,9 @@ class TestViews(TestBase):
         assert(data['cache_by_user'] == pi_api_cache_by_user)
         assert(data['user_info'] == pi_api_user_info)
         assert(data['json_only'] == pi_api_json_only)
+        assert(data['xml_only'] == pi_api_xml_only)
+        assert(data['public'] == pi_api_public)
+        assert(data['address_in_networks'] == pi_api_address_in_networks)
         assert(data['no_template'] == pi_api_no_template)
 
         assert(response.headers['Cache-Control'] == 'public, max-age=' + str(self.plugitviews.PI_META_CACHE))
@@ -476,6 +519,7 @@ class TestViews(TestBase):
             mv.dispatch_request()
         except NotFound:
             self.unpatch_view()
+            utils.PI_ALLOWED_NETWORKS = backup_allowed
             return  # Ok :)
 
         self.unpatch_view()
@@ -544,6 +588,7 @@ class TestViews(TestBase):
             mv.dispatch_request()
         except NotFound:
             self.unpatch_view()
+            utils.PI_ALLOWED_NETWORKS = backup_allowed
             return  # Ok :)
 
         self.unpatch_view()
@@ -772,33 +817,33 @@ class TestApi(TestBase):
     """Test the api.py file"""
 
     @classmethod
-    def setup_class(self):
-        super(TestApi, self).setup_class()
+    def setup_class(cls):
+        super(TestApi, cls).setup_class()
 
-        self.user_key = str(uuid.uuid4())
-        self.orgas_key = str(uuid.uuid4())
-        self.orga_key = str(uuid.uuid4())
-        self.project_members_key = str(uuid.uuid4())
-        self.send_mail_key = str(uuid.uuid4())
-        self.forum_key = str(uuid.uuid4())
+        cls.user_key = str(uuid.uuid4())
+        cls.orgas_key = str(uuid.uuid4())
+        cls.orga_key = str(uuid.uuid4())
+        cls.project_members_key = str(uuid.uuid4())
+        cls.send_mail_key = str(uuid.uuid4())
+        cls.forum_key = str(uuid.uuid4())
 
         from plugit.api import PlugItAPI
-        self.api = PlugItAPI('http://127.0.0.1:62312/')
+        cls.api = PlugItAPI('http://127.0.0.1:62312/')
 
         import subprocess
         import sys
         import time
 
         FNULL = open(os.devnull, 'w')
-        self.p = subprocess.Popen([sys.executable, 'tests/helpers/api_server.py', self.user_key, self.orgas_key, self.orga_key, self.project_members_key, self.send_mail_key, self.forum_key], stdout=FNULL, stderr=FNULL)
+        cls.p = subprocess.Popen([sys.executable, 'tests/helpers/api_server.py', cls.user_key, cls.orgas_key, cls.orga_key, cls.project_members_key, cls.send_mail_key, cls.forum_key], stdout=FNULL, stderr=FNULL)
 
         time.sleep(1)
 
     @classmethod
-    def teardown_class(self):
-        super(TestApi, self).teardown_class()
+    def teardown_class(cls):
+        super(TestApi, cls).teardown_class()
 
-        self.p.kill()
+        cls.p.kill()
 
     def test_get_user(self):
         """Test the get_user call"""
@@ -809,6 +854,24 @@ class TestApi(TestBase):
         assert(retour.pk == self.user_key[3])
         assert(retour.id == self.user_key[3])
         assert(getattr(retour, self.user_key[::-1]) == self.user_key)
+
+    def test_get_user_unknown(self):
+        """Test the get_user call"""
+
+        retour = self.api.get_user('not-a-user')
+
+        assert(not retour)
+
+    def test_subscriptions(self):
+        """Test the get_subscription_labels call"""
+
+        retour = self.api.get_subscription_labels(self.user_key[3])
+        assert(retour)
+        assert('test_subscription' in retour)
+
+    def test_subscriptions_unknown(self):
+        """Test the get_subscription_labels call"""
+        assert(not self.api.get_subscription_labels('not-a-user'))
 
     def test_get_orgas(self):
         """Test the get_orgas call"""
@@ -832,6 +895,13 @@ class TestApi(TestBase):
         assert(retour.pk == self.orga_key[3])
         assert(retour.id == self.orga_key[3])
         assert(getattr(retour, self.orga_key[::-1]) == self.orga_key)
+
+    def test_get_orga_unknown(self):
+        """Test the get_orga call"""
+
+        retour = self.api.get_orga('not-an-orga')
+
+        assert(not retour)
 
     def test_get_project_members(self):
         """Test the get_project_members call"""
@@ -869,9 +939,228 @@ class TestApi(TestBase):
         assert(retour)
         assert(retour['key'] == self.forum_key)
 
-    def test_ebuio_forum_tags(self):
+    def test_ebuio_forum_tags_no_tag(self):
         """Test the ebuio_forum_tags call"""
-        retour = self.api.ebuio_forum(self.forum_key[2], self.forum_key[6], self.forum_key[10], self.forum_key[8])
+        retour = self.api.forum_topic_get_by_tag_for_user()
+        assert(not retour)
 
+    def test_ebuio_forum_tags_no_author_empty(self):
+        """Test the ebuio_forum_tags call"""
+        retour = self.api.forum_topic_get_by_tag_for_user(self.forum_key[2])
+        assert(not retour)
+
+    def test_ebuio_forum_tags_no_author(self):
+        """Test the ebuio_forum_tags call"""
+        retour = self.api.forum_topic_get_by_tag_for_user(self.forum_key[3])
         assert(retour)
-        assert(retour['key'] == self.forum_key[::-1])
+        assert(self.forum_key[3] in retour)
+
+    def test_ebuio_forum_tags_author(self):
+        """Test the ebuio_forum_tags call"""
+        retour = self.api.forum_topic_get_by_tag_for_user(self.forum_key[3], self.forum_key[6])
+        assert(retour)
+        assert(self.forum_key[6] in retour)
+
+
+class TestRoutes(TestBase):
+    """Test routes.py"""
+
+    @classmethod
+    def setup_class(cls):
+        super(TestRoutes, cls).setup_class()
+
+        cls.load_routes()
+
+    @classmethod
+    def load_routes(cls, with_mail_callback=True):
+
+        import plugit
+
+        class DummyActions:
+            @plugit.utils.action(route="/", template="home.html")
+            def dummy_action(request):
+                return {}
+
+        plugit.app.url_map = Map()
+        plugit.app.view_functions = {}
+        plugit.load_actions(DummyActions, cls.mail_callback if with_mail_callback else None)
+
+        cls.app = plugit.app
+
+    def patch_view(self, ip='127.0.0.1', dont_jsonify=False, args=None):
+        """Patch the plugit view with special callbacks"""
+
+        from plugit import routes
+        import json
+
+        self.plugitroutes = routes
+
+        self.bkp_request = self.plugitroutes.request
+        self.bkp_jsonfy = self.plugitroutes.jsonify
+
+        myself = self
+
+        class R():
+            remote_addr = ip
+            headers = {}
+            args = {}
+            form = {}
+            self = myself
+
+        if args:
+            R.args = args
+            R.form = args
+
+        def false_jsonfy(**obj):
+            if dont_jsonify:
+                return obj
+            return json.dumps(obj)
+
+        self.plugitroutes.request = R()
+        self.plugitroutes.jsonify = false_jsonfy
+
+    def unpatch_view(self):
+        """Revert changes done to the view"""
+
+        self.plugitroutes.request = self.bkp_request
+        self.plugitroutes.jsonify = self.bkp_jsonfy
+
+    def get_rule_by_path(self, path):
+
+        for rule in self.app.url_map.iter_rules():
+            if str(rule) == path:
+                return rule, self.app.view_functions[rule.endpoint]
+
+    def test_ping_vue_created(self):
+        assert(self.get_rule_by_path('/ping'))
+
+    def test_ping_vue_ping(self):
+
+        rule, view = self.get_rule_by_path('/ping')
+
+        self.patch_view(args={'data': 'p'})
+        r = json.loads(view())
+        self.unpatch_view()
+
+        assert(r['data'] == 'p')
+
+    def test_ping_vue_ip(self):
+
+        from plugit import utils
+
+        backup_allowed = utils.PI_ALLOWED_NETWORKS
+        utils.PI_ALLOWED_NETWORKS = ['127.0.0.0/8']
+
+        self.patch_view('1.2.3.4')
+
+        rule, view = self.get_rule_by_path('/ping')
+
+        try:
+            view()
+        except NotFound:
+            self.unpatch_view()
+            utils.PI_ALLOWED_NETWORKS = backup_allowed
+            return  # Ok :)
+
+        self.unpatch_view()
+        utils.PI_ALLOWED_NETWORKS = backup_allowed
+
+        assert(False)
+
+    def test_version_vue_created(self):
+        assert(self.get_rule_by_path('/version'))
+
+    def test_version_vue_version(self):
+
+        rule, view = self.get_rule_by_path('/version')
+
+        self.patch_view()
+        r = json.loads(view())
+        self.unpatch_view()
+
+        assert(r['result'] == 'Ok')
+        assert(r['version'] == self.plugitroutes.PI_API_VERSION)
+        assert(r['protocol'] == self.plugitroutes.PI_API_NAME)
+
+    def test_mail_vue_created(self):
+        assert(self.get_rule_by_path('/mail'))
+
+    def test_mail_vue_mail_no_response(self):
+
+        rule, view = self.get_rule_by_path('/mail')
+
+        self.patch_view(args={'response_id': ''})
+        r = json.loads(view())
+        self.unpatch_view()
+
+        print(r)
+
+        assert(r['result'] == 'Error')
+
+    @staticmethod
+    def mail_callback(request):
+        request.self.mail_called = True
+        request.self.mail_response_id = request.form['response_id']
+        return '{"result": "OkCallback"}'
+
+    def test_mail_vue_mail_callback(self):
+        TestRoutes.load_routes()
+
+        rule, view = self.get_rule_by_path('/mail')
+
+        self.patch_view(args={'response_id': '42'})
+        self.mail_called = False
+        self.mail_response_id = False
+        r = json.loads(view())
+        self.unpatch_view()
+
+        assert(r['result'] == 'OkCallback')
+        assert(self.mail_called)
+        assert(self.mail_response_id == '42')
+
+    def test_mail_vue_mail_nocallback(self):
+        TestRoutes.load_routes(False)
+
+        rule, view = self.get_rule_by_path('/mail')
+
+        self.patch_view(args={'response_id': '42'})
+        self.mail_called = False
+        self.mail_response_id = False
+        r = json.loads(view())
+        self.unpatch_view()
+
+        assert(r['result'] == 'Ok')
+        assert(not self.mail_called)
+        assert(self.mail_response_id != '42')
+
+    def test_mail_vue_ip(self):
+
+        from plugit import utils
+
+        backup_allowed = utils.PI_ALLOWED_NETWORKS
+        utils.PI_ALLOWED_NETWORKS = ['127.0.0.0/8']
+
+        self.patch_view('1.2.3.4')
+
+        rule, view = self.get_rule_by_path('/mail')
+
+        try:
+            view()
+        except NotFound:
+            self.unpatch_view()
+            utils.PI_ALLOWED_NETWORKS = backup_allowed
+            return  # Ok :)
+
+        self.unpatch_view()
+        utils.PI_ALLOWED_NETWORKS = backup_allowed
+
+        assert(False)
+
+    def test_meta_view_created(self):
+        assert(self.get_rule_by_path('/meta/'))
+
+    def test_template_view_created(self):
+        assert(self.get_rule_by_path('/template/'))
+
+    def test_action_view_created(self):
+        assert(self.get_rule_by_path('/action/'))

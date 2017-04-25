@@ -5,7 +5,7 @@ sys.path.append('../../../')
 import time
 
 
-from plugit.utils import action, cache, only_logged_user, only_member_user, only_admin_user, only_orga_member_user, only_orga_admin_user, user_info, json_only, no_template, PlugItRedirect, PlugItSendFile, PlugItSetSession, get_session_from_request
+from plugit.utils import action, cache, only_logged_user, only_member_user, only_admin_user, only_orga_member_user, only_orga_admin_user, user_info, json_only, no_template, PlugItRedirect, PlugItSendFile, PlugItSetSession, get_session_from_request, xml_only, public, address_in_networks
 
 
 @action(route="/", template="home.html")
@@ -89,6 +89,30 @@ def test_500(request):
 @action(route='/json_only', template="home.html")
 @json_only()
 def test_json_only(request):
+    return {}
+
+
+@action(route='/xml_only', template="home.html")
+@xml_only()
+def test_xml_only(request):
+    return {'xml': '<a></a>'}
+
+
+@action(route='/public', template="home.html")
+@public()
+def test_public(request):
+    return {}
+
+
+@action(route='/address_in_networks', template="home.html")
+@address_in_networks(['127.0.0.1/24'])
+def test_address_in_networks(request):
+    return {}
+
+
+@action(route='/address_in_networks_outside', template="home.html")
+@address_in_networks(['255.255.255.255/32'])
+def test_address_in_networks_outside(request):
     return {}
 
 

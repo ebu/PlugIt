@@ -189,6 +189,36 @@ class TestExternal(unittest.TestCase):
 
         assert('json_only' not in self.do_query('meta/').json())
 
+    def test_xml_only(self):
+        """Test xml_only"""
+
+        retour = self.do_query('meta/xml_only')
+
+        assert(retour)
+        assert(retour.json()['xml_only'])
+
+        assert('xml_only' not in self.do_query('meta/').json())
+
+    def test_public(self):
+        """Test public"""
+
+        retour = self.do_query('meta/public')
+
+        assert(retour)
+        assert(retour.json()['public'])
+
+        assert('public' not in self.do_query('meta/').json())
+
+    def test_address_in_networks(self):
+        """Test address_in_networks"""
+
+        retour = self.do_query('meta/address_in_networks')
+
+        assert(retour)
+        assert(retour.json()['address_in_networks'])
+
+        assert('public' not in self.do_query('meta/').json())
+
     def test_no_template(self):
         """Test no_template"""
 

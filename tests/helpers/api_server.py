@@ -25,6 +25,14 @@ def test_user(pk):
         return json.dumps({user_key[::-1]: user_key})
 
 
+@app.route("/subscriptions/<pk>")
+def test_subscriptions(pk):
+    if pk == user_key[3]:
+        return json.dumps(['test_subscription'])
+
+    return None
+
+
 @app.route("/orgas/")
 def test_orgas():
     retour = []
@@ -84,6 +92,20 @@ def test_send_forum():
         return json.dumps({'key': forum_key[::-1]})
 
     return json.dumps({'key': forum_key})
+
+
+@app.route("/ebuio/forum/search/bytag/<tag>")
+def test_send_forum_search(tag):
+
+    if request.args.get('u') == forum_key[6]:
+        return json.dumps({'data': [forum_key[6]]})
+
+    if tag == forum_key[2]:
+        return json.dumps({'data': []})
+
+    if tag == forum_key[3]:
+        return json.dumps({'data': [forum_key[3]]})
+
 
 if __name__ == "__main__":
     app.run(port=62312)

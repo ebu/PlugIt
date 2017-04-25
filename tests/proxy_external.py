@@ -286,6 +286,18 @@ class TestExternal(unittest.TestCase):
         assert(retour.text == "{}")
         assert('json' not in retour.headers['content-type'])
 
+    def test_xml_only(self):
+        retour = self.do_query('xml_only')
+        assert(retour)
+        assert(retour.text == "<a></a>")
+        assert('xml' in retour.headers['content-type'])
+
+    def test_addr_in_network_ok(self):
+        assert(self.do_query('address_in_networks'))
+
+    def test_addr_in_network_not_ok(self):
+        assert(not self.do_query('address_in_networks_outside'))
+
     def test_json_headers(self):
         retour = self.do_query('json_only', headers={'Accept': 'text/json'})
         assert(retour)

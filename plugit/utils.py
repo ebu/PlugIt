@@ -150,8 +150,6 @@ def add_unique_postfix(fn):
         if not os.path.exists(uni_fn):
             return uni_fn
 
-    return None
-
 
 def get_session_from_request(request):
 
@@ -211,4 +209,3 @@ def check_ip(request):
             return True
     # Ip not found
     abort(404)
-    return False

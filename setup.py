@@ -28,5 +28,6 @@ setup(
     install_requires=[
         'requests',
         'flask',
+        'django-ipware',
     ],
 )

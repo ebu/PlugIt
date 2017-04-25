@@ -3,12 +3,6 @@
 
 import unittest
 from nose.tools import *
-import os
-import sys
-import uuid
-import subprocess
-import time
-import tempfile
 
 
 from django.conf import settings
@@ -20,6 +14,15 @@ settings.configure(LOGGING_CONFIG=None, PIAPI_STANDALONE=True, PIAPI_STANDALONE_
 
 from django import template
 from django.template import loader
+from django.template.base import TemplateSyntaxError
+from django.core.cache import cache
+import json
+import os
+import sys
+import uuid
+import subprocess
+import time
+import tempfile
 
 
 class TestBase(unittest.TestCase):
@@ -268,6 +271,23 @@ class TestPlugItTags(TestBase):
 
         assert(result == "%s,%s" % (test_val, action,))
 
+    def test_plugit_include_error(self):
+
+        settings.INSTALLED_APPS = ('plugIt',)
+        django.setup()
+
+        action = str(uuid.uuid4())
+        test_val = str(uuid.uuid4())
+
+        context = template.Context({'action': action, 'test_val': test_val})
+
+        try:
+            template.Template("""{% load plugit_tags %}{% plugitInclude %}""").render(context)
+        except TemplateSyntaxError:
+            return
+
+        assert(False)
+
     def test_plugit_include_security(self):
 
         settings.INSTALLED_APPS = ('plugIt',)
@@ -300,6 +320,20 @@ class TestPlugItTags(TestBase):
 
         assert(resultok == "%s,%s" % (test_val, action,))
         assert(resulterr == "")
+
+    def test_plugit_url_target_blank(self):
+
+        settings.INSTALLED_APPS = ('plugIt',)
+        django.setup()
+
+        action = str(uuid.uuid4())
+        test_val = str(uuid.uuid4())
+
+        context = template.Context({'action': action, 'test_val': test_val})
+
+        result = template.Template("""{% load plugit_tags %}{{ '<a b>' | url_target_blank | safe }}""").render(context)
+
+        assert(result == '<a target="_blank" b>')
 
 
 class TestPlugItDoQueryTest(TestBase):
@@ -343,6 +377,12 @@ class TestPlugItDoQueryTest(TestBase):
         assert(retour['method'] == 'POST')
         assert(retour['post_param'] == p)
 
+    def test_post_param_list(self):
+        p = [str(uuid.uuid4()), str(uuid.uuid4())]
+        retour = self.plugit.doQuery("test_post_list", method='POST', postParameters={'post_param': p}).json()
+        assert(retour['method'] == 'POST')
+        assert(retour['post_param'] == p)
+
     def test_post_getparam(self):
         p = str(uuid.uuid4())
         retour = self.plugit.doQuery("test_post", method='POST', getParmeters={'get_param': p}).json()
@@ -360,6 +400,12 @@ class TestPlugItDoQueryTest(TestBase):
 
         retour = self.plugit.doQuery("test_extraHeaders", method='POST', extraHeaders={'test': p}).json()
         assert(retour['x-plugit-test'] == p)
+
+    def test_extraHeaders_bytes_get(self):
+        p = str(uuid.uuid4()).encode('utf-8')
+
+        retour = self.plugit.doQuery("test_extraHeaders", method='GET', extraHeaders={'test': p}).json()
+        assert(retour['x-plugit-test'] == str(p))
 
     def test_session_get(self):
         p = str(uuid.uuid4())
@@ -427,6 +473,14 @@ class TestPlugItDoQueryTest(TestBase):
         assert(retour['method'] == 'POST')
         assert(retour['get_param'] == p)
 
+    def test_post_postparam_list_with_files(self):
+        fname, fobj = self._build_file()
+        p = [str(uuid.uuid4()), str(uuid.uuid4())]
+        retour = self.plugit.doQuery("test_post_list", method='POST', postParameters={'post_param': p}, files={'test': fobj}).json()
+        os.unlink(fname)
+        assert(retour['method'] == 'POST')
+        assert(retour['post_param'] == p)
+
     def test_extraHeaders_post_with_files(self):
         fname, fobj = self._build_file()
         p = str(uuid.uuid4())
@@ -467,6 +521,14 @@ class TestPlugIt(TestBase):
                 @property
                 def status_code(self):
                     return myself.plugIt.toReplyStatusCode()
+
+                @property
+                def headers(self):
+                    return myself.plugIt.toReplyHeaders()
+
+                @property
+                def content(self):
+                    return json.dumps(self.json())
 
             return DummyResponse()
 
@@ -512,5 +574,229 @@ class TestPlugIt(TestBase):
 
         assert(not self.plugIt.checkVersion())
 
-# Todo: plugIt
+    def test_new_mail(self):
+
+        self.plugIt.toReplyStatusCode = lambda: 200
+        self.plugIt.toReplyJson = lambda: {'result': 'Ok'}
+
+        message_id = str(uuid.uuid4())
+        message = str(uuid.uuid4())
+
+        assert(self.plugIt.newMail(message_id, message))
+        assert(self.lastDoQueryCall['url'] == 'mail')
+        assert(self.lastDoQueryCall['postParameters'].get('response_id') == message_id)
+        assert(self.lastDoQueryCall['postParameters'].get('message') == message)
+
+        self.plugIt.toReplyStatusCode = lambda: 201
+        assert(not self.plugIt.newMail(message_id, message))
+
+    def test_media(self):
+        self.plugIt.toReplyStatusCode = lambda: 200
+        self.plugIt.toReplyJson = lambda: {}
+        self.plugIt.toReplyHeaders = lambda: {}
+
+        media = str(uuid.uuid4())
+
+        data, content_type = self.plugIt.getMedia(media)
+
+        assert(data == '{}')
+        assert(content_type == 'application/octet-stream')
+        assert(self.lastDoQueryCall['url'] == 'media/{}'.format(media))
+
+        self.plugIt.toReplyHeaders = lambda: {'content-type': 'test'}
+
+        data, content_type = self.plugIt.getMedia(media)
+
+        assert(data == '{}')
+        assert(content_type == 'test')
+
+        self.plugIt.toReplyStatusCode = lambda: 201
+        data, content_type = self.plugIt.getMedia(media)
+        assert(not data)
+        assert(not content_type)
+
+    def test_meta(self):
+
+        k = str(uuid.uuid4())
+        path = str(uuid.uuid4())
+
+        self.plugIt.toReplyStatusCode = lambda: 200
+        self.plugIt.toReplyJson = lambda: {'k': k}
+        self.plugIt.toReplyHeaders = lambda: {'expire': 'Wed, 21 Oct 2015 07:28:00 GMT'}
+
+        data = self.plugIt.getMeta(path)
+        assert(self.lastDoQueryCall['url'] == 'meta/{}'.format(path))
+        assert(data['k'] == k)
+
+        # Data should not be cached
+        self.plugIt.toReplyJson = lambda: {'k2': k}
+        data = self.plugIt.getMeta(path)
+        assert(data['k2'] == k)
+
+    def test_meta_fail(self):
+        path = str(uuid.uuid4())
+
+        self.plugIt.toReplyStatusCode = lambda: 201
+        assert(not self.plugIt.getMeta(path))
+
+    def test_meta_cache(self):
+
+        k = str(uuid.uuid4())
+        path = str(uuid.uuid4())
+
+        self.plugIt.toReplyStatusCode = lambda: 200
+        self.plugIt.toReplyJson = lambda: {'k': k}
+        self.plugIt.toReplyHeaders = lambda: {}
+
+        # Data should be cached
+        data = self.plugIt.getMeta(path)
+        self.plugIt.toReplyJson = lambda: {'k2': k}
+        data = self.plugIt.getMeta(path)
+        assert(data['k'] == k)
+
+    def test_template(self):
+
+        k = str(uuid.uuid4())
+        path = str(uuid.uuid4())
+
+        self.plugIt.toReplyStatusCode = lambda: 200
+        self.plugIt.toReplyJson = lambda: {'k': k, 'template_tag': '-'}
+        self.plugIt.toReplyHeaders = lambda: {}
+
+        data = json.loads(self.plugIt.getTemplate(path))
+        assert(self.lastDoQueryCall['url'] == 'template/{}'.format(path))
+        assert(data['k'] == k)
+
+        # Data should be cached
+        self.plugIt.toReplyJson = lambda: {'k2': k, 'template_tag': '-'}
+        data = json.loads(self.plugIt.getTemplate(path))
+        assert(data['k'] == k)
+
+    def test_template_fail(self):
+
+        path = str(uuid.uuid4())
+
+        self.plugIt.toReplyStatusCode = lambda: 201
+        assert(not self.plugIt.getTemplate(path))
+
+    def test_template_no_meta_no_template(self):
+        path = str(uuid.uuid4())
+
+        self.plugIt.toReplyStatusCode = lambda: 200
+        self.plugIt.toReplyJson = lambda: {}
+        assert(not self.plugIt.getTemplate(path))
+
+    def test_do_action_normal_mode(self):
+
+        path = str(uuid.uuid4())
+
+        self.plugIt.toReplyStatusCode = lambda: 200
+        self.plugIt.toReplyJson = lambda: {}
+        self.plugIt.toReplyHeaders = lambda: {}
+
+        assert(self.plugIt.doAction(path) == ({}, {}))
+        assert(self.lastDoQueryCall['url'] == 'action/{}'.format(path))
+
+    def test_do_action_proxy_mode(self):
+
+        path = str(uuid.uuid4())
+
+        self.plugIt.toReplyStatusCode = lambda: 200
+        self.plugIt.toReplyJson = lambda: {}
+        self.plugIt.toReplyHeaders = lambda: {}
+
+        assert(self.plugIt.doAction(path, proxyMode=True) == ("{}", {}))
+        assert(self.lastDoQueryCall['url'] == path)
+
+    def test_do_action_proxy_mode_no_remplate(self):
+
+        k = str(uuid.uuid4())
+
+        self.plugIt.toReplyStatusCode = lambda: 200
+        self.plugIt.toReplyJson = lambda: {'k': k}
+        self.plugIt.toReplyHeaders = lambda: {'ebuio-plugit-notemplate': True}
+
+        r, __ = self.plugIt.doAction('', proxyMode=True)
+
+        assert(r.__class__.__name__ == 'PlugItNoTemplate')
+        assert(json.loads(r.content)['k'] == k)
+
+    def test_do_action_data(self):
+
+        path = str(uuid.uuid4())
+        k = str(uuid.uuid4())
+
+        self.plugIt.toReplyStatusCode = lambda: 200
+        self.plugIt.toReplyJson = lambda: {'k': k}
+        self.plugIt.toReplyHeaders = lambda: {}
+
+        assert(self.plugIt.doAction(path) == ({'k': k}, {}))
+
+    def test_do_action_500(self):
+        self.plugIt.toReplyStatusCode = lambda: 500
+        assert(self.plugIt.doAction('')[0].__class__.__name__ == 'PlugIt500')
+
+    def test_do_action_fail(self):
+        self.plugIt.toReplyStatusCode = lambda: 501
+        assert(self.plugIt.doAction('') == (None, {}))
+
+    def test_do_action_session(self):
+
+        k = str(uuid.uuid4())
+
+        self.plugIt.toReplyStatusCode = lambda: 200
+        self.plugIt.toReplyJson = lambda: {}
+        self.plugIt.toReplyHeaders = lambda: {'Ebuio-PlugIt-SetSession-k': k}
+        assert(self.plugIt.doAction('') == ({}, {'k': k}))
+
+    def test_do_action_redirect(self):
+
+        k = str(uuid.uuid4())
+
+        self.plugIt.toReplyStatusCode = lambda: 200
+        self.plugIt.toReplyJson = lambda: {}
+        self.plugIt.toReplyHeaders = lambda: {'ebuio-plugit-redirect': k}
+        r, headers = self.plugIt.doAction('')
+
+        assert(r.__class__.__name__ == 'PlugItRedirect')
+        assert(r.url == k)
+        assert(not r.no_prefix)
+        assert(headers == {})
+
+    def test_do_action_redirect_noprefix(self):
+
+        k = str(uuid.uuid4())
+
+        self.plugIt.toReplyStatusCode = lambda: 200
+        self.plugIt.toReplyJson = lambda: {}
+        self.plugIt.toReplyHeaders = lambda: {'ebuio-plugit-redirect': k, 'ebuio-plugit-redirect-noprefix': "True"}
+        r, headers = self.plugIt.doAction('')
+
+        assert(r.__class__.__name__ == 'PlugItRedirect')
+        assert(r.url == k)
+        assert(r.no_prefix)
+        assert(headers == {})
+
+    def test_do_action_file(self):
+
+        k = str(uuid.uuid4())
+        content_type = str(uuid.uuid4())
+        content_disposition = str(uuid.uuid4())
+
+        self.plugIt.toReplyStatusCode = lambda: 200
+        self.plugIt.toReplyJson = lambda: {'k': k}
+        self.plugIt.toReplyHeaders = lambda: {'ebuio-plugit-itafile': k, 'Content-Type': content_type}
+        r, headers = self.plugIt.doAction('')
+
+        assert(r.__class__.__name__ == 'PlugItFile')
+        assert(json.loads(r.content)['k'] == k)
+        assert(r.content_type == content_type)
+        assert(r.content_disposition == '')
+        assert(headers == {})
+
+        self.plugIt.toReplyHeaders = lambda: {'ebuio-plugit-itafile': k, 'Content-Type': content_type, 'content-disposition': content_disposition}
+        r, headers = self.plugIt.doAction('')
+        assert(r.content_disposition == content_disposition)
+
+
 # Todo: views
