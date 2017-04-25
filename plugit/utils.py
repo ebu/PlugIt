@@ -159,7 +159,7 @@ def get_session_from_request(request):
 
     for key, value in request.headers.items():
         if key.startswith('X-Plugitsession-'):
-            retour[key[16:]] = value
+            retour[key[16:].lower()] = value
 
     return retour
 

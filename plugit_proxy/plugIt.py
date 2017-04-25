@@ -254,7 +254,7 @@ class PlugIt():
 
             for (key, value) in r.headers.iteritems():
                 attr = 'ebuio-plugit-setsession-'
-                if key.startswith(attr):
+                if key.lower().startswith(attr):
                     session_to_set[key[len(attr):]] = value
 
             if 'ebuio-plugit-redirect' in r.headers:

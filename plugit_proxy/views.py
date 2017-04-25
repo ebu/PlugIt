@@ -7,7 +7,7 @@ from django.core.context_processors import csrf
 from django.views.decorators.csrf import csrf_exempt
 from django.http import Http404, HttpResponse, HttpResponseNotFound
 from django.conf import settings
-from django.http import HttpResponseRedirect, HttpResponsePermanentRedirect, HttpResponseForbidden
+from django.http import HttpResponseRedirect, HttpResponsePermanentRedirect, HttpResponseForbidden, HttpResponseServerError, JsonResponse
 from django.core.cache import cache
 from django.core.urlresolvers import reverse
 from django.views.decorators.cache import cache_control
@@ -294,7 +294,7 @@ def find_in_cache(cacheKey):
         context = cache.get('plugit-context-' + cacheKey, None)
 
         # We found a result, we can return it
-        if result and menu and context:
+        if result and context:
             return (result, menu, context)
     return (None, None, None)
 
@@ -456,8 +456,9 @@ def handle_special_cases(request, data, baseURI, meta):
         if 'HTTP_ACCEPT' in request.META and request.META['HTTP_ACCEPT'].find('json') != -1:
             return JsonResponse(data)
 
+        # Return json data without html content type, since json was not
+        # requiered
         result = json.dumps(data)
-
         return HttpResponse(result)
 
     if meta.get('xml_only', None):  # Just send the xml back

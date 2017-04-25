@@ -9,7 +9,7 @@ import os
 
 
 class TestExternal(unittest.TestCase):
-    """Class to test the plugit server"""
+    """Class to test the plugit service"""
 
     p = None
 
