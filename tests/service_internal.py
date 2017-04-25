@@ -1,516 +1,877 @@
-"""Test internal functions and features of the simple service"""
-
+"""Test internal functions and features of a service"""
 
 import unittest
 from nose.tools import *
-import os
+
 import sys
+import os
 import uuid
-import subprocess
-import time
-import tempfile
+from werkzeug.exceptions import NotFound
 
 
-from django.conf import settings
-import django
-
-
-settings.configure(LOGGING_CONFIG=None, PIAPI_STANDALONE=True, PIAPI_STANDALONE_URI="", PIAPI_BASEURI="")
-
-
-from django import template
-from django.template import loader
+class _CallBack():
+    def __init__(self, prop_to_set):
+        for (key, value) in prop_to_set.items():
+            setattr(self, key, value)
 
 
 class TestBase(unittest.TestCase):
     """Common class for tests"""
 
-    STANDALONE_PROXY = os.path.join('examples', 'standalone_proxy')
+    DUMMY_CONFIG_PATH = os.path.join('tests', 'dummy_config')
 
     @classmethod
     def setup_class(self):
         """Setup path"""
-        sys.path.append(self.STANDALONE_PROXY)
+        sys.path.append(self.DUMMY_CONFIG_PATH)
 
     @classmethod
     def teardown_class(self):
         """Remove added value from path"""
-        sys.path.remove(self.STANDALONE_PROXY)
+        sys.path.remove(self.DUMMY_CONFIG_PATH)
 
 
-class TestCheckMail(TestBase):
+class TestUtils(TestBase):
+    """Test the utils.py file"""
 
-    @classmethod
-    def setup_class(self):
-        super(TestCheckMail, self).setup_class()
-        self.start_popserver()
-        self.run_checkmail()
-        self.stop_popserver()
+    def test_decorators_action(self):
+        """Test the action decorator"""
+        from plugit.utils import action
 
-    @classmethod
-    def start_popserver(self):
-        self.p = subprocess.Popen([sys.executable, 'server.py'], cwd='tests/helpers/pop_server', stderr=subprocess.PIPE)
+        route = str(uuid.uuid4())
+        template = str(uuid.uuid4())
+        methods = str(uuid.uuid4())
 
-    @classmethod
-    def stop_popserver(self):
-        (out, err) = self.p.communicate()
-        self.output = err
+        @action(route=route, template=template, methods=methods)
+        def _tmp():
+            pass
 
-    @classmethod
-    def run_checkmail(self):
-        self.pop_user = str(uuid.uuid4())
-        self.pop_password = str(uuid.uuid4())
+        assert(_tmp.pi_api_action)
+        assert(_tmp.pi_api_route == route)
+        assert(_tmp.pi_api_template == template)
+        assert(_tmp.pi_api_methods == methods)
 
-        settings.INCOMING_MAIL_HOST = "127.0.0.1"
-        settings.INCOMING_MAIL_PORT = 22110
-        settings.INCOMING_MAIL_USER = self.pop_user
-        settings.INCOMING_MAIL_PASSWORD = self.pop_password
-        settings.EBUIO_MAIL_SECRET_HASH = 'secret-for-tests'
-        settings.EBUIO_MAIL_SECRET_KEY = 'secret2-for-tests'
+    def test_decorators_action_default(self):
+        """Test the action decorator"""
+        from plugit.utils import action
 
-        from plugit_proxy.management.commands import check_mail
+        @action(route='')
+        def _tmp():
+            pass
 
-        mail_handeled = []
+        assert(_tmp.pi_api_action)
+        assert(_tmp.pi_api_template == '')
+        assert('GET' in _tmp.pi_api_methods)
+        assert(len(_tmp.pi_api_methods) == 1)
 
-        # False plugit object to capture mail sends
-        class DummyPlugIt:
-            def __init__(self, *args, **kwargs):
-                pass
+    def test_decorators_only_logger_user(self):
+        """Test the only_logger_user decorator"""
+        from plugit.utils import only_logged_user
 
-            def newMail(self, data, payload):
-                mail_handeled.append((data, payload))
-                return True
+        @only_logged_user()
+        def _tmp():
+            pass
 
-        check_mail.PlugIt = DummyPlugIt
+        assert(_tmp.pi_api_only_logged_user)
 
-        check_mail.Command().handle()
+    def test_decorators_only_member_user(self):
+        """Test the only_member_user decorator"""
+        from plugit.utils import only_member_user
 
-        self.mail_handeled = mail_handeled
+        @only_member_user()
+        def _tmp():
+            pass
 
-        # assert(False)
+        assert(_tmp.pi_api_only_member_user)
 
-    def test_output(self):
-        assert(self.output)
+    def test_decorators_only_admin_user(self):
+        """Test the only_admin_user decorator"""
+        from plugit.utils import only_admin_user
 
-    def test_user(self):
-        """Test that the command logged in"""
+        @only_admin_user()
+        def _tmp():
+            pass
 
-        assert("USER:%s\n" % (self.pop_user,) in self.output)
+        assert(_tmp.pi_api_only_admin_user)
 
-    def test_password(self):
-        """Test that the command sent the correct password"""
+    def test_decorators_only_orga_member_user(self):
+        """Test the only_orga_member_user decorator"""
+        from plugit.utils import only_orga_member_user
 
-        assert("PASS:%s\n" % (self.pop_password,) in self.output)
+        @only_orga_member_user()
+        def _tmp():
+            pass
 
-    def test_mail1_retrived(self):
-        """Mail1 should have been retrivied"""
-        assert("RETRIVE:1\n" in self.output)
+        assert(_tmp.pi_api_only_orga_member_user)
 
-    def test_mail1_not_deleted(self):
-        """Mail1 should not have been deleted"""
-        assert("DELETE:1\n" not in self.output)
+    def test_decorators_only_orga_admin_user(self):
+        """Test the only_orga_admin_user decorator"""
+        from plugit.utils import only_orga_admin_user
 
-    def test_mail2_retrived(self):
-        """Mail2 should have been retrivied"""
-        assert("RETRIVE:2\n" in self.output)
+        @only_orga_admin_user()
+        def _tmp():
+            pass
 
-    def test_mail2_not_deleted(self):
-        """Mail2 should not have been deleted"""
-        assert("DELETE:2\n" not in self.output)
+        assert(_tmp.pi_api_only_orga_admin_user)
 
-    def test_mail3_retrived(self):
-        """Mail3 should have been retrivied"""
-        assert("RETRIVE:3\n" in self.output)
+    def test_decorators_cache(self):
+        """Test the cache decorator"""
+        from plugit.utils import cache
 
-    def test_mail3_not_deleted(self):
-        """Mail3 should not have been deleted"""
-        assert("DELETE:3\n" not in self.output)
+        time = str(uuid.uuid4())
+        byUser = str(uuid.uuid4())
 
-    def test_mail4_retrived(self):
-        """Mail4 should have been retrivied"""
-        assert("RETRIVE:4\n" in self.output)
+        @cache(time=time, byUser=byUser)
+        def _tmp():
+            pass
 
-    def test_mail4_not_deleted(self):
-        """Mail4 should not have been deleted"""
-        assert("DELETE:4\n" not in self.output)
+        assert(_tmp.pi_api_cache_time == time)
+        assert(_tmp.pi_api_cache_by_user == byUser)
 
-    def test_mail5_retrived(self):
-        """Mail5 should have been retrivied"""
-        assert("RETRIVE:5\n" in self.output)
-
-    def test_mail5_not_deleted(self):
-        """Mail5 should not have been deleted"""
-        assert("DELETE:5\n" not in self.output)
+    def test_decorators_user_info(self):
+        """Test the user_info decorator"""
+        from plugit.utils import user_info
 
-    def test_mail6_retrived(self):
-        """Mail6 should have been retrivied"""
-        assert("RETRIVE:6\n" in self.output)
+        props = str(uuid.uuid4())
 
-    def test_mail6_not_deleted(self):
-        """Mail6 should have been deleted"""
-        assert("DELETE:6\n" in self.output)
+        @user_info(props=props)
+        def _tmp():
+            pass
 
-    def test_mail6_handeled(self):
-        """Mail6 should has been handeled"""
-        assert(('test', 'ThisIsMail6\n\n') in self.mail_handeled)
+        assert(_tmp.pi_api_user_info == props)
 
-    def test_mail7_retrived(self):
-        """Mail7 should have been retrivied"""
-        assert("RETRIVE:7\n" in self.output)
+    def test_decorators_json_only(self):
+        """Test the json_only decorator"""
+        from plugit.utils import json_only
 
-    def test_mail7_not_deleted(self):
-        """Mail7 should have been deleted"""
-        assert("DELETE:7\n" in self.output)
+        @json_only()
+        def _tmp():
+            pass
 
-    def test_mail7_handeled(self):
-        """Mail7 should has been handeled"""
-        assert(('test', 'ThisIsMail7\n\n') in self.mail_handeled)
+        assert(_tmp.pi_api_json_only)
 
-    def test_mail891011121314151617_retrived(self):
-        """Mail with auto response should have been retrivied"""
-        for i in range(8, 18):
-            print("Testing", i,)
-            assert("RETRIVE:" + str(i) + "\n" in self.output)
-            print("OK")
+    def test_decorators_no_template(self):
+        """Test the no_template decorator"""
+        from plugit.utils import no_template
 
-    def test_mail891011121314151617_not_deleted(self):
-        """Mail with auto response should have been deleted"""
-        for i in range(8, 18):
-            print("Testing", i,)
-            assert("DELETE:" + str(i) + "\n" in self.output)
-            print("OK")
+        @no_template()
+        def _tmp():
+            pass
 
-    def test_mail891011121314151617_handeled(self):
-        """Mail with auto response should NOT has been handeled"""
-        for i in range(8, 18):
-            print("Testing", i,)
-            assert(('test', 'ThisIsMail%s\n\n' % (str(i),)) not in self.mail_handeled)
-            print("OK")
+        assert(_tmp.pi_api_no_template)
 
+    def test_md5checksum(self):
+        """Test the md5Checksum util"""
+        import tempfile
+        from plugit.utils import md5Checksum
 
-class TestPlugItTags(TestBase):
+        (filehandle, filename) = tempfile.mkstemp()
+        os.close(filehandle)
 
-    @classmethod
-    def setup_class(self):
-        super(TestPlugItTags, self).setup_class()
+        file_ = open(filename, 'wb')
+        file_.write('thegame\n')
+        file_.close()
 
-        # Handle custom user generation
-        settings.PIAPI_USERDATA = ['pk', 'prop1', 'propa']
+        assert(md5Checksum(filename) == '3a617592865c4a620d71ddf2311208c9')
 
-        self.user_pk = str(uuid.uuid4())
-        self.user_prop1 = str(uuid.uuid4())
-        self.user_prop2 = str(uuid.uuid4())
+        os.unlink(filename)
 
-        from plugit_proxy import views
-        self.bkp_generate = views.generate_user
+    def test_add_unique_postfix(self):
+        """Test the add_unique_postfix function"""
+        import tempfile
+        from plugit.utils import add_unique_postfix
 
-        def _generate_user(pk):
+        (filehandle, filename) = tempfile.mkstemp()
+        os.close(filehandle)
 
-            class DummyUser():
-                pk = self.user_pk
-                prop1 = self.user_prop1
-                prop2 = self.user_prop2
+        assert(add_unique_postfix(filename))
+        assert(filename != add_unique_postfix(filename))
 
-            if pk == self.user_pk:
-                return DummyUser()
+        os.unlink(filename)
 
-        views.generate_user = _generate_user
+        # File dosen't exist: should return the same
+        assert(filename == add_unique_postfix(filename))
 
-        # Handle template return
-        self.bkp_plugIt = views.plugIt
-        self.bkp_getPlugItObject = views.getPlugItObject
+    def test_get_session_from_request(self):
+        """Test the get_session_from_request function"""
+        from plugit.utils import get_session_from_request
 
-        class _plugIt():
-            def getTemplate(self, action):
-                return "{{test_val}}," + action
+        keya = str(uuid.uuid4())
+        keyb = str(uuid.uuid4())
+        valuea = str(uuid.uuid4())
+        valueb = str(uuid.uuid4())
+        valuec = str(uuid.uuid4())
 
-        def _getPlugItObject(__):
-            return _plugIt(), None, None
+        class R():
+            headers = {
+                'X-Plugitsession-' + keya: valuea,
+                'X-Plugitsession-' + keyb: valueb,
+                valuec: valuec,
+            }
 
-        views.plugIt = _plugIt()
-        views.getPlugItObject = _getPlugItObject
+        retour = get_session_from_request(R())
 
-    @classmethod
-    def teardown_class(self):
-        super(TestPlugItTags, self).teardown_class()
-        from plugit_proxy import views
-        views.generate_user = self.bkp_generate
-        views.plugIt = self.bkp_plugIt
-        views.getPlugItObject = self.bkp_getPlugItObject
+        assert(keya in retour)
+        assert(keyb in retour)
+        assert(valuec not in retour)
 
-    def test_get_user_return_user(self):
-        from plugit_proxy.templatetags.plugit_tags import plugitGetUser
+        assert(retour[keya] == valuea)
+        assert(retour[keyb] == valueb)
 
-        assert(plugitGetUser(self.user_pk).id)
-        assert(not plugitGetUser(self.user_pk * 2).id)
+    def test_redirect(self):
+        """Test PlugitRedirect"""
 
-    def test_get_user_return_only_wanted_user_probs(self):
-        from plugit_proxy.templatetags.plugit_tags import plugitGetUser
+        from plugit.utils import PlugItRedirect
 
-        user = plugitGetUser(self.user_pk)
+        url = str(uuid.uuid4())
+        no_prefix = str(uuid.uuid4())
 
-        assert(user.pk == self.user_pk)
-        assert(user.id == self.user_pk)
-        assert(user.prop1 == self.user_prop1)
-        assert(not hasattr(user, 'prop2'))
+        _tmp = PlugItRedirect(url=url, no_prefix=no_prefix)
 
-    def test_plugit_include(self):
+        assert(_tmp.no_prefix == no_prefix)
+        assert(_tmp.url == url)
 
-        settings.INSTALLED_APPS = ('plugIt',)
-        django.setup()
+    def test_redirect_default(self):
+        """Test PlugItRedirect with defaults values"""
 
-        action = str(uuid.uuid4())
-        test_val = str(uuid.uuid4())
+        from plugit.utils import PlugItRedirect
 
-        context = template.Context({'action': action, 'test_val': test_val})
+        _tmp = PlugItRedirect(url='')
 
-        result = template.Template("""{% load plugit_tags %}{% plugitInclude action %}""").render(context)
+        assert(not _tmp.no_prefix)
 
-        assert(result == "%s,%s" % (test_val, action,))
+    def test_sendfile(self):
+        """Test PlugItSendFile"""
 
-    def test_plugit_include_security(self):
+        from plugit.utils import PlugItSendFile
 
-        settings.INSTALLED_APPS = ('plugIt',)
-        settings.PIAPI_STANDALONE = False
-        settings.SECRET_FOR_SIGNS = str(uuid.uuid4())
-        django.setup()
+        mimetype = str(uuid.uuid4())
+        filename = str(uuid.uuid4())
+        as_attachment = str(uuid.uuid4())
+        attachment_filename = str(uuid.uuid4())
 
-        action = str(uuid.uuid4())
-        test_val = str(uuid.uuid4())
-        hpropk = str(uuid.uuid4())
-        hproname = str(uuid.uuid4())
+        _tmp = PlugItSendFile(mimetype=mimetype, filename=filename, as_attachment=as_attachment, attachment_filename=attachment_filename)
 
-        class DummyUser():
-            pk = str(uuid.uuid4())
-        u = DummyUser()
+        assert(_tmp.mimetype == mimetype)
+        assert(_tmp.filename == filename)
+        assert(_tmp.as_attachment == as_attachment)
+        assert(_tmp.attachment_filename == attachment_filename)
 
-        import utils
-        import app
-        app.utils = utils
+    def test_sendfile_default(self):
+        """Test PlugitSendFile with default values"""
 
-        hkey = utils.create_secret(hpropk, hproname, u.pk)
+        from plugit.utils import PlugItSendFile
 
-        contextok = template.Context({'action': action, 'test_val': test_val, 'ebuio_hpro_pk': hpropk, 'ebuio_hpro_name': hproname, 'ebuio_u': u, 'ebuio_hpro_key': hkey})
-        contexterr = template.Context({'action': action, 'test_val': test_val, 'ebuio_hpro_pk': hpropk, 'ebuio_hpro_name': hproname, 'ebuio_u': u, 'ebuio_hpro_key': hkey * 2})
+        _tmp = PlugItSendFile(mimetype='', filename='')
 
-        resultok = template.Template("""{% load plugit_tags %}{% plugitInclude action %}""").render(contextok)
-        resulterr = template.Template("""{% load plugit_tags %}{% plugitInclude action %}""").render(contexterr)
+        assert(not _tmp.as_attachment)
+        assert(_tmp.attachment_filename == '')
 
-        settings.PIAPI_STANDALONE = True
+    def test_setsession(self):
+        """Test PlugitRedirect"""
 
-        assert(resultok == "%s,%s" % (test_val, action,))
-        assert(resulterr == "")
+        from plugit.utils import PlugItSetSession
 
+        base = str(uuid.uuid4())
+        things_to_set = str(uuid.uuid4())
 
-class TestPlugItDoQueryTest(TestBase):
+        _tmp = PlugItSetSession(base=base, things_to_set=things_to_set)
 
-    @classmethod
-    def setup_class(self):
-        super(TestPlugItDoQueryTest, self).setup_class()
-        FNULL = open(os.devnull, 'w')
-        self.p = subprocess.Popen([sys.executable, 'doquery_server.py'], cwd='tests/helpers', stdout=FNULL, stderr=FNULL)
-        time.sleep(0.5)
+        assert(_tmp.base == base)
+        assert(_tmp.things_to_set == things_to_set)
 
-        from plugit_proxy.plugIt import PlugIt
-        self.plugit = PlugIt("http://127.0.0.1:62314")
+    def test_setsession_default(self):
+        """Test PlugItSetSession with defaults values"""
 
-    @classmethod
-    def teardown_class(self):
-        super(TestPlugItDoQueryTest, self).teardown_class()
-        self.p.kill()
+        from plugit.utils import PlugItSetSession
 
-    def test_get(self):
-        retour = self.plugit.doQuery("test_get").json()
-        assert(retour['method'] == 'GET')
+        _tmp = PlugItSetSession(base='')
 
-    def test_404(self):
-        retour = self.plugit.doQuery("/_")
+        assert(_tmp.things_to_set == {})
+
+    def test_address_in_network(self):
+        from plugit.utils import addressInNetwork
+
+        assert(addressInNetwork('123.123.123.123', '123.123.123.123/32'))
+        assert(not addressInNetwork('123.123.123.123', '123.123.123.1/32'))
+
+        assert(addressInNetwork('123.123.123.123', '123.123.123.1/24'))
+        assert(not addressInNetwork('123.123.123.123', '123.123.1.1/24'))
+
+        assert(addressInNetwork('123.123.123.123', '123.123.1.1/16'))
+        assert(not addressInNetwork('123.123.123.123', '123.1.1.1/16'))
+
+        assert(addressInNetwork('123.123.123.123', '123.1.1.1/8'))
+        assert(not addressInNetwork('123.123.123.123', '1.1.1.1/8'))
+
+        assert(addressInNetwork('123.123.123.123', '1.1.1.1/0'))
+        assert(addressInNetwork('123.123.123.123', '0.0.0.0/0'))
+
+    def test_check_ip(self):
+        """Test check_ip"""
+
+        from plugit import utils
+
+        backup_allowed = utils.PI_ALLOWED_NETWORKS
+        utils.PI_ALLOWED_NETWORKS = ['123.1.1.1/8']
+
+        class R():
+            remote_addr = '123.123.123.123'
+
+        try:
+            retour = utils.check_ip(R())
+        except Exception:
+            retour = False
+
+        utils.PI_ALLOWED_NETWORKS = backup_allowed
+
+        assert(retour)
+
+    def test_check_ip_2(self):
+        """Test check_ip"""
+
+        from plugit import utils
+
+        backup_allowed = utils.PI_ALLOWED_NETWORKS
+        utils.PI_ALLOWED_NETWORKS = ['1.1.1.1/8']
+
+        class R():
+            remote_addr = '123.123.123.123'
+
+        try:
+            retour = utils.check_ip(R())
+        except Exception:
+            retour = False
+
+        utils.PI_ALLOWED_NETWORKS = backup_allowed
+
         assert(not retour)
 
-    def test_get_param(self):
-        p = str(uuid.uuid4())
-        retour = self.plugit.doQuery("test_get", getParmeters={'get_param': p}).json()
-        assert(retour['method'] == 'GET')
-        assert(retour['get_param'] == p)
 
-    def test_post(self):
-        retour = self.plugit.doQuery("test_post", method='POST').json()
-        assert(retour['method'] == 'POST')
+class TestViews(TestBase):
+    """Test views.py"""
 
-    def test_post_param(self):
-        p = str(uuid.uuid4())
-        retour = self.plugit.doQuery("test_post", method='POST', postParameters={'post_param': p}).json()
-        assert(retour['method'] == 'POST')
-        assert(retour['post_param'] == p)
+    def patch_view(self, ip='127.0.0.1', dont_jsonify=False):
+        """Patch the plugit view with special callbacks"""
 
-    def test_post_getparam(self):
-        p = str(uuid.uuid4())
-        retour = self.plugit.doQuery("test_post", method='POST', getParmeters={'get_param': p}).json()
-        assert(retour['method'] == 'POST')
-        assert(retour['get_param'] == p)
+        from plugit import views
+        import json
 
-    def test_extraHeaders_get(self):
-        p = str(uuid.uuid4())
+        self.plugitviews = views
 
-        retour = self.plugit.doQuery("test_extraHeaders", method='GET', extraHeaders={'test': p}).json()
-        assert(retour['x-plugit-test'] == p)
+        self.bkp_request = self.plugitviews.request
+        self.bkp_md5 = self.plugitviews.md5Checksum
+        self.bkp_response = self.plugitviews.make_response
+        self.bkp_jsonfy = self.plugitviews.jsonify
 
-    def test_extraHeaders_post(self):
-        p = str(uuid.uuid4())
+        class R():
+            remote_addr = ip
+            headers = {}
 
-        retour = self.plugit.doQuery("test_extraHeaders", method='POST', extraHeaders={'test': p}).json()
-        assert(retour['x-plugit-test'] == p)
+        def false_md5_checksum(value):
+            return value * 2
 
-    def test_session_get(self):
-        p = str(uuid.uuid4())
+        def false_make_response(obj):
+            class Rep():
+                retour = obj
+                headers = {}
+            return Rep()
 
-        retour = self.plugit.doQuery("test_session", method='GET', session={'test': p}).json()
-        assert(retour['x-plugitsession-test'] == p)
-        assert(retour['cookie-test'] == p)
+        def false_jsonfy(obj):
+            if dont_jsonify:
+                return obj
+            return json.dumps(obj)
 
-    def test_session_post(self):
-        p = str(uuid.uuid4())
+        self.plugitviews.request = R()
+        self.plugitviews.md5Checksum = false_md5_checksum
+        self.plugitviews.make_response = false_make_response
+        self.plugitviews.jsonify = false_jsonfy
 
-        retour = self.plugit.doQuery("test_session", method='POST', session={'test': p}).json()
-        assert(retour['x-plugitsession-test'] == p)
-        assert(retour['cookie-test'] == p)
+    def unpatch_view(self):
+        """Revert changes done to the view"""
 
-    def test_fileupload(self):
+        self.plugitviews.request = self.bkp_request
+        self.plugitviews.md5Checksum = self.bkp_md5
+        self.plugitviews.make_response = self.bkp_response
+        self.plugitviews.jsonify = self.bkp_jsonfy
 
-        p = str(uuid.uuid4())
-        (handle, tmpfile) = tempfile.mkstemp()
-        handle = open(tmpfile, 'wb')
-        handle.write(p)
+    def test_meta(self):
+        """Test the MetaView"""
+
+        import json
+        import datetime
+
+        self.patch_view()
+
+        pi_api_template = str(uuid.uuid4())
+        pi_api_only_logged_user = str(uuid.uuid4())
+        pi_api_only_member_user = str(uuid.uuid4())
+        pi_api_only_admin_user = str(uuid.uuid4())
+        pi_api_only_orga_member_user = str(uuid.uuid4())
+        pi_api_only_orga_admin_user = str(uuid.uuid4())
+        pi_api_cache_time = str(uuid.uuid4())
+        pi_api_cache_by_user = str(uuid.uuid4())
+        pi_api_user_info = str(uuid.uuid4())
+        pi_api_json_only = str(uuid.uuid4())
+        pi_api_no_template = str(uuid.uuid4())
+
+        props = {
+            'pi_api_template': pi_api_template,
+            'pi_api_only_logged_user': pi_api_only_logged_user,
+            'pi_api_only_member_user': pi_api_only_member_user,
+            'pi_api_only_admin_user': pi_api_only_admin_user,
+            'pi_api_only_orga_member_user': pi_api_only_orga_member_user,
+            'pi_api_only_orga_admin_user': pi_api_only_orga_admin_user,
+            'pi_api_cache_time': pi_api_cache_time,
+            'pi_api_cache_by_user': pi_api_cache_by_user,
+            'pi_api_user_info': pi_api_user_info,
+            'pi_api_json_only': pi_api_json_only,
+            'pi_api_no_template': pi_api_no_template
+        }
+
+        mv = self.plugitviews.MetaView(_CallBack(props))
+
+        response = mv.dispatch_request()
+
+        self.unpatch_view()
+
+        data = json.loads(response.retour)
+
+        assert(data['template_tag'] == (('templates/' + pi_api_template) * 2))
+        assert(data['only_logged_user'] == pi_api_only_logged_user)
+        assert(data['only_member_user'] == pi_api_only_member_user)
+        assert(data['only_admin_user'] == pi_api_only_admin_user)
+        assert(data['only_orga_member_user'] == pi_api_only_orga_member_user)
+        assert(data['only_orga_admin_user'] == pi_api_only_orga_admin_user)
+        assert(data['cache_time'] == pi_api_cache_time)
+        assert(data['cache_by_user'] == pi_api_cache_by_user)
+        assert(data['user_info'] == pi_api_user_info)
+        assert(data['json_only'] == pi_api_json_only)
+        assert(data['no_template'] == pi_api_no_template)
+
+        assert(response.headers['Cache-Control'] == 'public, max-age=' + str(self.plugitviews.PI_META_CACHE))
+        date = datetime.datetime.strptime(response.headers['Expire'], "%a, %d %b %Y %H:%M:%S GMT")
+
+        assert(date)
+
+        now = datetime.datetime.utcnow() + datetime.timedelta(seconds=self.plugitviews.PI_META_CACHE)
+        now = now - datetime.timedelta(microseconds=now.microsecond)
+
+        # If we just switched seconds. No reason we got more than this of runtime...
+        assert(date == now or data == (now - datetime.timedelta(seconds=1)))
+
+    def test_meta_ip(self):
+        """Check if the meta view check the IP"""
+
+        from plugit import utils
+
+        backup_allowed = utils.PI_ALLOWED_NETWORKS
+        utils.PI_ALLOWED_NETWORKS = ['127.0.0.0/8']
+
+        self.patch_view('1.2.3.4')
+
+        mv = self.plugitviews.MetaView({})
+
+        try:
+            mv.dispatch_request()
+        except NotFound:
+            self.unpatch_view()
+            return  # Ok :)
+
+        self.unpatch_view()
+        utils.PI_ALLOWED_NETWORKS = backup_allowed
+
+        assert(False)
+
+    def test_template(self):
+        """Test the template view"""
+
+        self.patch_view()
+
+        file_content = '\n'.join([str(uuid.uuid4()) for x in range(0, 0xF)])
+
+        import tempfile
+        import os
+
+        if not os.path.isdir('tests/templates'):
+            delete_the_template_folder = True
+            os.mkdir('tests/templates')
+        else:
+            delete_the_template_folder = False
+
+        (handle, tmp_template) = tempfile.mkstemp(dir='tests/templates/')
+        handle = open(tmp_template, 'wb')
+        handle.write(file_content)
         handle.close()
+        current_dir = os.getcwd()
 
-        class FileObj():
-            def temporary_file_path(self):
-                return tmpfile
-            name = 'test'
+        try:
+            mv = self.plugitviews.TemplateView(_CallBack({'pi_api_template': tmp_template.split(os.sep)[-1]}))
 
-        retour = self.plugit.doQuery("test_fileupload", method='POST', files={'test': FileObj()}).json()
+            from flask import Flask
+            app = Flask(__name__)
+            with app.app_context():
+                with app.test_request_context():
+                    os.chdir(os.sep.join(tmp_template.split(os.sep)[:-2]))
+                    response = mv.dispatch_request()
+                    os.chdir(current_dir)
 
-        os.unlink(tmpfile)
+            self.unpatch_view()
+        finally:
+            os.chdir(current_dir)
+            os.unlink(tmp_template)
 
-        assert(retour['file-test'] == p)
+            if delete_the_template_folder:
+                os.rmdir('tests/templates')
 
-    def _build_file(self):
+        response.direct_passthrough = False
 
-        (handle, tmpfile) = tempfile.mkstemp()
-        handle = open(tmpfile, 'wb')
-        handle.write("test")
+        assert(response.data == file_content)
+
+    def test_template_ip(self):
+        """Check if the template view check the IP"""
+
+        from plugit import utils
+
+        backup_allowed = utils.PI_ALLOWED_NETWORKS
+        utils.PI_ALLOWED_NETWORKS = ['127.0.0.0/8']
+
+        self.patch_view('1.2.3.4')
+
+        mv = self.plugitviews.TemplateView({})
+
+        try:
+            mv.dispatch_request()
+        except NotFound:
+            self.unpatch_view()
+            return  # Ok :)
+
+        self.unpatch_view()
+        utils.PI_ALLOWED_NETWORKS = backup_allowed
+
+        assert(False)
+
+    def test_action(self):
+        """Test action"""
+
+        import json
+
+        self.patch_view()
+
+        data = {'1': str(uuid.uuid4()), '2': str(uuid.uuid4())}
+
+        def _tmpa(__):
+            return data
+
+        mv = self.plugitviews.ActionView(_tmpa)
+        response = mv.dispatch_request()
+        self.unpatch_view()
+
+        assert(json.loads(response) == data)
+
+    def test_action_got_extra_parameters(self):
+        """Test action"""
+
+        import json
+
+        self.patch_view()
+
+        data = {'1': str(uuid.uuid4()), '2': str(uuid.uuid4())}
+
+        def _tmpa(__, extra_data):
+            return extra_data
+
+        mv = self.plugitviews.ActionView(_tmpa)
+        response = mv.dispatch_request(data)
+        self.unpatch_view()
+
+        assert(json.loads(response) == data)
+
+    def test_action_got_request(self):
+        """Test action"""
+
+        import json
+
+        self.patch_view()
+
+        def _tmpa(request):
+            return request.__class__.__module__ + '.' + request.__class__.__name__
+
+        mv = self.plugitviews.ActionView(_tmpa)
+        from flask import Flask
+        app = Flask(__name__)
+        with app.app_context():
+            with app.test_request_context():
+                response = mv.dispatch_request()
+        self.unpatch_view()
+
+        assert(json.loads(response) == "tests.service_internal.R")
+
+    def test_action_set_session(self):
+
+        self.patch_view(dont_jsonify=True)
+
+        data = {'a': str(uuid.uuid4()), 'b': str(uuid.uuid4()), 'headers': {}}
+        session_key = str(uuid.uuid4())
+        session_value = str(uuid.uuid4())
+
+        def _tmpa(__):
+            from plugit.utils import PlugItSetSession
+            return PlugItSetSession(_CallBack(data), {session_key: session_value})
+
+        mv = self.plugitviews.ActionView(_tmpa)
+        response = mv.dispatch_request()
+        self.unpatch_view()
+
+        assert(response.a == data['a'])
+        assert(response.b == data['b'])
+        assert(response.headers['EbuIo-PlugIt-SetSession-' + session_key] == session_value)
+
+    def test_action_redirect(self):
+
+        self.patch_view(dont_jsonify=True)
+
+        redirect_dest = str(uuid.uuid4())
+
+        def _tmpa(__):
+            from plugit.utils import PlugItRedirect
+            return PlugItRedirect(redirect_dest, no_prefix=False)
+
+        mv = self.plugitviews.ActionView(_tmpa)
+        response = mv.dispatch_request()
+        self.unpatch_view()
+
+        assert(response.headers['EbuIo-PlugIt-Redirect'] == redirect_dest)
+        assert('EbuIo-PlugIt-Redirect-NoPrefix' not in response.headers)
+
+    def test_action_redirect_no_prefix(self):
+
+        self.patch_view(dont_jsonify=True)
+
+        redirect_dest = str(uuid.uuid4())
+
+        def _tmpa(__):
+            from plugit.utils import PlugItRedirect
+            return PlugItRedirect(redirect_dest, no_prefix=True)
+
+        mv = self.plugitviews.ActionView(_tmpa)
+        response = mv.dispatch_request()
+        self.unpatch_view()
+
+        assert(response.headers['EbuIo-PlugIt-Redirect'] == redirect_dest)
+        assert(response.headers['EbuIo-PlugIt-Redirect-NoPrefix'] == 'True')
+
+    def test_action_send_file(self):
+        """Test the action view sending a file"""
+
+        self.patch_view(dont_jsonify=True)
+
+        file_content = '\n'.join([str(uuid.uuid4()) for x in range(0, 0xF)])
+
+        minetype = str(uuid.uuid4())
+
+        import tempfile
+        import os
+
+        if not os.path.isdir('tests/templates'):
+            delete_the_template_folder = True
+            os.mkdir('tests/templates')
+        else:
+            delete_the_template_folder = False
+
+        (handle, tmp_template) = tempfile.mkstemp(dir='tests/templates/')
+        handle = open(tmp_template, 'wb')
+        handle.write(file_content)
         handle.close()
+        current_dir = os.getcwd()
 
-        class FileObj():
-            def temporary_file_path(self):
-                return tmpfile
-            name = 'test'
+        def _tmpa(__):
+            from plugit.utils import PlugItSendFile
+            return PlugItSendFile(tmp_template, minetype)
 
-        return (tmpfile, FileObj())
+        try:
+            mv = self.plugitviews.ActionView(_tmpa)
 
-    def test_post_param_with_files(self):
-        fname, fobj = self._build_file()
+            from flask import Flask
+            app = Flask(__name__)
+            with app.app_context():
+                with app.test_request_context():
+                    os.chdir(os.sep.join(tmp_template.split(os.sep)[:-2]))
+                    response = mv.dispatch_request()
+                    os.chdir(current_dir)
 
-        p = str(uuid.uuid4())
-        retour = self.plugit.doQuery("test_post", method='POST', postParameters={'post_param': p}, files={'test': fobj}).json()
+            self.unpatch_view()
+        finally:
+            os.chdir(current_dir)
+            os.unlink(tmp_template)
 
-        os.unlink(fname)
+            if delete_the_template_folder:
+                os.rmdir('tests/templates')
 
-        assert(retour['method'] == 'POST')
-        assert(retour['post_param'] == p)
+        response.direct_passthrough = False
 
-    def test_post_getparam_with_files(self):
-        fname, fobj = self._build_file()
-        p = str(uuid.uuid4())
-        retour = self.plugit.doQuery("test_post", method='POST', getParmeters={'get_param': p}, files={'test': fobj}).json()
-        os.unlink(fname)
-        assert(retour['method'] == 'POST')
-        assert(retour['get_param'] == p)
+        assert(response.data == file_content)
+        assert(response.headers['Content-Type'] == minetype)
 
-    def test_extraHeaders_post_with_files(self):
-        fname, fobj = self._build_file()
-        p = str(uuid.uuid4())
+    def test_action_send_file_2(self):
+        """Test the action view sending a file"""
 
-        retour = self.plugit.doQuery("test_extraHeaders", method='POST', extraHeaders={'test': p}, files={'test': fobj}).json()
-        os.unlink(fname)
-        assert(retour['x-plugit-test'] == p)
+        self.patch_view(dont_jsonify=True)
 
-    def test_session_post_with_files(self):
-        fname, fobj = self._build_file()
-        p = str(uuid.uuid4())
+        file_content = '\n'.join([str(uuid.uuid4()) for x in range(0, 0xF)])
 
-        retour = self.plugit.doQuery("test_session", method='POST', session={'test': p}, files={'test': fobj}).json()
-        os.unlink(fname)
-        assert(retour['x-plugitsession-test'] == p)
-        assert(retour['cookie-test'] == p)
+        minetype = str(uuid.uuid4())
+        atta_filename = str(uuid.uuid4())
+
+        import tempfile
+        import os
+
+        if not os.path.isdir('tests/templates'):
+            delete_the_template_folder = True
+            os.mkdir('tests/templates')
+        else:
+            delete_the_template_folder = False
+
+        (handle, tmp_template) = tempfile.mkstemp(dir='tests/templates/')
+        handle = open(tmp_template, 'wb')
+        handle.write(file_content)
+        handle.close()
+        current_dir = os.getcwd()
+
+        def _tmpa(__):
+            from plugit.utils import PlugItSendFile
+            return PlugItSendFile(tmp_template, minetype, as_attachment=True, attachment_filename=atta_filename)
+
+        try:
+            mv = self.plugitviews.ActionView(_tmpa)
+
+            from flask import Flask
+            app = Flask(__name__)
+            with app.app_context():
+                with app.test_request_context():
+                    os.chdir(os.sep.join(tmp_template.split(os.sep)[:-2]))
+                    response = mv.dispatch_request()
+                    os.chdir(current_dir)
+
+            self.unpatch_view()
+        finally:
+            os.chdir(current_dir)
+            os.unlink(tmp_template)
+
+            if delete_the_template_folder:
+                os.rmdir('tests/templates')
+
+        response.direct_passthrough = False
+
+        assert(response.data == file_content)
+        assert(response.headers['Content-Type'] == minetype)
+        assert(response.headers['Content-Disposition'] == "attachment; filename=" + atta_filename)
 
 
-class TestPlugIt(TestBase):
+class TestApi(TestBase):
+    """Test the api.py file"""
 
     @classmethod
     def setup_class(self):
-        super(TestPlugIt, self).setup_class()
+        super(TestApi, self).setup_class()
 
-        from plugit_proxy.plugIt import PlugIt
+        self.user_key = str(uuid.uuid4())
+        self.orgas_key = str(uuid.uuid4())
+        self.orga_key = str(uuid.uuid4())
+        self.project_members_key = str(uuid.uuid4())
+        self.send_mail_key = str(uuid.uuid4())
+        self.forum_key = str(uuid.uuid4())
 
-        self.plugIt = PlugIt('http://0.0.0.0/')
+        from plugit.api import PlugItAPI
+        self.api = PlugItAPI('http://127.0.0.1:62312/')
 
-        myself = self
+        import subprocess
+        import sys
+        import time
 
-        def _doQuery(url, method='GET', getParmeters=None, postParameters=None, files=None, extraHeaders={}, session={}):
-            myself.lastDoQueryCall = {'url': url, 'method': method, 'getParmeters': getParmeters, 'postParameters': postParameters, 'files': files, 'extraHeaders': extraHeaders, 'session': session}
+        FNULL = open(os.devnull, 'w')
+        self.p = subprocess.Popen([sys.executable, 'tests/helpers/api_server.py', self.user_key, self.orgas_key, self.orga_key, self.project_members_key, self.send_mail_key, self.forum_key], stdout=FNULL, stderr=FNULL)
 
-            class DummyResponse():
-                def json(self):
-                    return myself.plugIt.toReplyJson()
+        time.sleep(1)
 
-                @property
-                def status_code(self):
-                    return myself.plugIt.toReplyStatusCode()
+    @classmethod
+    def teardown_class(self):
+        super(TestApi, self).teardown_class()
 
-            return DummyResponse()
+        self.p.kill()
 
-        self.plugIt.doQuery = _doQuery
+    def test_get_user(self):
+        """Test the get_user call"""
 
-    def test_ping(self):
+        retour = self.api.get_user(self.user_key[3])
 
-        self.plugIt.toReplyStatusCode = lambda: 200
-        self.plugIt.toReplyJson = lambda: {'data': self.lastDoQueryCall['url'].split('data=', 1)[1]}
+        assert(retour)
+        assert(retour.pk == self.user_key[3])
+        assert(retour.id == self.user_key[3])
+        assert(getattr(retour, self.user_key[::-1]) == self.user_key)
 
-        assert(self.plugIt.ping())
+    def test_get_orgas(self):
+        """Test the get_orgas call"""
 
-        self.plugIt.toReplyStatusCode = lambda: 404
+        retour = self.api.get_orgas()
 
-        assert(not self.plugIt.ping())
+        assert(retour)
+        assert(len(retour) == len(self.orgas_key))
+        for x in self.orgas_key:
+            o = retour.pop(0)
+            assert(o.id == x)
+            assert(o.pk == x)
+            assert(getattr(o, self.orgas_key.replace(x, '')[::-1]) == self.orgas_key.replace(x, ''))
 
-        self.plugIt.toReplyStatusCode = lambda: 200
-        self.plugIt.toReplyJson = lambda: {'data': self.lastDoQueryCall['url'].split('data=', 1)[1] * 2}
+    def test_get_orga(self):
+        """Test the get_orga call"""
 
-        assert(not self.plugIt.ping())
+        retour = self.api.get_orga(self.orga_key[3])
 
-        assert(self.lastDoQueryCall['url'].startswith('ping'))
+        assert(retour)
+        assert(retour.pk == self.orga_key[3])
+        assert(retour.id == self.orga_key[3])
+        assert(getattr(retour, self.orga_key[::-1]) == self.orga_key)
 
-    def test_check_version(self):
+    def test_get_project_members(self):
+        """Test the get_project_members call"""
 
-        self.plugIt.toReplyStatusCode = lambda: 200
-        self.plugIt.toReplyJson = lambda: {'result': 'Ok', 'version': self.plugIt.PI_API_VERSION, 'protocol': self.plugIt.PI_API_NAME}
+        retour = self.api.get_project_members()
 
-        assert(self.plugIt.checkVersion())
-        assert(self.lastDoQueryCall['url'] == 'version')
+        assert(retour)
+        assert(len(retour) == len(self.project_members_key))
 
-        self.plugIt.toReplyJson = lambda: {'result': 'poney', 'version': self.plugIt.PI_API_VERSION, 'protocol': self.plugIt.PI_API_NAME}
-        assert(not self.plugIt.checkVersion())
+        for x in self.project_members_key:
+            o = retour.pop(0)
+            assert(o.id == x)
+            assert(getattr(o, self.project_members_key.replace(x, '')[::-1]) == self.project_members_key.replace(x, ''))
 
-        self.plugIt.toReplyJson = lambda: {'result': 'Ok', 'version': self.plugIt.PI_API_VERSION * 2, 'protocol': self.plugIt.PI_API_NAME}
-        assert(not self.plugIt.checkVersion())
+    def test_send_mail(self):
+        """Test the send mail call"""
 
-        self.plugIt.toReplyJson = lambda: {'result': 'Ok', 'version': self.plugIt.PI_API_VERSION, 'protocol': self.plugIt.PI_API_NAME * 2}
-        assert(not self.plugIt.checkVersion())
+        retour = self.api.send_mail(self.send_mail_key[1], self.send_mail_key[5], [self.send_mail_key[0], self.send_mail_key[4]], self.send_mail_key[9])
 
-        self.plugIt.toReplyStatusCode = lambda: 201
-        self.plugIt.toReplyJson = lambda: {'result': 'Ok', 'version': self.plugIt.PI_API_VERSION, 'protocol': self.plugIt.PI_API_NAME}
+        assert(retour)
+        assert(retour.text == self.send_mail_key)
 
-        assert(not self.plugIt.checkVersion())
+    def test_send_mail_2(self):
+        """Test the send mail call, with a response_id"""
 
-# Todo: plugIt
-# Todo: views
+        retour = self.api.send_mail(self.send_mail_key[1], self.send_mail_key[5], [self.send_mail_key[0], self.send_mail_key[4]], self.send_mail_key[9], self.send_mail_key[7])
+
+        assert(retour)
+        assert(retour.text == self.send_mail_key[::-1])
+
+    def test_ebuio_forum(self):
+        """Test the ebuio_forum call"""
+        retour = self.api.ebuio_forum(self.forum_key[2], self.forum_key[6], self.forum_key[10])
+
+        assert(retour)
+        assert(retour['key'] == self.forum_key)
+
+    def test_ebuio_forum_tags(self):
+        """Test the ebuio_forum_tags call"""
+        retour = self.api.ebuio_forum(self.forum_key[2], self.forum_key[6], self.forum_key[10], self.forum_key[8])
+
+        assert(retour)
+        assert(retour['key'] == self.forum_key[::-1])
