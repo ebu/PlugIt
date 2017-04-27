@@ -9,13 +9,16 @@ from django.conf import settings
 import django
 
 
-settings.configure(LOGGING_CONFIG=None, PIAPI_STANDALONE=True, PIAPI_STANDALONE_URI="", PIAPI_BASEURI="")
+settings.configure(LOGGING_CONFIG=None, PIAPI_STANDALONE=True, PIAPI_BASEURI="/plugIt/", PIAPI_ORGAMODE=True, PIAPI_REALUSERS=False, PIAPI_PROXYMODE=False, PIAPI_PLUGITMENUACTION='menubar', PIAPI_STANDALONE_URI='http://127.0.0.1:63441', TEMPLATE_DIRS=('tests/templates',), PIAPI_USERDATA=['k'], PIAPI_PLUGITTEMPLATE=None)
 
 
 from django import template
 from django.template import loader
 from django.template.base import TemplateSyntaxError
 from django.core.cache import cache
+from django.test.utils import setup_test_environment, teardown_test_environment
+# from django.db.connection.creation import create_test_db, destroy_test_db
+from django.test import RequestFactory
 import json
 import os
 import sys
@@ -205,7 +208,7 @@ class TestPlugItTags(TestBase):
         self.user_prop2 = str(uuid.uuid4())
 
         from plugit_proxy import views
-        self.bkp_generate = views.generate_user
+        views.bpk_generate_user = views.generate_user
 
         def _generate_user(pk):
 
@@ -236,8 +239,10 @@ class TestPlugItTags(TestBase):
     @classmethod
     def teardown_class(self):
         super(TestPlugItTags, self).teardown_class()
+
         from plugit_proxy import views
-        views.generate_user = self.bkp_generate
+
+        views.generate_user = views.bpk_generate_user
         views.plugIt = self.bkp_plugIt
         views.getPlugItObject = self.bkp_getPlugItObject
 
@@ -799,4 +804,1013 @@ class TestPlugIt(TestBase):
         assert(r.content_disposition == content_disposition)
 
 
-# Todo: views
+class TestProxyViews(TestBase):
+
+    process_service = None
+
+    @classmethod
+    def setup_class(self):
+        super(TestProxyViews, self).setup_class()
+
+        django.setup()
+        setup_test_environment()
+
+        from plugit_proxy import views
+        from plugit_proxy.plugIt import PlugIt
+
+        self.views = views
+        self.PlugIt = PlugIt
+
+        self.factory = RequestFactory()
+
+        self.start_process_service()
+
+    @classmethod
+    def teardown_class(self):
+        super(TestProxyViews, self).teardown_class()
+        teardown_test_environment()
+
+        self.process_service.kill()
+        self.process_service = None
+
+    @classmethod
+    def start_process_service(self, args=[]):
+
+        if self.process_service:
+            self.process_service.kill()
+
+        FNULL = open(os.devnull, 'w')
+        self.process_service = subprocess.Popen([sys.executable, 'server.py'] + args, cwd='tests/helpers/flask_server', stdout=FNULL, stderr=FNULL)
+        time.sleep(0.5)
+
+    def random_base_url(self):
+
+        new_base_url = str(uuid.uuid4())
+
+        self.views.baseURI_bkp = self.views.baseURI
+        self.views.baseURI = new_base_url
+
+        return new_base_url
+
+    def restore_base_url(self):
+        self.views.baseURI = self.views.baseURI_bkp
+
+    def build_request(self, path):
+        r = self.factory.get(path)
+        r.session = {}
+
+        return r
+
+    def test_generate_user_nobody(self):
+        assert(not self.views.generate_user(None, None))
+
+    def test_generate_user_ano(self):
+        user = self.views.generate_user('ano')
+        assert(user)
+        assert(not user.is_authenticated())
+        assert(not user.ebuio_member)
+        assert(not user.ebuio_admin)
+        assert(not user.ebuio_orga_member)
+        assert(not user.ebuio_orga_admin)
+
+    def test_generate_user_log(self):
+        user = self.views.generate_user('log')
+        assert(user)
+        assert(user.is_authenticated())
+        assert(not user.ebuio_member)
+        assert(not user.ebuio_admin)
+        assert(not user.ebuio_orga_member)
+        assert(not user.ebuio_orga_admin)
+
+    def test_generate_user_mem(self):
+        user = self.views.generate_user('mem')
+        assert(user)
+        assert(user.is_authenticated())
+        assert(user.ebuio_member)
+        assert(not user.ebuio_admin)
+        assert(user.ebuio_orga_member)
+        assert(not user.ebuio_orga_admin)
+
+    def test_generate_user_adm(self):
+        user = self.views.generate_user('adm')
+        assert(user)
+        assert(user.is_authenticated())
+        assert(user.ebuio_member)
+        assert(user.ebuio_admin)
+        assert(user.ebuio_orga_member)
+        assert(user.ebuio_orga_admin)
+
+    def test_generate_user_compat_mode(self):
+        user = self.views.generate_user(None, 3)
+        assert(user)
+        assert(user.is_authenticated())
+        assert(not user.ebuio_member)
+        assert(not user.ebuio_admin)
+        assert(not user.ebuio_orga_member)
+        assert(not user.ebuio_orga_admin)
+
+    def test_gen_404(self):
+        raison = str(uuid.uuid4())
+        url = self.random_base_url()
+        usermode = str(uuid.uuid4())
+
+        request = self.build_request('/')
+        request.session['plugit-standalone-usermode'] = usermode
+
+        response = self.views.gen404(request, url, raison)
+
+        assert(response)
+        assert(response.status_code == 404)
+        assert(response.content.strip() == '404,{},{},{}'.format(raison, url, usermode))
+
+        self.restore_base_url()
+
+    def test_gen_500(self):
+        url = self.random_base_url()
+        usermode = str(uuid.uuid4())
+
+        request = self.build_request('/')
+        request.session['plugit-standalone-usermode'] = usermode
+
+        response = self.views.gen500(request, url)
+
+        assert(response)
+        assert(response.status_code == 500)
+        assert(response.content.strip() == '500,{},{}'.format(url, usermode))
+
+        self.restore_base_url()
+
+    def test_gen_403(self):
+        raison = str(uuid.uuid4())
+        project = str(uuid.uuid4())
+        url = self.random_base_url()
+        usermode = str(uuid.uuid4())
+
+        request = self.build_request('/')
+        request.session['plugit-standalone-usermode'] = usermode
+
+        response = self.views.gen403(request, url, raison, project)
+
+        assert(response)
+        assert(response.status_code == 403)
+        assert(response.content.strip() == '403,{},{},{},{}'.format(raison, url, usermode, project))
+
+        self.restore_base_url()
+
+    def test_cache_key_no_cache(self):
+        assert(not self.views.get_cache_key(None, {}, None, None))
+
+    def test_cache_key_zero_cache_time(self):
+        assert(not self.views.get_cache_key(None, {'cache_time': 0}, None, None))
+
+    def test_cache_key_cache_time(self):
+        assert(self.views.get_cache_key(self.build_request('/'), {'cache_time': 1, 'template_tag': ''}, None, None))
+
+    def test_cache_key_varies_on_path(self):
+        k = str(uuid.uuid4())
+        k2 = str(uuid.uuid4())
+
+        headers = {'cache_time': 1, 'template_tag': ''}
+
+        assert(self.views.get_cache_key(self.build_request(k), headers, None, None) == self.views.get_cache_key(self.build_request(k), headers, None, None))
+        assert(self.views.get_cache_key(self.build_request(k), headers, None, None) != self.views.get_cache_key(self.build_request(k2), headers, None, None))
+
+    def test_cache_key_varies_on_template_tag(self):
+        k = str(uuid.uuid4())
+        k2 = str(uuid.uuid4())
+
+        request = self.build_request('/')
+
+        assert(self.views.get_cache_key(request, {'cache_time': 1, 'template_tag': k}, None, None) == self.views.get_cache_key(request, {'cache_time': 1, 'template_tag': k}, None, None))
+        assert(self.views.get_cache_key(request, {'cache_time': 1, 'template_tag': k}, None, None) != self.views.get_cache_key(request, {'cache_time': 1, 'template_tag': k2}, None, None))
+
+    def test_cache_key_varies_on_orga(self):
+
+        class O1:
+            pk = str(uuid.uuid4())
+
+        class O2:
+            pk = str(uuid.uuid4())
+
+        headers = {'cache_time': 1, 'template_tag': ''}
+        request = self.build_request('/')
+
+        assert(self.views.get_cache_key(request, headers, False, O1) == self.views.get_cache_key(request, headers, False, O1))
+        assert(self.views.get_cache_key(request, headers, False, O1) == self.views.get_cache_key(request, headers, False, O2))
+        assert(self.views.get_cache_key(request, headers, True, O1) == self.views.get_cache_key(request, headers, True, O1))
+        assert(self.views.get_cache_key(request, headers, True, O1) != self.views.get_cache_key(request, headers, True, O2))
+
+    def test_cache_key_varies_on_user(self):
+
+        class U1:
+            pk = str(uuid.uuid4())
+
+        class U2:
+            pk = str(uuid.uuid4())
+
+        r1 = self.build_request('/')
+        r2 = self.build_request('/')
+
+        r1.user = U1()
+        r2.user = U2()
+
+        headers = {'cache_time': 1, 'template_tag': ''}
+
+        assert(self.views.get_cache_key(r1, headers, False, False) == self.views.get_cache_key(r1, headers, False, False))
+        assert(self.views.get_cache_key(r1, headers, False, False) == self.views.get_cache_key(r2, headers, False, False))
+
+        headers = {'cache_time': 1, 'template_tag': '', 'cache_by_user': False}
+
+        assert(self.views.get_cache_key(r1, headers, False, False) == self.views.get_cache_key(r1, headers, False, False))
+        assert(self.views.get_cache_key(r1, headers, False, False) == self.views.get_cache_key(r2, headers, False, False))
+
+        headers = {'cache_time': 1, 'template_tag': '', 'cache_by_user': True}
+
+        assert(self.views.get_cache_key(r1, headers, False, False) == self.views.get_cache_key(r1, headers, False, False))
+        assert(self.views.get_cache_key(r1, headers, False, False) != self.views.get_cache_key(r2, headers, False, False))
+
+        for should_cache in ['only_logged_user', 'only_member_user', 'only_admin_user', 'only_orga_member_user', 'only_orga_admin_user']:
+            headers = {'cache_time': 1, 'template_tag': '', should_cache: True}
+
+            assert(self.views.get_cache_key(r1, headers, False, False) == self.views.get_cache_key(r1, headers, False, False))
+            assert(self.views.get_cache_key(r1, headers, False, False) != self.views.get_cache_key(r2, headers, False, False))
+
+            headers = {'cache_time': 1, 'template_tag': '', 'cache_by_user': False, should_cache: True}
+
+            assert(self.views.get_cache_key(r1, headers, False, False) == self.views.get_cache_key(r1, headers, False, False))
+            assert(self.views.get_cache_key(r1, headers, False, False) == self.views.get_cache_key(r2, headers, False, False))
+
+            headers = {'cache_time': 1, 'template_tag': '', 'cache_by_user': True, should_cache: True}
+
+            assert(self.views.get_cache_key(r1, headers, False, False) == self.views.get_cache_key(r1, headers, False, False))
+            assert(self.views.get_cache_key(r1, headers, False, False) != self.views.get_cache_key(r2, headers, False, False))
+
+    def batch_check_rights_and_access(self, request, meta, rights):
+
+        for right, value in rights.items():
+            request.user = self.views.generate_user(right)
+            response = self.views.check_rights_and_access(request, meta)
+
+            if value:
+                if not response or response.status_code != value:
+                    print("Excepted {}, got {}".format(value, response.status_code if response else 'Nothing'))
+                    assert(False)
+            else:
+                if response:
+                    print("Excepted nothing, got {}".format(response.status_code if response else 'Nothing'))
+                    assert(False)
+
+    def test_rights_and_access_nothing_needed(self):
+
+        self.batch_check_rights_and_access(self.build_request('/'), {}, {
+            'ano': False,
+            'log': False,
+            'mem': False,
+            'adm': False,
+        })
+
+    def test_check_rights_and_access_logged_in(self):
+
+        meta = {'only_logged_user': True}
+
+        self.batch_check_rights_and_access(self.build_request('/'), meta, {
+            'ano': 403,
+            'log': False,
+            'mem': False,
+            'adm': False,
+        })
+
+    def test_check_rights_and_access_member(self):
+
+        meta = {'only_member_user': True}
+
+        self.batch_check_rights_and_access(self.build_request('/'), meta, {
+            'ano': 403,
+            'log': 403,
+            'mem': False,
+            'adm': False,
+        })
+
+    def test_check_rights_and_access_admin(self):
+
+        meta = {'only_admin_user': True}
+
+        self.batch_check_rights_and_access(self.build_request('/'), meta, {
+            'ano': 403,
+            'log': 403,
+            'mem': 403,
+            'adm': False,
+        })
+
+    def test_check_rights_and_access_orga_member(self):
+
+        meta = {'only_orga_member_user': True}
+
+        self.batch_check_rights_and_access(self.build_request('/'), meta, {
+            'ano': 403,
+            'log': 403,
+            'mem': False,
+            'adm': False,
+        })
+
+    def test_check_rights_and_access_orga_admin(self):
+
+        meta = {'only_orga_admin_user': True}
+
+        self.batch_check_rights_and_access(self.build_request('/'), meta, {
+            'ano': 403,
+            'log': 403,
+            'mem': 403,
+            'adm': False,
+        })
+
+    def test_check_rights_and_access_address_in_network(self):
+
+        request = self.build_request('/')
+        request.META['REMOTE_ADDR'] = '127.0.0.1'
+
+        meta = {'address_in_networks': ['127.0.0.1/32']}
+
+        self.batch_check_rights_and_access(request, meta, {
+            'ano': False,
+            'log': False,
+            'mem': False,
+            'adm': False,
+        })
+
+        request = self.build_request('/')
+        request.META['REMOTE_ADDR'] = '42.42.42.42'
+
+        self.batch_check_rights_and_access(request, meta, {
+            'ano': 403,
+            'log': 403,
+            'mem': 403,
+            'adm': 403,
+        })
+
+        meta = {'address_in_networks': ['127.0.0.1/32', '42.42.42.0/24']}
+
+        self.batch_check_rights_and_access(request, meta, {
+            'ano': False,
+            'log': False,
+            'mem': False,
+            'adm': False,
+        })
+
+        request = self.build_request('/')
+        request.META['REMOTE_ADDR'] = ''
+
+        self.batch_check_rights_and_access(request, meta, {
+            'ano': 403,
+            'log': 403,
+            'mem': 403,
+            'adm': 403,
+        })
+
+    def test_address_in_network(self):
+
+        # Test common cases
+        assert(self.views.is_address_in_network('127.0.0.1', '127.0.0.1/32'))
+        assert(self.views.is_address_in_network('127.0.0.1', '127.0.0.1/24'))
+        assert(self.views.is_address_in_network('127.0.0.1', '127.0.0.1/16'))
+        assert(self.views.is_address_in_network('127.0.0.1', '127.0.0.1/8'))
+        assert(self.views.is_address_in_network('127.0.0.1', '127.0.0.1/0'))
+
+        assert(not self.views.is_address_in_network('127.0.0.2', '127.0.0.1/32'))
+        assert(self.views.is_address_in_network('127.0.0.2', '127.0.0.1/24'))
+        assert(self.views.is_address_in_network('127.0.0.2', '127.0.0.1/16'))
+        assert(self.views.is_address_in_network('127.0.0.2', '127.0.0.1/8'))
+        assert(self.views.is_address_in_network('127.0.0.2', '127.0.0.1/0'))
+
+        assert(not self.views.is_address_in_network('127.0.1.1', '127.0.0.1/32'))
+        assert(not self.views.is_address_in_network('127.0.1.1', '127.0.0.1/24'))
+        assert(self.views.is_address_in_network('127.0.1.1', '127.0.0.1/16'))
+        assert(self.views.is_address_in_network('127.0.1.1', '127.0.0.1/8'))
+        assert(self.views.is_address_in_network('127.0.1.1', '127.0.0.1/0'))
+
+        assert(not self.views.is_address_in_network('127.1.1.1', '127.0.0.1/32'))
+        assert(not self.views.is_address_in_network('127.1.1.1', '127.0.0.1/24'))
+        assert(not self.views.is_address_in_network('127.1.1.1', '127.0.0.1/16'))
+        assert(self.views.is_address_in_network('127.1.1.1', '127.0.0.1/8'))
+        assert(self.views.is_address_in_network('127.1.1.1', '127.0.0.1/0'))
+
+        assert(not self.views.is_address_in_network('128.1.1.1', '127.0.0.1/32'))
+        assert(not self.views.is_address_in_network('128.1.1.1', '127.0.0.1/24'))
+        assert(not self.views.is_address_in_network('128.1.1.1', '127.0.0.1/16'))
+        assert(not self.views.is_address_in_network('128.1.1.1', '127.0.0.1/8'))
+        assert(self.views.is_address_in_network('128.1.1.1', '127.0.0.1/0'))
+
+    def test_caching(self):
+
+        cache_key = str(uuid.uuid4())
+        result = {'r': uuid.uuid4()}
+        menu = {'r': uuid.uuid4()}
+
+        class Context():
+            dicts = [{'r': uuid.uuid4(), 'csrf_token': uuid.uuid4()}]
+
+        meta = {'cache_time': 1}
+
+        self.views.cache_if_needed(cache_key, result, menu, Context(), meta)
+
+        r, m, c = self.views.find_in_cache(cache_key)
+
+        assert(r == result)
+        assert(m == menu)
+        assert(c['r'] == Context.dicts[0]['r'])
+        assert('csrf_token' not in c)
+
+        # Unknows keys shouldn't be cached
+        r, m, c = self.views.find_in_cache(cache_key * 2)
+        assert(not r)
+        assert(not m)
+        assert(not c)
+
+        # No key, no cache
+        r, m, c = self.views.find_in_cache(None)
+        assert(not r)
+        assert(not m)
+        assert(not c)
+
+        # Caching should works without a menu
+        self.views.cache_if_needed(cache_key, result, None, Context(), meta)
+
+        r, m, c = self.views.find_in_cache(cache_key)
+        assert(r)
+        assert(not m)
+        assert(c)
+
+    def test_build_base_parmeters_get(self):
+
+        k = str(uuid.uuid4())
+        k2 = str(uuid.uuid4())
+
+        r = self.factory.get('/', {'k': k, 'ebuio_k': k2})
+
+        get, post, files = self.views.build_base_parameters(r)
+
+        assert(get['k'] == k)
+        assert('ebuio_k' not in get)
+        assert(not post)
+
+    def test_build_base_parmeters_get_list(self):
+
+        k = str(uuid.uuid4())
+        k2 = str(uuid.uuid4())
+
+        r = self.factory.get('/', {'k': [k, k2]})
+
+        get, post, files = self.views.build_base_parameters(r)
+
+        assert(get['k'] == [k, k2])
+
+    def test_build_base_parmeters_post(self):
+
+        k = str(uuid.uuid4())
+        k2 = str(uuid.uuid4())
+
+        r = self.factory.post('/', {'k': k, 'ebuio_k': k2})
+
+        get, post, files = self.views.build_base_parameters(r)
+
+        assert(not get)
+        assert(post['k'] == k)
+        assert('ebuio_k' not in post)
+
+    def test_build_base_parmeters_post_list(self):
+
+        k = str(uuid.uuid4())
+        k2 = str(uuid.uuid4())
+
+        r = self.factory.post('/', {'k': [k, k2]})
+
+        get, post, files = self.views.build_base_parameters(r)
+
+        assert(post['k'] == [k, k2])
+
+    def test_build_base_parmeters_post_and_get(self):
+
+        k = str(uuid.uuid4())
+        k2 = str(uuid.uuid4())
+
+        r = self.factory.post('/?k={}'.format(k), {'k': k2})
+
+        get, post, files = self.views.build_base_parameters(r)
+
+        assert(get['k'] == k)
+        assert(post['k'] == k2)
+
+    def test_build_base_parmeters_post_files(self):
+
+        with open('tests/helpers/flask_server/media/testfile1', 'rb') as f:
+            r = self.factory.post('/', {'k': f, 'ebuio_k': f})
+
+        get, post, files = self.views.build_base_parameters(r)
+
+        assert(not get)
+        assert(not post)
+        assert('k' in files)
+        assert('ebuio_k' not in files)
+
+    def test_build_user_requested_parameters(self):
+
+        settings.PIAPI_USERDATA = ['k']
+
+        k = str(uuid.uuid4())
+
+        class U():
+            pass
+
+        r = self.build_request('/')
+        r.user = U()
+        r.user.k = k
+
+        get, post, files = self.views.build_user_requested_parameters(r, {'user_info': ['k']})
+
+        assert(get['ebuio_u_k'] == k)
+        assert(not post)
+        assert(not files)
+
+    def test_build_user_requested_parameters_post(self):
+
+        settings.PIAPI_USERDATA = ['k']
+
+        k = str(uuid.uuid4())
+
+        class U():
+            pass
+
+        r = self.factory.post('/')
+        r.user = U()
+        r.user.k = k
+
+        get, post, files = self.views.build_user_requested_parameters(r, {'user_info': ['k']})
+
+        assert(not get)
+        assert(post['ebuio_u_k'] == k)
+        assert(not files)
+
+    def test_build_user_requested_parameters_unknown(self):
+
+        settings.PIAPI_USERDATA = []
+
+        k = str(uuid.uuid4())
+
+        class U():
+            pass
+
+        r = self.factory.post('/')
+        r.user = U()
+        r.user.k = k
+
+        # Should raise exception
+        try:
+            get, post, files = self.views.build_user_requested_parameters(r, {'user_info': ['k']})
+        except Exception:
+            return
+
+        assert(False)
+
+    def test_build_user_requested_parameters_not_a_prop(self):
+
+        settings.PIAPI_USERDATA = ['k']
+
+        class U():
+            pass
+
+        r = self.factory.post('/')
+        r.user = U()
+
+        # Should raise exception
+        try:
+            get, post, files = self.views.build_user_requested_parameters(r, {'user_info': ['k']})
+        except Exception:
+            return
+
+        assert(False)
+
+    def test_build_user_requested_parameters_prop_false(self):
+
+        settings.PIAPI_USERDATA = ['k']
+
+        class U():
+            pass
+
+        r = self.factory.post('/')
+        r.user = U()
+        r.user.k = None
+
+        get, post, files = self.views.build_user_requested_parameters(r, {'user_info': ['k']})
+
+        assert(not get)
+        assert(not post['ebuio_u_k'])
+        assert(not files)
+
+    def test_build_orga_parameters_no_orga(self):
+
+        assert(self.views.build_orga_parameters(None, False, False) == ({}, {}, {}))
+        assert(self.views.build_orga_parameters(None, True, False) == ({}, {}, {}))
+        assert(self.views.build_orga_parameters(None, False, True) == ({}, {}, {}))
+
+    def test_build_orga_parameters_orga(self):
+
+        class O():
+            pk = str(uuid.uuid4())
+
+        assert(self.views.build_orga_parameters(self.factory.get('/'), True, O()) == ({'ebuio_orgapk': O.pk}, {}, {}))
+        assert(self.views.build_orga_parameters(self.factory.post('/'), True, O()) == ({}, {'ebuio_orgapk': O.pk}, {}))
+
+    def test_build_parameters(self):
+
+        settings.PIAPI_USERDATA = ['k']
+
+        class O():
+            pk = str(uuid.uuid4())
+
+        k = str(uuid.uuid4())
+        k2 = str(uuid.uuid4())
+
+        class U():
+            pass
+
+        r = self.factory.get('/', {'k2': k2})
+        r.user = U()
+        r.user.k = k
+
+        get, post, files = self.views.build_parameters(r, {'user_info': ['k']}, True, O())
+
+        assert(get['ebuio_orgapk'] == O.pk)
+        assert(get['k2'] == k2)
+        assert(get['ebuio_u_k'] == k)
+        assert(not post)
+        assert(not files)
+
+    def test_build_extra_headers(self):
+
+        k = str(uuid.uuid4())
+        uri = self.random_base_url()
+
+        assert(not self.views.build_extra_headers(None, False, False, None))
+
+        settings.PIAPI_USERDATA = ['k']
+
+        class U():
+            pass
+
+        r = self.factory.get('/')
+        r.user = U()
+        r.user.k = k
+
+        headers = self.views.build_extra_headers(r, True, False, None)
+
+        assert(headers['user_k'] == k)
+        assert(headers['base_url'] == uri)
+        assert('orga_pk' not in headers)
+        assert('orga_name' not in headers)
+        assert('orga_codops' not in headers)
+
+        class O():
+            pk = str(uuid.uuid4())
+            name = str(uuid.uuid4())
+            ebu_codops = str(uuid.uuid4())
+
+        headers = self.views.build_extra_headers(r, True, True, O())
+        assert(headers['orga_pk'] == O.pk)
+        assert(headers['orga_name'] == O.name)
+        assert(headers['orga_codops'] == O.ebu_codops)
+
+        self.restore_base_url()
+
+    def test_handle_special_case_no_data(self):
+        assert(self.views.handle_special_cases(self.build_request('/'), None, None, {}).status_code == 404)
+
+    def test_handle_special_case_empty_data(self):
+        assert(not self.views.handle_special_cases(self.build_request('/'), {}, None, {}))
+
+    def test_handle_special_case_500(self):
+
+        class PlugIt500():
+            pass
+
+        assert(self.views.handle_special_cases(self.build_request('/'), PlugIt500(), None, {}).status_code == 500)
+
+    def test_handle_special_case_redirect(self):
+
+        class PlugItRedirect():
+            def __init__(self, url, no_prefix=False):
+                self.url = url
+                self.no_prefix = no_prefix
+
+        k = str(uuid.uuid4())
+        k2 = str(uuid.uuid4())
+
+        r = self.views.handle_special_cases(self.build_request('/'), PlugItRedirect(k), k2, {})
+        assert(r.status_code == 302)
+        assert(r['Location'] == '{}{}'.format(k2, k))
+
+        r = self.views.handle_special_cases(self.build_request('/'), PlugItRedirect(k, True), k2, {})
+        assert(r.status_code == 302)
+        assert(r['Location'] == k)
+
+    def test_handle_special_case_file(self):
+
+        class PlugItFile():
+            content = str(uuid.uuid4())
+            content_type = str(uuid.uuid4())
+            content_disposition = str(uuid.uuid4())
+
+        r = self.views.handle_special_cases(self.build_request('/'), PlugItFile(), None, {})
+
+        assert(r.content == PlugItFile.content)
+        assert(r['Content-Type'] == PlugItFile.content_type)
+        assert(r['Content-Disposition'] == PlugItFile.content_disposition)
+
+    def test_handle_special_case_no_template(self):
+
+        class PlugItNoTemplate():
+            content = str(uuid.uuid4())
+
+        r = self.views.handle_special_cases(self.build_request('/'), PlugItNoTemplate(), None, {})
+
+        assert(r.content == PlugItNoTemplate.content)
+
+    def test_handle_special_case_json_1(self):
+
+        k = str(uuid.uuid4())
+
+        r = self.views.handle_special_cases(self.build_request('/'), {'k': k}, None, {'json_only': True})
+
+        assert(r.content == json.dumps({'k': k}))
+        assert('json' not in r['Content-Type'])
+
+    def test_handle_special_case_json_2(self):
+
+        k = str(uuid.uuid4())
+
+        request = self.build_request('/')
+        request.META['HTTP_ACCEPT'] = 'text/json'
+
+        r = self.views.handle_special_cases(request, {'k': k}, None, {'json_only': True})
+
+        assert(r.content == json.dumps({'k': k}))
+        assert('json' in r['Content-Type'])
+
+    def test_handle_special_case_xml(self):
+
+        k = str(uuid.uuid4())
+
+        r = self.views.handle_special_cases(self.build_request('/'), {'xml': k}, None, {'xml_only': True})
+
+        assert(r.content == k)
+
+    def test_build_final_template_no_template(self):
+
+        k = str(uuid.uuid4())
+
+        assert(self.views.build_final_response(None, {'no_template': True}, k, None, None, None, None).content == k)
+
+    def test_build_final_template_proxy(self):
+
+        k = str(uuid.uuid4())
+        k2 = str(uuid.uuid4())
+        k3 = str(uuid.uuid4())
+
+        assert(self.views.build_final_response(self.build_request('/'), {}, k, k2, None, True, k3).content.strip() == "base,{},{},{}".format(k, k2, k3))
+
+    def test_build_final_template(self):
+
+        k = str(uuid.uuid4())
+        k2 = str(uuid.uuid4())
+        k3 = str(uuid.uuid4())
+
+        assert(self.views.build_final_response(self.build_request('/'), {}, k, k2, None, False, k3).content.strip() == "plugitbase,{},{},{}".format(k, k2, k3))
+
+    def test_render_data_proxy(self):
+
+        k = str(uuid.uuid4())
+        k2 = str(uuid.uuid4())
+
+        tpl = "{}{}~__PLUGIT_CSRF_TOKEN__~{}".format(k, "{", "}")
+
+        assert(self.views.render_data({'csrf_token': k2}, None, True, tpl) == ("{}{}".format(k, k2), None))
+
+    def test_render_data(self):
+
+        k = str(uuid.uuid4())
+        k2 = str(uuid.uuid4())
+        menu = str(uuid.uuid4())
+
+        tpl = "{}{}k2{}{}% block menubar %{}menu{}% endblock %{}".format(k, "{{", "}}", "{", "}{{", "}}{", "}")
+
+        assert(self.views.render_data(self.views.Context({'k2': k2, 'menu': menu}), tpl, False, None) == ("{}{}{}".format(k, k2, menu), menu))
+
+    def test_build_context(self):
+
+        k = str(uuid.uuid4())
+        k2 = str(uuid.uuid4())
+        k3 = str(uuid.uuid4())
+        url = self.random_base_url()
+
+        class U:
+            pk = str(uuid.uuid4())
+
+        request = self.build_request('/')
+        request.session['plugit-standalone-usermode'] = k
+        request.user = U()
+
+        result = self.views.build_context(request, {'k2': k2}, None, False, None, None)
+
+        assert(result['ebuio_baseUrl'] == url)
+        assert(result['ebuio_u'].id == U.pk)
+        assert(result['ebuio_u'].pk == U.pk)
+        assert(result['ebuio_userMode'] == k)
+        assert(not result['ebuio_realUsers'])
+        assert(not result['ebuio_orgamode'])
+        assert(result['k2'] == k2)
+        assert('csrf_token' in result)
+        assert('MEDIA_URL' in result)
+        assert('STATIC_URL' in result)
+
+        result = self.views.build_context(request, {'k2': k2}, None, True, k3, None)
+        assert(result['ebuio_orgamode'])
+        assert(result['ebuio_orga'] == k3)
+
+        self.restore_base_url()
+
+    def test_get_template_proxy(self):
+        assert(self.views.get_template(None, None, None, True) == (None, None))
+
+    def test_get_template(self):
+        request = self.build_request('/')
+        assert(self.views.get_template(request, "", {}, False) == ('home_template\n', None))
+
+    def test_get_template_404(self):
+        request = self.build_request('/')
+        template, exception = self.views.get_template(request, "_", {}, False)
+
+        assert(not template)
+        assert(exception)
+        assert(exception.status_code == 404)
+
+    def test_session(self):
+
+        k = str(uuid.uuid4())
+        k2 = str(uuid.uuid4())
+
+        request = self.build_request('/')
+
+        self.views.update_session(request, {'k': k}, 1)
+        retour = self.views.get_current_session(request, 1)
+        assert(retour.get('k') == k)
+
+        self.views.update_session(request, {'k': k2}, 2)
+        retour = self.views.get_current_session(request, 1)
+        assert(retour.get('k') == k)
+        retour = self.views.get_current_session(request, 2)
+        assert(retour.get('k') == k2)
+
+    def test_main_view_basic(self):
+        settings.PIAPI_USERDATA = ['pk']
+        assert(self.views.main(self.build_request('/'), 'test_main').content.strip() == "ok")
+
+    def test_main_view_basic_404(self):
+        settings.PIAPI_USERDATA = ['pk']
+        assert(self.views.main(self.build_request('/'), '_').status_code == 404)
+
+    def test_main_view_concurent_settings(self):
+        settings.PIAPI_REALUSERS = True
+        assert(self.views.main(self.build_request('/'), 'test_main').status_code == 404)
+        settings.PIAPI_REALUSERS = False
+
+    def test_main_view_proxy_mode(self):
+        settings.PIAPI_PROXYMODE = True
+        assert(self.views.main(self.build_request('/'), 'action/test_main').content.strip().startswith('base,'))
+        settings.PIAPI_PROXYMODE = False
+
+    def test_main_view_proxy_mode_404(self):
+        settings.PIAPI_PROXYMODE = True
+        assert(self.views.main(self.build_request('/'), '_').status_code == 404)
+        settings.PIAPI_PROXYMODE = False
+
+    def test_main_view_cache(self):
+        before = self.views.main(self.build_request('/'), 'cacheTime').content.strip().split('\n')[0]
+        time.sleep(1)
+        after = self.views.main(self.build_request('/'), 'cacheTime').content.strip().split('\n')[0]
+        assert(before == after)
+
+    def test_main_view_access(self):
+
+        self.views.check_rights_and_access_bpk = self.views.check_rights_and_access
+
+        class DummyError():
+            pass
+
+        def check_rights_and_access(*args, **kwargs):
+            return DummyError()
+
+        self.views.check_rights_and_access = check_rights_and_access
+
+        assert(isinstance(self.views.main(self.build_request('/'), 'test_main'), DummyError))
+
+        self.views.check_rights_and_access = self.views.check_rights_and_access_bpk
+
+    def test_main_view_get_menu(self):
+        assert(self.views.main(self.build_request('/'), 'test_main', None, True).strip() == "")
+
+    def test_main_view_template(self):
+
+        self.views.get_template_bpk = self.views.get_template
+
+        class DummyError():
+            pass
+
+        def get_template(*args, **kwargs):
+            return (None, DummyError())
+
+        self.views.get_template = get_template
+
+        assert(isinstance(self.views.main(self.build_request('/'), 'test_main'), DummyError))
+
+        self.views.get_template = self.views.get_template_bpk
+
+    def test_media_view(self):
+        assert(self.views.media(self.build_request('/'), 'testfile2').content.strip() == "This is test file 2 !")
+
+    def test_media_view_404(self):
+        try:
+            self.views.media(self.build_request('/'), '_')
+        except Exception:
+            return True
+
+        assert(False)  # Exception should have been raised
+
+    def test_set_user_view(self):
+        r = self.factory.get('/', {'mode': 'ano'})
+        r.session = {}
+        self.views.setUser(r)
+
+        self.views.main(r, 'test_set_user')
+        result = self.views.main(r, 'test_set_user')
+        assert(not r.user.pk)
+        assert(result.content.strip() == "None")
+
+        r = self.factory.get('/', {'mode': 'log'})
+        r.session = {}
+        self.views.setUser(r)
+
+        result = self.views.main(r, 'test_set_user')
+        assert(r.user.pk == -1)
+        assert(result.content.strip() == "-1")
+
+    def test_set_user_standalone(self):
+        settings.PIAPI_STANDALONE = False
+
+        try:
+            self.views.setUser(self.build_request('/'))
+        except:
+            settings.PIAPI_STANDALONE = True
+            return True
+
+        assert(False)  # Excpetion should have been raised
+
+    def test_set_user_real(self):
+        settings.PIAPI_REALUSERS = True
+
+        try:
+            self.views.setUser(self.build_request('/'))
+        except:
+            settings.PIAPI_REALUSERS = False
+            return True
+
+        assert(False)  # Excpetion should have been raised
+
+    def test_set_orga(self):
+
+        k = str(uuid.uuid4())
+        k2 = str(uuid.uuid4())
+
+        r = self.factory.get('/', {'pk': k, 'name': k2})
+        r.session = {}
+        self.views.setOrga(r)
+        assert(self.views.main(r, 'test_get_orga').content.strip() == "{},{}".format(k, k2))
+
+    def test_check_api_key(self):
+
+        k = str(uuid.uuid4())
+        assert(self.views.check_api_key(self.build_request('/'), k, None))
+
+    def test_home(self):
+
+        self.views.main_bkp = self.views.main
+
+        class MainProbe():
+            pass
+
+        def main(*args, **kwargs):
+            return MainProbe()
+
+        self.views.main = main
+
+        assert(isinstance(self.views.home(self.build_request('/'), None), MainProbe))
+
+        self.views.main = self.views.main_bkp

@@ -207,3 +207,22 @@ def test_sendfile_external(request):
     if request.files['testfile2'] and request.files['testfile2'].stream.read().strip() == "This is test file 2 !":
         return {"echo": "ok"}
     return {"echo": "err"}
+
+
+@action(route='/test_main', template="echo.html")
+@no_template()
+def test_main(request):
+    return {"echo": "ok"}
+
+
+@action(route='/test_set_user', template="echo.html")
+@user_info(['pk'])
+@no_template()
+def test_set_user(request):
+    return {'echo': request.args.get('ebuio_u_pk')}
+
+
+@action(route='/test_get_orga', template="get_orga.html")
+@no_template()
+def test_get_orga(request):
+    return {}
