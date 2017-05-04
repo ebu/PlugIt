@@ -109,8 +109,9 @@ def generate_user(mode=None, pk=None):
         user.ebuio_admin = False
         user.subscription_labels = []
 
-    user.ebuio_orga_member = user.ebuio_member
-    user.ebuio_orga_admin = user.ebuio_admin
+    if user:
+        user.ebuio_orga_member = user.ebuio_member
+        user.ebuio_orga_admin = user.ebuio_admin
 
     return user
 
