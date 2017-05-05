@@ -15,8 +15,7 @@ class MetaView(View):
 
     def dispatch_request(self, *args, **kwargs):
 
-        if not check_ip(request):
-            return
+        check_ip(request)
 
         objResponse = {}
 
@@ -53,8 +52,7 @@ class TemplateView(View):
 
     def dispatch_request(self, *args, **kwargs):
 
-        if not check_ip(request):
-            return
+        check_ip(request)
 
         # We just return the content of the template
         return send_from_directory('templates/', self.action.pi_api_template)
@@ -68,8 +66,7 @@ class ActionView(View):
 
     def dispatch_request(self, *args, **kwargs):
 
-        if not check_ip(request):
-            return
+        check_ip(request)
 
         # Call the action
         result = self.action(request, *args, **kwargs)

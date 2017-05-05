@@ -7,7 +7,7 @@ from django.core.context_processors import csrf
 from django.views.decorators.csrf import csrf_exempt
 from django.http import Http404, HttpResponse, HttpResponseNotFound
 from django.conf import settings
-from django.http import HttpResponseRedirect, HttpResponsePermanentRedirect, HttpResponseForbidden
+from django.http import HttpResponseRedirect, HttpResponsePermanentRedirect, HttpResponseForbidden, HttpResponseServerError, JsonResponse
 from django.core.cache import cache
 from django.core.urlresolvers import reverse
 from django.views.decorators.cache import cache_control
@@ -289,13 +289,12 @@ def find_in_cache(cacheKey):
     """Check if the content exists in cache and return it"""
     # If we have to use cache, we try to find the result in cache
     if cacheKey:
-        result = cache.get('plugit-result-' + cacheKey, None)
-        menu = cache.get('plugit-menu-' + cacheKey, None)
-        context = cache.get('plugit-context-' + cacheKey, None)
+
+        data = cache.get('plugit-cache-' + cacheKey, None)
 
         # We found a result, we can return it
-        if result and menu and context:
-            return (result, menu, context)
+        if data:
+            return (data['result'], data['menu'], data['context'])
     return (None, None, None)
 
 
@@ -456,8 +455,9 @@ def handle_special_cases(request, data, baseURI, meta):
         if 'HTTP_ACCEPT' in request.META and request.META['HTTP_ACCEPT'].find('json') != -1:
             return JsonResponse(data)
 
+        # Return json data without html content type, since json was not
+        # requiered
         result = json.dumps(data)
-
         return HttpResponse(result)
 
     if meta.get('xml_only', None):  # Just send the xml back
@@ -550,9 +550,9 @@ def cache_if_needed(cacheKey, result, menu, context, meta):
 
         del flat_context['csrf_token']
 
-        cache.set('plugit-result-' + cacheKey, result, meta['cache_time'])
-        cache.set('plugit-menu-' + cacheKey, menu, meta['cache_time'])
-        cache.set('plugit-context-' + cacheKey, flat_context, meta['cache_time'])
+        data = {'result': result, 'menu': menu, 'context': flat_context}
+
+        cache.set('plugit-cache-' + cacheKey, data, meta['cache_time'])
 
 
 def build_context(request, data, hproject, orgaMode, currentOrga, availableOrga):
@@ -870,7 +870,7 @@ def media(request, path, hproPk=None):
 def setUser(request):
     """In standalone mode, change the current user"""
 
-    if not settings.PIAPI_STANDALONE and not settings.PIAPI_REALUSERS:
+    if not settings.PIAPI_STANDALONE or settings.PIAPI_REALUSERS:
         raise Http404
 
     request.session['plugit-standalone-usermode'] = request.GET.get('mode')
