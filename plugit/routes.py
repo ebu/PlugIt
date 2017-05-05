@@ -2,7 +2,7 @@ from params import PI_BASE_URL, PI_API_VERSION, PI_API_NAME
 from views import request, check_ip, jsonify, MetaView, TemplateView, ActionView
 
 
-def load_routes(app, actions):
+def load_routes(app, actions, mail_callback):
 
     @app.route(PI_BASE_URL + "ping")
     def ping():
@@ -21,7 +21,11 @@ def load_routes(app, actions):
     @app.route(PI_BASE_URL + "mail", methods=['POST'])
     def mail():
         """The mail method: Process mail handling"""
-        return jsonify(result='Ok')
+
+        if not mail_callback:
+            return jsonify(result='Ok')
+
+        return mail_callback(request)
 
     # Register the 3 URLs (meta, template, action) for each actions
     # We test for each element in the module actions if it's an action
