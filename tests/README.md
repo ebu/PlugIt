@@ -7,21 +7,19 @@ nose is used and can be installed using `pip install nose`.
 
 # Run tests
 
-Just go into the PlugIt folder and run `nosetests`
+Just go into the PlugIt folder and run `nosetests tests`
 
 # Architecture
 
 The goal is to cover all functionalities. Tests are separated in 4 files:
 
-## service_external.py
+## proxy_external.py
 
-This file contains tests for the PlugIt client, using external HTTP call to the web server.
+This file contains tests for the PlugIt proxy, using external HTTP call to the web server. A simple plugit service is run behind the PlugIt proxy.
 
-Tests still have to be written for this part.
+## proxy_internal.py
 
-## service_internal.py
-
-This file contains tests for the PlugIt client, testing internal python calls.
+This file contains tests for the PlugIt proxy, testing internal python calls.
 
 Tests are subdivided into different classes.
 
@@ -53,11 +51,13 @@ assert(self.plugIt.checkVersion())
 assert(self.lastDoQueryCall['url'] == 'version')
 ```
 
-This class is not finished yet.
+### TestPlugItViews
 
-### Todo
+Tests views in `views.py`, using direct calls and 'false' requests created with django testing utils.
 
-Tests for the _views.py_ still have to be written.
+Some helpers functions are also tested.
+
+API views aren't tested yet.
 
 ## service_external.py
 

@@ -293,7 +293,6 @@ class TestExternal(unittest.TestCase):
         """Test post requests"""
 
         assert(not self.do_query('action/postonly'))
-        assert(not self.do_query('action/postonly', 'POST'))
         assert(self.do_query('action/postonly', 'POST', postParameters={'1': '9'}).json()['result'] == 'ok')
 
         assert(self.do_query('meta/postonly'))
