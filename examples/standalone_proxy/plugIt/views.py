@@ -5,7 +5,7 @@ from django.template import RequestContext
 from django.template.loader_tags import BlockNode, ExtendsNode
 from django.core.context_processors import csrf
 from django.views.decorators.csrf import csrf_exempt
-from django.http import Http404, HttpResponse, HttpResponseForbidden, HttpResponseNotFound
+from django.http import Http404, HttpResponse, HttpResponseForbidden, HttpResponseNotFound, HttpResponseServerError
 from django.utils.encoding import smart_str
 from django.conf import settings
 from django.contrib.admin.views.decorators import staff_member_required
@@ -135,6 +135,17 @@ def gen404(request, baseURI, reason):
                            context_instance=RequestContext(request)))
 
 
+def gen500(request, baseURI):
+    """Return a 500 error"""
+    return HttpResponseServerError(
+        render_to_response('plugIt/500.html', {
+            'context': {
+                'ebuio_baseUrl': baseURI,
+                'ebuio_userMode': request.session.get('plugit-standalone-usermode', 'ano'),
+            }
+        }, context_instance=RequestContext(request)))
+
+
 def gen403(request, baseURI, reason, project=None):
     """Return a 403 error"""
     orgas = None
@@ -159,7 +170,7 @@ def gen403(request, baseURI, reason, project=None):
 
         orgas = rorgas
 
-    return HttpResponseNotFound(render_to_response('plugIt/403.html', {'context': {'reason': reason, 'orgas': orgas,
+    return HttpResponseForbidden(render_to_response('plugIt/403.html', {'context': {'reason': reason, 'orgas': orgas,
                                                                                    'public_ask': public_ask,
                                                                                    'ebuio_baseUrl': baseURI,
                                                                                    'ebuio_userMode': request.session.get(
@@ -385,6 +396,9 @@ def handle_special_cases(request, data, baseURI, meta):
 
     if data is None:
         return gen404(request, baseURI, 'data')
+
+    if data.__class__.__name__ == 'PlugIt500':
+        return gen500(request, baseURI)
 
     if data.__class__.__name__ == 'PlugItRedirect':
         url = data.url
