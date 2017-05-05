@@ -1,0 +1,5 @@
+To: nothing+not_in_base64@tests.ebu.io
+Subject: This mail should not be handled: data is not in base64
+
+Message
+
