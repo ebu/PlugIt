@@ -4,6 +4,7 @@ from django.conf import settings
 
 register = template.Library()
 
+
 class PlugItIncludeNode(Node):
     def __init__(self, action):
         self.action = action
@@ -31,6 +32,7 @@ class PlugItIncludeNode(Node):
 
         return template.render(context)
 
+
 @register.tag
 def plugitInclude(parser, token):
     """
@@ -47,6 +49,7 @@ def plugitInclude(parser, token):
 
     return PlugItIncludeNode(action)
 
+
 @register.assignment_tag
 def plugitGetUser(pk):
     if settings.PIAPI_STANDALONE:
@@ -57,7 +60,7 @@ def plugitGetUser(pk):
         from users.models import TechUser
         try:
             user = TechUser.objects.get(pk=pk)
-        except:
+        except Exception:
             return None
 
     # Return only wanted properties about the user
@@ -72,6 +75,7 @@ def plugitGetUser(pk):
     user_cleaned.id = str(user_cleaned.pk)
 
     return user_cleaned
+
 
 @register.filter
 def url_target_blank(text):

@@ -23,7 +23,7 @@ class PlugIt():
         self.cacheKey = 'plugit-' + hashlib.md5(baseURI).hexdigest()
 
         if testIfOk:
-            #Check if everything is ok
+            # Check if everything is ok
             if not self.ping():
                 raise Exception("Server doesn't reply to ping !")
             if not self.checkVersion():
@@ -228,6 +228,13 @@ class PlugIt():
             """Object to display content without a template"""
             def __init__(self, content):
                 self.content = content
+
+        class PlugIt500():
+            """Object to return a 500"""
+            pass
+
+        if r.status_code == 500:
+            return (PlugIt500(), {})
 
         if r.status_code == 200:  # Get the content if there is not problem. If there is, template will stay to None
             # {} is parsed as None (but should be an empty object)

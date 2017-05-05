@@ -1,5 +1,6 @@
-from params import PI_BASE_URL
-from views import *
+from params import PI_BASE_URL, PI_API_VERSION, PI_API_NAME
+from views import request, check_ip, jsonify, MetaView, TemplateView, ActionView
+
 
 def load_routes(app, actions, mail_callback):
 
@@ -31,21 +32,21 @@ def load_routes(app, actions, mail_callback):
     # (added by the decorator in utils)
     for act in dir(actions):
         obj = getattr(actions, act)
-        if hasattr(obj, 'pi_api_action') and obj.pi_api_action:
+        if hasattr(obj, 'pi_api_action') and obj.pi_api_action and not hasattr(obj.pi_api_action, '__call__'):
             # We found an action and we can now add it to our routes
 
             # Meta
             app.add_url_rule(
-                PI_BASE_URL + 'meta' + obj.pi_api_route,
-                view_func=MetaView.as_view('meta_' + act, action=obj))
+                '{}meta{}'.format(PI_BASE_URL, obj.pi_api_route),
+                view_func=MetaView.as_view('meta_{}'.format(act), action=obj))
 
             # Template
             app.add_url_rule(
-                PI_BASE_URL + 'template' + obj.pi_api_route,
-                view_func=TemplateView.as_view('template_' + act, action=obj))
+                '{}template{}'.format(PI_BASE_URL, obj.pi_api_route),
+                view_func=TemplateView.as_view('template_{}'.format(act), action=obj))
 
             # Action
             app.add_url_rule(
-                PI_BASE_URL + 'action' + obj.pi_api_route,
-                view_func=ActionView.as_view('action_' + act, action=obj),
+                '{}action{}'.format(PI_BASE_URL, obj.pi_api_route),
+                view_func=ActionView.as_view('action_{}'.format(act), action=obj),
                 methods=obj.pi_api_methods)

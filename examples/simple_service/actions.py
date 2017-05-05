@@ -3,12 +3,12 @@
 import sqlite3
 from plugit.utils import action, cache, only_logged_user, only_member_user, user_info, json_only, PlugItRedirect, PlugItSendFile
 
-### Basic sample service: polls
+# ## Basic sample service: polls
 # Anonymous users can see polls
 # Registered users can vote
 # Members can create polls
 # Administrators can see who selected what
-## Data is stored into a simple sqlite database
+# # Data is stored into a simple sqlite database
 
 # Sqlite part: Load the database. If the database doesn't exist, create a new one
 coxDB = sqlite3.connect('poll.db', check_same_thread=False)
@@ -175,3 +175,8 @@ def test_json(request):
 @action(route="/test_send_file")
 def test_send_file(request):
     return PlugItSendFile("utils.py", "text/plain", True, "utils.txt")
+
+
+@action(route="/bug", template="test.html", methods=['GET'])
+def bug(request):
+    raise ValueError('Voluntary error')
