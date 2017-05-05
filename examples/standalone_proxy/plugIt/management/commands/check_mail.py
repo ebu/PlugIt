@@ -26,7 +26,7 @@ class Command(BaseCommand):
 
         numMessages = len(pop_connection.list()[1])
         for i in range(numMessages):
-            data = '\n'.join(pop_connection.retr(i+1)[1])
+            data = '\n'.join(pop_connection.retr(i + 1)[1])
             msg = email.message_from_string(data)
 
             # Extract part after the + in the email (notifications+<ID>@ebu.io)
@@ -43,7 +43,7 @@ class Command(BaseCommand):
 
                     decrypted_ebuid = decrypter.decrypt(encrypted_ebuid)
                 except Exception as e:
-                    print "Error with", msg['To'], e
+                    print("Error with {} {}".format(msg['To'], e))
                     continue
 
                 try:
@@ -54,7 +54,7 @@ class Command(BaseCommand):
                 expected_hash = hashlib.sha512(data + settings.EBUIO_MAIL_SECRET_HASH).hexdigest()[30:42]  # Substring to avoid long strings
 
                 if expected_hash != hash:
-                    print "Error with", msg['To'], "Unexpected hash !"
+                    print("Error with {}, Unexpected hash !".format(msg['To']))
                     continue
 
                 if 'x-auto-response-suppress' in msg \
@@ -63,8 +63,8 @@ class Command(BaseCommand):
                    or 'auto-submitted' in msg \
                    or msg.get('precedence', None) in ['auto_reply', 'bluk', 'junk'] \
                    or msg.get('x-precedence', None) in ['auto_reply', 'bluk', 'junk']:
-                        print "AutoResponse, dropped", msg['Subject']
-                        pop_connection.dele(i+1)
+                        print("AutoResponse, dropped {}".format(msg['Subject']))
+                        pop_connection.dele(i + 1)
                         continue
 
                 (projectid, data) = data.split(':', 1)
@@ -92,6 +92,6 @@ class Command(BaseCommand):
                 payload = get_first_text_part(msg)
 
                 if plugIt.newMail(data, payload):
-                    print "Ok", msg['Subject']
-                    pop_connection.dele(i+1)
+                    print("Ok {}".format(msg['Subject']))
+                    pop_connection.dele(i + 1)
         pop_connection.quit()

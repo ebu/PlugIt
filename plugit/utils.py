@@ -191,7 +191,7 @@ class PlugItSetSession():
 
 def addressInNetwork(ip, net):
     "Is an address in a network"
-    #http://stackoverflow.com/questions/819355/how-can-i-check-if-an-ip-is-in-a-network-in-python
+    # http://stackoverflow.com/questions/819355/how-can-i-check-if-an-ip-is-in-a-network-in-python
     import socket
     import struct
     ipaddr = struct.unpack('=L', socket.inet_aton(ip))[0]

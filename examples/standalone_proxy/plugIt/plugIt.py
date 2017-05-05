@@ -23,7 +23,7 @@ class PlugIt():
         self.cacheKey = 'plugit-' + hashlib.md5(baseURI).hexdigest()
 
         if testIfOk:
-            #Check if everything is ok
+            # Check if everything is ok
             if not self.ping():
                 raise Exception("Server doesn't reply to ping !")
             if not self.checkVersion():
