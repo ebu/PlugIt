@@ -35,6 +35,9 @@ class PlugIt():
         # Build headers
         headers = {}
 
+        if not postParameters:
+            postParameters = {}
+
         for key, value in extraHeaders.iteritems():
             # Fixes #197 for values with utf-8 chars to be passed into plugit
             if isinstance(value, basestring):
@@ -46,7 +49,7 @@ class PlugIt():
             headers['X-Plugitsession-' + key] = value
             if 'Cookie' not in headers:
                 headers['Cookie'] = ''
-            headers['Cookie'] += key + '=' + value + '; '
+            headers['Cookie'] += key + '=' + str(value) + '; '
 
         if method == 'POST':
             if not files:
@@ -58,6 +61,7 @@ class PlugIt():
                 from poster.encode import multipart_encode, MultipartParam
                 from poster.streaminghttp import register_openers
                 import urllib2
+                import urllib
 
                 # Register the streaming http handlers with urllib2
                 register_openers()
@@ -79,8 +83,13 @@ class PlugIt():
 
                 headers.update(headers_multi)
 
+                if getParmeters:
+                    get_uri = '?' + urllib.urlencode(getParmeters)
+                else:
+                    get_uri = ''
+
                 # Create the Request object
-                request = urllib2.Request(self.baseURI + '/' + url, datagen, headers)
+                request = urllib2.Request(self.baseURI + '/' + url + get_uri, datagen, headers)
 
                 re = urllib2.urlopen(request)
 
@@ -157,6 +166,7 @@ class PlugIt():
         action = urlparse(uri).path
 
         mediaKey = self.cacheKey + '_meta_' + action
+        mediaKey = mediaKey.replace(' ', '__')
 
         meta = cache.get(mediaKey, None)
 

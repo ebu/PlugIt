@@ -4,7 +4,7 @@ from setuptools import setup
 
 setup(
     name="plugit",
-    packages=["plugit"],
+    packages=["plugit", "plugit_proxy"],
     version="0.2.0rc3",
     license="BSD",
     description="PlugIt is a framework enhancing the portability and integration of web services requiring a user interface.",
@@ -24,7 +24,7 @@ setup(
         "Topic :: Software Development :: Libraries :: Python Modules",
         "Topic :: Internet :: WWW/HTTP :: HTTP Servers",
     ],
-    long_description=open("README.md").read() + "\n\n"
+    long_description=open("README.md").read() + "\n\n",
     install_requires=[
         'requests',
         'flask',

@@ -171,6 +171,14 @@ def test_json(request):
 
     return {"hello": "Test", "data": request.args.get('data', '')}
 
+@action(route="/test_xml")
+@xml_only()
+def test_xml(request):
+    return """
+<?xml version="1.0" encoding="UTF-8"?>
+<hello>
+	<test>Test</test>
+</hello>"""
 
 @action(route="/test_send_file")
 def test_send_file(request):

@@ -2,7 +2,7 @@ from params import PI_BASE_URL, PI_API_VERSION, PI_API_NAME
 from views import request, check_ip, jsonify, MetaView, TemplateView, ActionView
 
 
-def load_routes(app, actions, mail_callback):
+def load_routes(app, actions, mail_callback=None):
 
     @app.route(PI_BASE_URL + "ping")
     def ping():
@@ -21,6 +21,9 @@ def load_routes(app, actions, mail_callback):
     @app.route(PI_BASE_URL + "mail", methods=['POST'])
     def mail():
         """The mail method: Process mail handling"""
+
+        if not request.form['response_id']:
+            return jsonify(result='Error')
 
         if not mail_callback:
             return jsonify(result='Ok')

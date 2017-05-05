@@ -18,6 +18,10 @@ urlpatterns = patterns('',
 
     (r'^' + settings.MEDIA_URL[1:] + '(?P<path>.*)$', 'django.views.static.serve', {'document_root': settings.MEDIA_ROOT}),  # Never use this in prod !
 
+    # Login - logout
+    url(r'^ebuio_logout$', 'django.contrib.auth.views.logout', {'next_page': '/'}),
+    url(r'^ebuio_login$', 'django.contrib.auth.views.login'),
+
     # Default to PlugIt
     url(r'', include('plugIt.urls')),  # plugit
 )
