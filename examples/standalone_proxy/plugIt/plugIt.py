@@ -229,6 +229,13 @@ class PlugIt():
             def __init__(self, content):
                 self.content = content
 
+        class PlugIt500():
+            """Object to return a 500"""
+            pass
+
+        if r.status_code == 500:
+            return (PlugIt500(), {})
+
         if r.status_code == 200:  # Get the content if there is not problem. If there is, template will stay to None
             # {} is parsed as None (but should be an empty object)
 

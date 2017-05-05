@@ -5,7 +5,8 @@ from django.template import RequestContext
 from django.template.loader_tags import BlockNode, ExtendsNode
 from django.core.context_processors import csrf
 from django.views.decorators.csrf import csrf_exempt
-from django.http import Http404, HttpResponse, HttpResponseNotFound
+from django.http import Http404, HttpResponse, HttpResponseForbidden, HttpResponseNotFound, HttpResponseServerError
+from django.utils.encoding import smart_str
 from django.conf import settings
 from django.http import HttpResponseRedirect, HttpResponsePermanentRedirect
 from django.core.cache import cache
@@ -98,8 +99,9 @@ def generate_user(mode=None, pk=None):
         user.ebuio_admin = False
         user.subscription_labels = []
 
-    user.ebuio_orga_member = user.ebuio_member
-    user.ebuio_orga_admin = user.ebuio_admin
+    if user:
+        user.ebuio_orga_member = user.ebuio_member
+        user.ebuio_orga_admin = user.ebuio_admin
 
     return user
 
@@ -120,6 +122,17 @@ def gen404(request, baseURI, reason):
         render_to_response('plugIt/404.html', {'context':
             {
                 'reason': reason,
+                'ebuio_baseUrl': baseURI,
+                'ebuio_userMode': request.session.get('plugit-standalone-usermode', 'ano'),
+            }
+        }, context_instance=RequestContext(request)))
+
+
+def gen500(request, baseURI):
+    """Return a 500 error"""
+    return HttpResponseServerError(
+        render_to_response('plugIt/500.html', {
+            'context': {
                 'ebuio_baseUrl': baseURI,
                 'ebuio_userMode': request.session.get('plugit-standalone-usermode', 'ano'),
             }
@@ -150,7 +163,8 @@ def gen403(request, baseURI, reason, project=None):
 
         orgas = rorgas
 
-    return HttpResponseNotFound(render_to_response('plugIt/403.html', {'context':
+
+    return HttpResponseForbidden(render_to_response('plugIt/403.html', {'context':
         {
             'reason': reason,
             'orgas': orgas,
@@ -161,7 +175,7 @@ def gen403(request, baseURI, reason, project=None):
         }
     }, context_instance=RequestContext(request)))
 
-
+  
 def get_cache_key(request, meta, orgaMode, currentOrga):
     """Return the cache key to use"""
 
@@ -378,6 +392,9 @@ def handle_special_cases(request, data, baseURI, meta):
 
     if data is None:
         return gen404(request, baseURI, 'data')
+
+    if data.__class__.__name__ == 'PlugIt500':
+        return gen500(request, baseURI)
 
     if data.__class__.__name__ == 'PlugItRedirect':
         url = data.url

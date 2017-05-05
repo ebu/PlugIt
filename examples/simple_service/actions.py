@@ -175,3 +175,8 @@ def test_json(request):
 @action(route="/test_send_file")
 def test_send_file(request):
     return PlugItSendFile("utils.py", "text/plain", True, "utils.txt")
+
+
+@action(route="/bug", template="test.html", methods=['GET'])
+def bug(request):
+    raise ValueError('Voluntary error')
