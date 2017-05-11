@@ -28,5 +28,10 @@ setup(
     install_requires=[
         'requests',
         'flask',
+        'django-ipware',
+        'django<1.9',
+        'python-dateutil',
+        'poster',
+        'pycrypto',
     ],
 )

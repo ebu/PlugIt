@@ -8,8 +8,7 @@ def load_routes(app, actions, mail_callback=None):
     def ping():
         """The ping method: Just return the data provided"""
 
-        if not check_ip(request):
-            return
+        check_ip(request)
 
         return jsonify(data=request.args.get('data', ''))
 
@@ -21,6 +20,8 @@ def load_routes(app, actions, mail_callback=None):
     @app.route(PI_BASE_URL + "mail", methods=['POST'])
     def mail():
         """The mail method: Process mail handling"""
+
+        check_ip(request)
 
         if not request.form['response_id']:
             return jsonify(result='Error')

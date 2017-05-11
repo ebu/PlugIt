@@ -1,0 +1,21 @@
+To: nothing+dfwYm7PvJqUkkQOs9wKKInK_BOYH6g==@tests.ebu.io
+Subject: Mail to be handeled, multipart
+Content-Type: multipart/alternative;
+ boundary="------------040902030302050208030703"
+
+This is a multi-part message in MIME format.
+--------------040902030302050208030703
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: 7bit
+
+ThisIsMail7
+
+
+--------------040902030302050208030703
+Content-Type: text/html; charset=ISO-8859-1
+Content-Transfer-Encoding: 7bit
+
+HTML CONTENT
+
+
+--------------040902030302050208030703--
