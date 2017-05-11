@@ -5,7 +5,7 @@ from setuptools import setup
 setup(
     name="plugit",
     packages=["plugit", "plugit_proxy"],
-    version="0.2.0rc3",
+    version="0.3.0",
     license="BSD",
     description="PlugIt is a framework enhancing the portability and integration of web services requiring a user interface.",
     author="EBU Technology & Innovation",
