@@ -1,6 +1,8 @@
 PlugIt
 =======
 [![PyPI version](https://badge.fury.io/py/plugit.png)](https://badge.fury.io/py/plugit)
+[![Build Status](https://travis-ci.org/ebu/PlugIt.svg?branch=master)](https://travis-ci.org/ebu/PlugIt)
+[![Coverage Status](https://coveralls.io/repos/github/ebu/PlugIt/badge.svg?branch=master)](https://coveralls.io/github/ebu/PlugIt?branch=master)
 
 `PlugIt` is a framework enhancing the portability and integration of micro-services requiring a user interface.
 
