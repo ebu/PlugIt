@@ -1,3 +1,7 @@
+# v0.3.1
+
+Small fix for proxy, when not used in standalone mode
+
 # v0.3.0
 
 Major update with new architecture of the project.
