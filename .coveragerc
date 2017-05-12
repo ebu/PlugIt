@@ -1,2 +1,4 @@
 [report]
-omit = examples/*
+omit =
+    examples/*
+    plugit_proxy/urls.py
