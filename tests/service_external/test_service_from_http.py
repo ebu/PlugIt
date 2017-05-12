@@ -1,5 +1,3 @@
-"""Test the simple service from an external point of view (Using HTTP requests)"""
-
 import unittest
 from nose.tools import *
 
