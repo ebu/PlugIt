@@ -723,6 +723,15 @@ def main(request, query, hproPk=None, returnMenuOnly=False):
         # TODO Add STANDALONE Orgas here
         # availableOrga.append((orga, isAdmin))
 
+        # Get meta, if not in proxy mode
+        if not proxyMode:
+            meta = plugIt.getMeta(query)
+
+            if not meta:
+                return gen404(request, baseURI, 'meta')
+        else:
+            meta = {}
+
     else:
         request.user.ebuio_member = hproject.isMemberRead(request.user)
         request.user.ebuio_admin = hproject.isMemberWrite(request.user)
@@ -730,6 +739,15 @@ def main(request, query, hproPk=None, returnMenuOnly=False):
         orgaMode = hproject.plugItOrgaMode
         proxyMode = hproject.plugItProxyMode
         plugItMenuAction = hproject.plugItMenuAction
+
+        # Get meta, if not in proxy mode
+        if not proxyMode:
+            meta = plugIt.getMeta(query)
+
+            if not meta:
+                return gen404(request, baseURI, 'meta')
+        else:
+            meta = {}
 
         if orgaMode:
             # List available orgas
@@ -745,32 +763,23 @@ def main(request, query, hproPk=None, returnMenuOnly=False):
                 else:
                     availableOrga = request.user.getOrgas(distinct=True)
 
-        if not availableOrga:
-            # TODO HERE TO CHANGE PUBLIC
-            if not meta.get('public'):  # Page is not public, raise 403
-                return gen403(request, baseURI, 'no_orga_in_orgamode', hproject)
-        else:
-            # Build the current orga
-            realCurrentOrga = get_current_orga(request, hproject, availableOrga)
+            if not availableOrga:
+                # TODO HERE TO CHANGE PUBLIC
+                if not meta.get('public'):  # Page is not public, raise 403
+                    return gen403(request, baseURI, 'no_orga_in_orgamode', hproject)
+            else:
+                # Build the current orga
+                realCurrentOrga = get_current_orga(request, hproject, availableOrga)
 
-            currentOrga = SimpleOrga()
+                currentOrga = SimpleOrga()
 
-            currentOrga.pk = realCurrentOrga.pk
-            currentOrga.name = realCurrentOrga.name
-            currentOrga.ebu_codops = realCurrentOrga.ebu_codops
+                currentOrga.pk = realCurrentOrga.pk
+                currentOrga.name = realCurrentOrga.name
+                currentOrga.ebu_codops = realCurrentOrga.ebu_codops
 
-            # Get rights
-            request.user.ebuio_orga_member = realCurrentOrga.isMember(request.user)
-            request.user.ebuio_orga_admin = realCurrentOrga.isOwner(request.user)
-
-    # Get meta, if not in proxy mode
-    if not proxyMode:
-        meta = plugIt.getMeta(query)
-
-        if not meta:
-            return gen404(request, baseURI, 'meta')
-    else:
-        meta = {}
+                # Get rights
+                request.user.ebuio_orga_member = realCurrentOrga.isMember(request.user)
+                request.user.ebuio_orga_admin = realCurrentOrga.isOwner(request.user)
 
     cacheKey = get_cache_key(request, meta, orgaMode, currentOrga)
 
