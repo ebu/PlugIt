@@ -47,7 +47,7 @@ class TestProxyViews(TestBase):
             self.process_service.kill()
 
         FNULL = open(os.devnull, 'w')
-        self.process_service = subprocess.Popen([sys.executable, 'server.py'] + args, cwd='tests/helpers/flask_server', stdout=FNULL, stderr=FNULL)
+        self.process_service = subprocess.Popen([sys.executable, 'server.py', '63441'] + args, cwd='tests/helpers/flask_server', stdout=FNULL, stderr=FNULL)
         time.sleep(0.5)
 
     def random_base_url(self):

@@ -17,4 +17,4 @@ if 'baseurl' in sys.argv:
 
 if __name__ == "__main__":
     plugit.load_actions(actions)
-    plugit.app.run(debug=False, port=63441)
+    plugit.app.run(debug=False, port=int(sys.argv[1]))

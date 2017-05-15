@@ -17,42 +17,46 @@ class TestExternal(unittest.TestCase):
     session = None
 
     @classmethod
-    def setup_class(self):
-        self.start_process_service()
-        self.start_process_proxy()
-        self.session = requests.Session()
+    def setup_class(cls):
+        cls.start_process_service()
+        cls.start_process_proxy()
+        cls.session = requests.Session()
 
     @classmethod
-    def start_process_service(self, args=[]):
+    def start_process_service(cls, args=[]):
 
-        if self.process_service:
-            self.process_service.kill()
+        if cls.process_service:
+            cls.process_service.kill()
+
+        print("Starting flask")
 
         FNULL = open(os.devnull, 'w')
-        self.process_service = subprocess.Popen([sys.executable, 'server.py'] + args, cwd='tests/helpers/flask_server', stdout=FNULL, stderr=FNULL)
-        time.sleep(0.5)
+        cls.process_service = subprocess.Popen([sys.executable, 'server.py', '63442'] + args, cwd='tests/helpers/flask_server')
+        time.sleep(5)
 
     @classmethod
-    def start_process_proxy(self, args=[]):
+    def start_process_proxy(cls, args=[]):
 
-        if self.process_proxy:
-            self.process_proxy.kill()
+        if cls.process_proxy:
+            cls.process_proxy.kill()
 
         FNULL = open(os.devnull, 'w')
         my_env = os.environ.copy()
-        my_env['PLUGIT_SERVER'] = 'http://127.0.0.1:63441'
+        my_env['PLUGIT_SERVER'] = 'http://127.0.0.1:63442'
 
-        self.process_proxy = subprocess.Popen([sys.executable, 'manage.py', 'runserver', '127.0.0.1:23423'] + args, cwd='examples/standalone_proxy', stdout=FNULL, stderr=FNULL, env=my_env)
-        time.sleep(0.5)
+        print("Starting django")
+
+        cls.process_proxy = subprocess.Popen([sys.executable, 'manage.py', 'runserver', '127.0.0.1:23423'] + args, cwd='examples/standalone_proxy', env=my_env)
+        time.sleep(5)
 
     @classmethod
-    def teardown_class(self):
+    def teardown_class(cls):
 
-        self.process_service.kill()
-        self.process_service = None
+        cls.process_service.kill()
+        cls.process_service = None
 
-        self.process_proxy.kill()
-        self.process_proxy = None
+        cls.process_proxy.kill()
+        cls.process_proxy = None
 
     def do_query(self, url, method='GET', getParmeters=None, postParameters=None, files=None, headers={}):
         return self.session.request(method.upper(), 'http://127.0.0.1:23423/plugIt/' + url, params=getParmeters, data=postParameters, stream=True, headers=headers, allow_redirects=True, files=files)
