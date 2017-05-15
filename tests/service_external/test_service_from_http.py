@@ -1,5 +1,3 @@
-"""Test the simple service from an external point of view (Using HTTP requests)"""
-
 import unittest
 from nose.tools import *
 
@@ -27,7 +25,7 @@ class TestExternal(unittest.TestCase):
             self.p.kill()
 
         FNULL = open(os.devnull, 'w')
-        self.p = subprocess.Popen([sys.executable, 'server.py'] + args, cwd='tests/helpers/flask_server', stdout=FNULL, stderr=FNULL)
+        self.p = subprocess.Popen([sys.executable, 'server.py', '63443'] + args, cwd='tests/helpers/flask_server', stdout=FNULL, stderr=FNULL)
         time.sleep(0.5)
 
     @classmethod
@@ -37,7 +35,7 @@ class TestExternal(unittest.TestCase):
         self.p = None
 
     def do_query(self, url, method='GET', getParmeters=None, postParameters=None, files=None, headers={}):
-        return requests.request(method.upper(), 'http://127.0.0.1:63441/' + url, params=getParmeters, data=postParameters, stream=True, headers=headers, allow_redirects=True, files=files)
+        return requests.request(method.upper(), 'http://127.0.0.1:63443/' + url, params=getParmeters, data=postParameters, stream=True, headers=headers, allow_redirects=True, files=files)
 
     def test_ping(self):
         """Test if the server respond to the ping call"""
