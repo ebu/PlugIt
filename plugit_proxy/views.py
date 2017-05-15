@@ -945,7 +945,7 @@ def api_home(request, key=None, hproPk=None):
     """Show the home page for the API with all methods"""
 
     if not check_api_key(request, key, hproPk):
-        raise Http404
+        return HttpResponseForbidden
 
     return render_to_response('plugIt/api.html', {}, context_instance=RequestContext(request))
 
@@ -954,13 +954,13 @@ def api_user(request, userPk, key=None, hproPk=None):
     """Return information about an user"""
 
     if not check_api_key(request, key, hproPk):
-        raise Http404
+        return HttpResponseForbidden
 
     if settings.PIAPI_STANDALONE:
         if not settings.PIAPI_REALUSERS:
             user = generate_user(pk=userPk)
             if user is None:
-                raise Http404
+                return HttpResponseNotFound()
         else:
             user = get_object_or_404(DUser, pk=userPk)
 
@@ -996,7 +996,7 @@ def api_user(request, userPk, key=None, hproPk=None):
             for (orga, isAdmin) in user.getOrgas(distinct=True):
                 if orga.pk in projectOrgaIds:
                     limitedOrgas.append((orga, isAdmin))
-        else:
+        elif hasattr(user, 'getOrgas'):
             limitedOrgas = user.getOrgas(distinct=True)
 
         # Create List
@@ -1011,7 +1011,7 @@ def api_user_uuid(request, userUuid, key=None, hproPk=None):
     """Return information about an user based on uuid"""
 
     if not check_api_key(request, key, hproPk):
-        raise Http404
+        return HttpResponseForbidden
 
     # From UUID to Pk
     from users.models import TechUser
@@ -1031,7 +1031,7 @@ def api_subscriptions(request, userPk, key=None, hproPk=None):
     """Return information about an user based on uuid"""
 
     if not check_api_key(request, key, hproPk):
-        raise Http404
+        return HttpResponseForbidden
 
     # From UUID to Pk
     from users.models import TechUser
@@ -1049,7 +1049,7 @@ def api_orga(request, orgaPk, key=None, hproPk=None):
     """Return information about an organization"""
 
     if not check_api_key(request, key, hproPk):
-        raise Http404
+        return HttpResponseForbidden
 
     retour = {}
 
@@ -1084,7 +1084,7 @@ def api_get_project_members(request, key=None, hproPk=True):
     """Return the list of project members"""
 
     if not check_api_key(request, key, hproPk):
-        raise Http404
+        return HttpResponseForbidden
 
     if settings.PIAPI_STANDALONE:
         if not settings.PIAPI_REALUSERS:
@@ -1161,13 +1161,13 @@ def api_send_mail(request, key=None, hproPk=None):
     """Send a email. Posts parameters are used"""
 
     if not check_api_key(request, key, hproPk):
-        raise Http404
+        return HttpResponseForbidden
 
-    sender = request.POST['sender'] or settings.MAIL_SENDER
+    sender = request.POST.get('sender', settings.MAIL_SENDER)
     dests = request.POST.getlist('dests')
     subject = request.POST['subject']
     message = request.POST['message']
-    html_message = request.POST['html_message']
+    html_message = request.POST.get('html_message')
 
     if 'response_id' in request.POST:
         key = hproPk + ':' + request.POST['response_id']
@@ -1183,7 +1183,7 @@ def api_orgas(request, key=None, hproPk=None):
     """Return the list of organizations pk"""
 
     if not check_api_key(request, key, hproPk):
-        raise Http404
+        return HttpResponseForbidden
 
     list_orgas = []
 
@@ -1215,7 +1215,7 @@ def api_ebuio_forum(request, key=None, hproPk=None):
     """Create a topic on the forum of the ioproject. EBUIo only !"""
 
     if not check_api_key(request, key, hproPk):
-        raise Http404
+        return HttpResponseForbidden
 
     if settings.PIAPI_STANDALONE:
         return HttpResponse(json.dumps({'error': 'no-on-ebuio'}), content_type="application/json")
@@ -1279,7 +1279,10 @@ def api_ebuio_forum_get_topics_by_tag_for_user(request, key=None, hproPk=None, t
 
     # Check API key (in order to be sure that we have a valid one and that's correspond to the project
     if not check_api_key(request, key, hproPk):
-        raise Http404
+        return HttpResponseForbidden
+
+    if settings.PIAPI_STANDALONE:
+        return HttpResponse(json.dumps({'error': 'no-on-ebuio'}), content_type="application/json")
 
     # We get the plugit object representing the project
     (_, _, hproject) = getPlugItObject(hproPk)
@@ -1298,7 +1301,7 @@ def api_ebuio_forum_get_topics_by_tag_for_user(request, key=None, hproPk=None, t
         user = generate_user(mode='ano')
 
     if not hproject.discuss_can_display_posts(user):
-        raise Http404
+        return HttpResponseForbidden
 
     # Verify the existence of the tag
     if not tag:
@@ -1317,4 +1320,3 @@ def api_ebuio_forum_get_topics_by_tag_for_user(request, key=None, hproPk=None, t
          'replies_number': post.direct_subposts_size()} for post in posts]
 
     return HttpResponse(json.dumps({'data': posts_json}), content_type="application/json")
-

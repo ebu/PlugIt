@@ -97,14 +97,14 @@ def test_send_forum():
 @app.route("/ebuio/forum/search/bytag/<tag>")
 def test_send_forum_search(tag):
 
-    if request.args.get('u') == forum_key[6]:
-        return json.dumps({'data': [forum_key[6]]})
+    if request.args.get('u') == forum_key[10:20]:
+        return json.dumps({'data': [forum_key[10:20]]})
 
-    if tag == forum_key[2]:
+    if tag == forum_key[1:20]:
         return json.dumps({'data': []})
 
-    if tag == forum_key[3]:
-        return json.dumps({'data': [forum_key[3]]})
+    if tag == forum_key[3:10]:
+        return json.dumps({'data': [forum_key[3:10]]})
 
 
 if __name__ == "__main__":
