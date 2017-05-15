@@ -28,11 +28,15 @@ class TestExternal(unittest.TestCase):
         if cls.process_service:
             cls.process_service.kill()
 
-        print("Starting flask")
-
         FNULL = open(os.devnull, 'w')
-        cls.process_service = subprocess.Popen([sys.executable, 'server.py', '63442'] + args, cwd='tests/helpers/flask_server')
-        time.sleep(5)
+        cls.process_service = subprocess.Popen([sys.executable, 'server.py', '63442'] + args, cwd='tests/helpers/flask_server', stdout=FNULL, stderr=FNULL)
+
+        for x in range(50):
+            try:
+                requests.get('http://127.0.0.1:63442')
+                return
+            except:
+                time.sleep(0.1)
 
     @classmethod
     def start_process_proxy(cls, args=[]):
@@ -44,10 +48,14 @@ class TestExternal(unittest.TestCase):
         my_env = os.environ.copy()
         my_env['PLUGIT_SERVER'] = 'http://127.0.0.1:63442'
 
-        print("Starting django")
+        cls.process_proxy = subprocess.Popen([sys.executable, 'manage.py', 'runserver', '127.0.0.1:23423'] + args, cwd='examples/standalone_proxy', env=my_env, stdout=FNULL, stderr=FNULL)
 
-        cls.process_proxy = subprocess.Popen([sys.executable, 'manage.py', 'runserver', '127.0.0.1:23423'] + args, cwd='examples/standalone_proxy', env=my_env)
-        time.sleep(5)
+        for x in range(50):
+            try:
+                requests.get('http://127.0.0.1:23423')
+                return
+            except:
+                time.sleep(0.1)
 
     @classmethod
     def teardown_class(cls):

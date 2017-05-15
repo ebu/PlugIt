@@ -6,6 +6,7 @@ from nose.tools import *
 
 import os
 import uuid
+import requests
 
 
 class TestApi(TestBase):
@@ -32,7 +33,12 @@ class TestApi(TestBase):
         FNULL = open(os.devnull, 'w')
         cls.p = subprocess.Popen([sys.executable, 'tests/helpers/api_server.py', cls.user_key, cls.orgas_key, cls.orga_key, cls.project_members_key, cls.send_mail_key, cls.forum_key], stdout=FNULL, stderr=FNULL)
 
-        time.sleep(1)
+        for x in range(50):
+            try:
+                requests.get('http://127.0.0.1:62312')
+                return
+            except:
+                time.sleep(0.1)
 
     @classmethod
     def teardown_class(cls):

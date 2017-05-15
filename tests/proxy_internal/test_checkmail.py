@@ -13,31 +13,31 @@ import time
 class TestCheckMail(TestBase):
 
     @classmethod
-    def setup_class(self):
-        super(TestCheckMail, self).setup_class()
-        self.start_popserver()
+    def setup_class(cls):
+        super(TestCheckMail, cls).setup_class()
+        cls.start_popserver()
         time.sleep(1)
-        self.run_checkmail()
-        self.stop_popserver()
+        cls.run_checkmail()
+        cls.stop_popserver()
 
     @classmethod
-    def start_popserver(self):
-        self.p = subprocess.Popen([sys.executable, 'server.py'], cwd='tests/helpers/pop_server', stderr=subprocess.PIPE)
+    def start_popserver(cls):
+        cls.p = subprocess.Popen([sys.executable, 'server.py'], cwd='tests/helpers/pop_server', stderr=subprocess.PIPE)
 
     @classmethod
-    def stop_popserver(self):
-        (out, err) = self.p.communicate()
-        self.output = err
+    def stop_popserver(cls):
+        (out, err) = cls.p.communicate()
+        cls.output = err
 
     @classmethod
-    def run_checkmail(self):
-        self.pop_user = str(uuid.uuid4())
-        self.pop_password = str(uuid.uuid4())
+    def run_checkmail(cls):
+        cls.pop_user = str(uuid.uuid4())
+        cls.pop_password = str(uuid.uuid4())
 
         settings.INCOMING_MAIL_HOST = "127.0.0.1"
         settings.INCOMING_MAIL_PORT = 22110
-        settings.INCOMING_MAIL_USER = self.pop_user
-        settings.INCOMING_MAIL_PASSWORD = self.pop_password
+        settings.INCOMING_MAIL_USER = cls.pop_user
+        settings.INCOMING_MAIL_PASSWORD = cls.pop_password
         settings.EBUIO_MAIL_SECRET_HASH = 'secret-for-tests'
         settings.EBUIO_MAIL_SECRET_KEY = 'secret2-for-tests'
 
@@ -58,9 +58,7 @@ class TestCheckMail(TestBase):
 
         check_mail.Command().handle()
 
-        self.mail_handeled = mail_handeled
-
-        # assert(False)
+        cls.mail_handeled = mail_handeled
 
     def test_output(self):
         assert(self.output)

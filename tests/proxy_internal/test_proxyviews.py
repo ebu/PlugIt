@@ -9,6 +9,7 @@ import sys
 import uuid
 import subprocess
 import time
+import requests
 
 
 class TestProxyViews(TestBase):
@@ -16,8 +17,8 @@ class TestProxyViews(TestBase):
     process_service = None
 
     @classmethod
-    def setup_class(self):
-        super(TestProxyViews, self).setup_class()
+    def setup_class(cls):
+        super(TestProxyViews, cls).setup_class()
 
         django.setup()
         setup_test_environment()
@@ -25,30 +26,36 @@ class TestProxyViews(TestBase):
         from plugit_proxy import views
         from plugit_proxy.plugIt import PlugIt
 
-        self.views = views
-        self.PlugIt = PlugIt
+        cls.views = views
+        cls.PlugIt = PlugIt
 
-        self.factory = RequestFactory()
+        cls.factory = RequestFactory()
 
-        self.start_process_service()
+        cls.start_process_service()
 
     @classmethod
-    def teardown_class(self):
-        super(TestProxyViews, self).teardown_class()
+    def teardown_class(cls):
+        super(TestProxyViews, cls).teardown_class()
         teardown_test_environment()
 
-        self.process_service.kill()
-        self.process_service = None
+        cls.process_service.kill()
+        cls.process_service = None
 
     @classmethod
-    def start_process_service(self, args=[]):
+    def start_process_service(cls, args=[]):
 
-        if self.process_service:
-            self.process_service.kill()
+        if cls.process_service:
+            cls.process_service.kill()
 
         FNULL = open(os.devnull, 'w')
-        self.process_service = subprocess.Popen([sys.executable, 'server.py', '63441'] + args, cwd='tests/helpers/flask_server', stdout=FNULL, stderr=FNULL)
-        time.sleep(0.5)
+        cls.process_service = subprocess.Popen([sys.executable, 'server.py', '63441'] + args, cwd='tests/helpers/flask_server', stdout=FNULL, stderr=FNULL)
+
+        for x in range(50):
+            try:
+                requests.get('http://127.0.0.1:63441')
+                return
+            except:
+                time.sleep(0.1)
 
     def random_base_url(self):
 

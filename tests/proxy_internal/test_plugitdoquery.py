@@ -7,24 +7,31 @@ import uuid
 import subprocess
 import time
 import tempfile
+import requests
 
 
 class TestPlugItDoQueryTest(TestBase):
 
     @classmethod
-    def setup_class(self):
-        super(TestPlugItDoQueryTest, self).setup_class()
+    def setup_class(cls):
+        super(TestPlugItDoQueryTest, cls).setup_class()
         FNULL = open(os.devnull, 'w')
-        self.p = subprocess.Popen([sys.executable, 'doquery_server.py'], cwd='tests/helpers', stdout=FNULL, stderr=FNULL)
-        time.sleep(0.5)
+        cls.p = subprocess.Popen([sys.executable, 'doquery_server.py'], cwd='tests/helpers', stdout=FNULL, stderr=FNULL)
 
         from plugit_proxy.plugIt import PlugIt
-        self.plugit = PlugIt("http://127.0.0.1:62314")
+        cls.plugit = PlugIt("http://127.0.0.1:62314")
+
+        for x in range(50):
+            try:
+                requests.get('http://127.0.0.1:62314')
+                return
+            except:
+                time.sleep(0.1)
 
     @classmethod
-    def teardown_class(self):
-        super(TestPlugItDoQueryTest, self).teardown_class()
-        self.p.kill()
+    def teardown_class(cls):
+        super(TestPlugItDoQueryTest, cls).teardown_class()
+        cls.p.kill()
 
     def test_get(self):
         retour = self.plugit.doQuery("test_get").json()
