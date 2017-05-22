@@ -1,1 +1,4 @@
 include README.md
+include plugit_proxy/management/*.py
+include plugit_proxy/management/commands/*.py
+include plugit_proxy/templatetags/*.py
