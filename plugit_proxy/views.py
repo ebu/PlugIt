@@ -689,8 +689,8 @@ def main(request, query, hproPk=None, returnMenuOnly=False):
 
     # Check for SSL Requirements and redirect to ssl if necessary
     if hproject and hproject.plugItRequiresSsl:
-        if request._get_scheme() == 'http':
-            secure_url = request.build_absolute_uri(request.get_full_path()).replace('http://', 'https://')
+        if not request.is_secure():
+            secure_url = 'https://{0}{1}'.format(request.get_host(), request.get_full_path())
             return HttpResponsePermanentRedirect(secure_url)
 
     orgaMode = None
