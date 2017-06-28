@@ -1,3 +1,7 @@
+# v0.3.3
+
+Fix django methods used to resolve the hostname to take into account possible usage behind revers proxy server.
+
 # v0.3.1
 
 Small fix for proxy, when not used in standalone mode
