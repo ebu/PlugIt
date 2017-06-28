@@ -1,6 +1,10 @@
-# v0.3.2
+# v0.3.4
 
 Introduction of the `PI_USE_PROXY_IP` setting, allowing PlugIt services to do remote ip check behind a proxy.
+
+# v0.3.3
+
+Fix django methods used to resolve the hostname to take into account possible usage behind revers proxy server.
 
 # v0.3.1
 
