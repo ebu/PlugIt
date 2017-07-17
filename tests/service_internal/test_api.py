@@ -147,17 +147,17 @@ class TestApi(TestBase):
 
     def test_ebuio_forum_tags_no_author_empty(self):
         """Test the ebuio_forum_tags call"""
-        retour = self.api.forum_topic_get_by_tag_for_user(self.forum_key[2])
+        retour = self.api.forum_topic_get_by_tag_for_user(self.forum_key[1:20])
         assert(not retour)
 
     def test_ebuio_forum_tags_no_author(self):
         """Test the ebuio_forum_tags call"""
-        retour = self.api.forum_topic_get_by_tag_for_user(self.forum_key[3])
+        retour = self.api.forum_topic_get_by_tag_for_user(self.forum_key[3:10])
         assert(retour)
-        assert(self.forum_key[3] in retour)
+        assert(self.forum_key[3:10] in retour)
 
     def test_ebuio_forum_tags_author(self):
         """Test the ebuio_forum_tags call"""
-        retour = self.api.forum_topic_get_by_tag_for_user(self.forum_key[3], self.forum_key[6])
+        retour = self.api.forum_topic_get_by_tag_for_user(self.forum_key[3:10], self.forum_key[10:20])
         assert(retour)
-        assert(self.forum_key[6] in retour)
+        assert(self.forum_key[10:20] in retour)
