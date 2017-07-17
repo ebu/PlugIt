@@ -1,3 +1,7 @@
+# v0.3.2
+
+Introduction of the `PI_USE_PROXY_IP` setting, allowing PlugIt services to do remote ip check behind a proxy.
+
 # v0.3.1
 
 Small fix for proxy, when not used in standalone mode

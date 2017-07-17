@@ -12,3 +12,5 @@ PI_BASE_URL = os.environ.get('PLUGIT_BASE_URL', '/')
 PI_ALLOWED_NETWORKS = os.environ.get('PLUGIT_ALLOWED_NETWORKS', '0.0.0.0/0').split(',')
 
 PI_API_NAME = 'plugit-sample'
+
+PI_USE_PROXY_IP = False
