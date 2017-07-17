@@ -1,7 +1,7 @@
 import hashlib
 
 from flask import abort
-from params import PI_ALLOWED_NETWORKS
+from params import PI_ALLOWED_NETWORKS, PI_USE_PROXY_IP
 
 import os
 import sys
@@ -204,8 +204,13 @@ def addressInNetwork(ip, net):
 
 
 def check_ip(request):
+    addr = request.remote_addr
+
+    if PI_USE_PROXY_IP and request.access_route:
+        addr = request.access_route[-1]
+
     for net in PI_ALLOWED_NETWORKS:
-        if addressInNetwork(request.remote_addr, net):
+        if addressInNetwork(addr, net):
             return True
     # Ip not found
     abort(404)

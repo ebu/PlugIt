@@ -17,6 +17,8 @@ PI_BASE_URL = config.PI_BASE_URL
 # IP allowed to use the PlugIt API.
 PI_ALLOWED_NETWORKS = config.PI_ALLOWED_NETWORKS
 
+PI_USE_PROXY_IP = getattr(config, 'PI_USE_PROXY_IP', False)
+
 # # Does not edit code bellow !
 
 # API version parameters

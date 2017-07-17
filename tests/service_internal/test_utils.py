@@ -355,3 +355,47 @@ class TestUtils(TestBase):
         utils.PI_ALLOWED_NETWORKS = backup_allowed
 
         assert(not retour)
+
+    def test_check_ip_proxy(self):
+        """Test check_ip with proxy mode"""
+
+        from plugit import utils
+
+        backup_allowed = utils.PI_ALLOWED_NETWORKS
+
+        class R():
+            remote_addr = '11.11.11.11'
+            access_route = ['22.22.22.22']
+
+        utils.PI_ALLOWED_NETWORKS = ['11.11.11.11/32']
+        try:
+            retour_no_proxy_no_proxy = utils.check_ip(R())
+        except Exception:
+            retour_no_proxy_no_proxy = False
+
+        utils.PI_ALLOWED_NETWORKS = ['22.22.22.22/32']
+        try:
+            retour_no_proxy_proxy = utils.check_ip(R())
+        except Exception:
+            retour_no_proxy_proxy = False
+
+        utils.PI_ALLOWED_NETWORKS = ['11.11.11.11/32']
+        utils.PI_USE_PROXY_IP = True
+        try:
+            retour_proxy_no_proxy = utils.check_ip(R())
+        except Exception:
+            retour_proxy_no_proxy = False
+
+        utils.PI_ALLOWED_NETWORKS = ['22.22.22.22/32']
+        try:
+            retour_proxy_proxy = utils.check_ip(R())
+        except Exception:
+            retour_proxy_proxy = False
+
+        utils.PI_ALLOWED_NETWORKS = backup_allowed
+        utils.PI_USE_PROXY_IP = False
+
+        assert(retour_no_proxy_no_proxy)
+        assert(retour_proxy_proxy)
+        assert(not retour_no_proxy_proxy)
+        assert(not retour_proxy_no_proxy)

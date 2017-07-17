@@ -61,6 +61,7 @@ Settings are defined in the `config.py` file.
 * `PI_META_CACHE` : Number of seconds to ask the _PlugIt Proxy_ to cache the meta information. Set by default to 0 if _DEBUG_ is True, 5 minutes if `DEBUG` is False.
 * `PI_BASE_URL` : String. The base URL to access the PlugIt API. It's possible to use a different URL (eg. '/plugIt/') to have others flask methods for another API using the same server.py. *Must end with a /*
 * `PI_ALLOWED_NETWORKS` : Array of subnets. PlugIt call will be restricted to thoses networks. Eg: `['127.0.0.1/32']` (Single ip), `['0.0.0.0/0']` (Everyone), `['192.168.42.0/24']` (Everyone with ip 192.168.42.X)
+* `PI_USE_PROXY_IP`: Use the `X-Forwarded-For` header to do `PI_ALLOWED_NETWORKS`'s checks. Don't activate this option if you don't use a proxy or the check can be easily bypassed.
 * `PI_API_USERDATA` : Array of string. Properties allowed about the current user
 * `PI_API_ORGAMODE` : If true, work in Orga mode (next section)
 * `PI_API_REALUSERS` : If true, work with real users. Exclusive with PIAPI_ORGAMODE (don't active both !). You need to setup a database and use `python manage.py syncdb` to create it. Administration is available @ _http://127.0.0.1:8000/admin/_
