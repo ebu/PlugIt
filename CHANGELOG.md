@@ -1,3 +1,9 @@
+# v0.3.6
+
+Introduction of `send_etag` decorator, who allow to send an ETag header to the final client, using the `_plugit_etag` value in returned data.
+If an *action* return a 304, 401, 403, 404, 429 or 500 status code, the final code will be passed to the final client (before that, only a 200, 404 (for any code not in [200, 500]) or 500 was sent back).
+
+
 # v0.3.5
 
 Introduction of `X-Plugit-Remote-Addr` header, with the source IP of the user doing the request on the proxy side.

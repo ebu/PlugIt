@@ -58,6 +58,10 @@ It's possible to redirect the client using the header `EbuIo-PlugIt-Redirect`. P
 
 It's possible to send a file using the header `EbuIo-PlugIt-ItAFile`. The content is send to the user, using the same content-type. If any, the Content-Disposition header is also forwarder.
 
+The `ETag` header will be send back to the client.
+
+If this method return a 304, 401, 403, 404, 429 or 500 http status code the exact status code will be send back to the client. In others cases, if the status code is not 200, a 404 will be returned.
+
 ### /media/_medianame_
 This call return a specific media on the service side. Each request on EBUio side on /media/* is forwarded to the service and returned to the client. No caching is used, but a 1 hour Cache-Control header is set by EBUio-
 

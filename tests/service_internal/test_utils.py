@@ -169,6 +169,16 @@ class TestUtils(TestBase):
 
         assert(_tmp.pi_api_no_template)
 
+    def test_decorators_send_etag(self):
+        """Test the send_etag decorator"""
+        from plugit.utils import send_etag
+
+        @send_etag()
+        def _tmp():
+            pass
+
+        assert(_tmp.pi_api_send_etag)
+
     def test_md5checksum(self):
         """Test the md5Checksum util"""
         import tempfile

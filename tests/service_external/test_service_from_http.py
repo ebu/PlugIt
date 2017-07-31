@@ -316,6 +316,13 @@ class TestExternal(unittest.TestCase):
         assert(not self.do_query('template/tralala'))
         assert(not self.do_query('meta/tralala'))
 
+    def test_etag(self):
+        r = self.do_query('action/etag')
+
+        assert(r)
+        assert('ETag' in r.headers)
+        assert(r.headers['ETag'] == 'this-is-an-etag')
+
     def test_baseurl(self):
         self.start_p(['baseurl'])
 

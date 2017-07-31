@@ -25,6 +25,7 @@ It's possible to use various additional decorators to specify how the meta about
 * `@json_only`: Specifies the action return only json
 * `@xml_only`: Specifies the action return only xml (Response to have structure {'xml':'..'})
 * `@no_template`: Specifies no master template should be used
+* `@send_etag`: Specifiy that, when execution the action, the `_plugit_etag` value should be send back in `ETag` header and not as data.
 
 Again, the server.py file takes care of responding to /meta/, /template/ and /action/ call. The function in actions.py will be called when needed. The request is passed as the first parameters to actions.
 

@@ -1,3 +1,7 @@
+from flask import abort, Response
+import werkzeug
+
+
 import sys
 sys.path.append('../../../')
 
@@ -5,7 +9,7 @@ sys.path.append('../../../')
 import time
 
 
-from plugit.utils import action, cache, only_logged_user, only_member_user, only_admin_user, only_orga_member_user, only_orga_admin_user, user_info, json_only, no_template, PlugItRedirect, PlugItSendFile, PlugItSetSession, get_session_from_request, xml_only, public, address_in_networks
+from plugit.utils import action, cache, only_logged_user, only_member_user, only_admin_user, only_orga_member_user, only_orga_admin_user, user_info, json_only, no_template, PlugItRedirect, PlugItSendFile, PlugItSetSession, get_session_from_request, xml_only, public, address_in_networks, send_etag
 
 
 @action(route="/", template="home.html")
@@ -231,3 +235,41 @@ def test_get_orga(request):
 @action(route='/remote_addr', template="echo.html")
 def test_remote_addr(request):
     return {'echo': request.headers.get('X-Plugit-Remote-Addr')}
+
+
+@action(route='/generate_401', template="echo.html")
+def test_generate_401(request):
+    abort(401)
+
+
+@action(route='/generate_403', template="echo.html")
+def test_generate_403(request):
+    abort(403)
+
+
+@action(route='/generate_404', template="echo.html")
+def test_generate_404(request):
+    abort(404)
+
+
+@action(route='/generate_304', template="echo.html")
+def test_generate_304(request):
+
+    class NotModified(werkzeug.exceptions.HTTPException):
+        code = 304
+
+        def get_response(self, environment):
+            return Response(status=304)
+
+    abort(NotModified())
+
+
+@action(route='/generate_429', template="echo.html")
+def test_generate_429(request):
+    abort(429)
+
+
+@action(route='/etag', template="echo.html")
+@send_etag()
+def test_etag(request):
+    return {'_plugit_etag': 'this-is-an-etag', 'echo': '42'}

@@ -81,6 +81,12 @@ class ActionView(View):
             for (key, value) in headers.items():
                 response.headers['EbuIo-PlugIt-SetSession-' + key] = value
 
+            if hasattr(self.action, 'pi_api_send_etag'):
+                if result:
+                    etag = result.pop('_plugit_etag', None)
+                    if etag:
+                        response.headers['ETag'] = etag
+
         # Is it a redirect ?
         if isinstance(result, PlugItRedirect):
             response = make_response("")

@@ -243,8 +243,16 @@ class PlugIt():
             """Object to return a 500"""
             pass
 
+        class PlugItSpecialCode():
+            """Object to return a special status code"""
+            def __init__(self, code):
+                self.code = code
+
         if r.status_code == 500:
-            return (PlugIt500(), {})
+            return (PlugIt500(), {}, {})
+
+        if r.status_code in [429, 404, 403, 401, 304]:
+            return (PlugItSpecialCode(r.status_code), {}, {})
 
         if r.status_code == 200:  # Get the content if there is not problem. If there is, template will stay to None
             # {} is parsed as None (but should be an empty object)
@@ -257,13 +265,20 @@ class PlugIt():
                 if key.lower().startswith(attr):
                     session_to_set[key[len(attr):]] = value
 
+            # Build list of headers to forward
+            headers_to_set = {}
+
+            for h in ['ETag']:
+                if h in r.headers:
+                    headers_to_set[h] = r.headers[h]
+
             if 'ebuio-plugit-redirect' in r.headers:
                 no_prefix = False
 
                 if 'ebuio-plugit-redirect-noprefix' in r.headers:
                     no_prefix = r.headers['ebuio-plugit-redirect-noprefix'] == 'True'
 
-                return (PlugItRedirect(r.headers['ebuio-plugit-redirect'], no_prefix), session_to_set)
+                return (PlugItRedirect(r.headers['ebuio-plugit-redirect'], no_prefix), session_to_set, headers_to_set)
 
             if 'ebuio-plugit-itafile' in r.headers:
 
@@ -272,17 +287,17 @@ class PlugIt():
                 else:
                     content_disposition = ''
 
-                return (PlugItFile(r.content, r.headers['Content-Type'], content_disposition), session_to_set)
+                return (PlugItFile(r.content, r.headers['Content-Type'], content_disposition), session_to_set, headers_to_set)
 
             if proxyMode and 'ebuio-plugit-notemplate' in r.headers:
-                return (PlugItNoTemplate(r.content), session_to_set)
+                return (PlugItNoTemplate(r.content), session_to_set, headers_to_set)
 
             if proxyMode:
-                return (r.content, session_to_set)
+                return (r.content, session_to_set, headers_to_set)
 
             if not r.content or r.content == "{}":
-                return ({}, session_to_set)
+                return ({}, session_to_set, headers_to_set)
 
-            return (r.json(), session_to_set)
+            return (r.json(), session_to_set, headers_to_set)
         else:
-            return (None, {})
+            return (None, {}, {})
