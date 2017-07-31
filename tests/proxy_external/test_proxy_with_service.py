@@ -420,3 +420,12 @@ class TestExternal(unittest.TestCase):
         assert(retour.status_code == 200)
         assert('ETag' in retour.headers)
         assert(retour.headers['ETag'] == 'this-is-an-etag')
+
+    def test_if_none_match(self):
+
+        k = str(uuid.uuid4())
+
+        retour = self.do_query('if_none_match', headers={'If-None-Match': k})
+
+        assert(retour)
+        assert(k in retour.text)

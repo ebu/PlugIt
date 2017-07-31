@@ -273,3 +273,9 @@ def test_generate_429(request):
 @send_etag()
 def test_etag(request):
     return {'_plugit_etag': 'this-is-an-etag', 'echo': '42'}
+
+
+@action(route='/if_none_match', template="echo.html")
+def test_if_none_match(request):
+    print(request.headers)
+    return {'echo': request.headers.get('X-PlugIt-If-None-Match')}

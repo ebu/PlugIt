@@ -419,8 +419,11 @@ def build_extra_headers(request, proxyMode, orgaMode, currentOrga):
         # General
         things_to_add['base_url'] = baseURI
 
-    if request and hasattr(request, 'META') and 'REMOTE_ADDR' in request.META:
-        things_to_add['remote-addr'] = request.META['REMOTE_ADDR']
+    if request and hasattr(request, 'META'):
+        if 'REMOTE_ADDR' in request.META:
+            things_to_add['remote-addr'] = request.META['REMOTE_ADDR']
+        if 'HTTP_IF_NONE_MATCH' in request.META:
+            things_to_add['If-None-Match'] = request.META['HTTP_IF_NONE_MATCH']
 
     return things_to_add
 

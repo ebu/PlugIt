@@ -82,6 +82,7 @@ The management task check_mail is used to check mails and should be runned insid
 The PlugIt Proxy will send extra information about the client using HTTP headers. All headers begin by `X-Plugit-`.
 
 * `X-Plugit-Remote-Addr`: The ip of the client doing the request.
+* `X-Plugit-If-None-Match`: The If-None-Match header value of the client doing the request.
 
 ### ProxyMode
 
