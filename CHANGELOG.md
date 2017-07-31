@@ -1,3 +1,7 @@
+# v0.3.5
+
+Introduction of `X-Plugit-Remote-Addr` header, with the source IP of the user doing the request on the proxy side.
+
 # v0.3.4
 
 Introduction of the `PI_USE_PROXY_IP` setting, allowing PlugIt services to do remote ip check behind a proxy.

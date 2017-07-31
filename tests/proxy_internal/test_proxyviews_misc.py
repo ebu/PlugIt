@@ -217,6 +217,7 @@ class TestProxyViewsMisc(TestProxyViews):
 
         k = str(uuid.uuid4())
         uri = self.random_base_url()
+        remote = str(uuid.uuid4())
 
         assert(not self.views.build_extra_headers(None, False, False, None))
 
@@ -228,11 +229,13 @@ class TestProxyViewsMisc(TestProxyViews):
         r = self.factory.get('/')
         r.user = U()
         r.user.k = k
+        r.META = {'REMOTE_ADDR': remote}
 
         headers = self.views.build_extra_headers(r, True, False, None)
 
         assert(headers['user_k'] == k)
         assert(headers['base_url'] == uri)
+        assert(headers['remote-addr'] == remote)
         assert('orga_pk' not in headers)
         assert('orga_name' not in headers)
         assert('orga_codops' not in headers)

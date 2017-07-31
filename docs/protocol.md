@@ -73,6 +73,11 @@ It's possible to send mail using the API. All users reply to the mail, if keepin
 
 The management task check_mail is used to check mails and should be runned inside a cron job on the PlugIt Service. Relevent configuration (`INCOMING_MAIL` and `MAIL_SENDER`) should also be correct.
 
+### Extra headers
+
+The PlugIt Proxy will send extra information about the client using HTTP headers. All headers begin by `X-Plugit-`.
+
+* `X-Plugit-Remote-Addr`: The ip of the client doing the request.
 
 ### ProxyMode
 

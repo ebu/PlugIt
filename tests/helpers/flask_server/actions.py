@@ -226,3 +226,8 @@ def test_set_user(request):
 @no_template()
 def test_get_orga(request):
     return {}
+
+
+@action(route='/remote_addr', template="echo.html")
+def test_remote_addr(request):
+    return {'echo': request.headers.get('X-Plugit-Remote-Addr')}
