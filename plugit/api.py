@@ -136,7 +136,7 @@ class PlugItAPI(object):
 
         retour = []
 
-        for data in r.json()['data']:
+        for data in r.json().get('data', []):
             retour.append(data)
 
         return retour
