@@ -875,14 +875,14 @@ def _get_subscription_labels(user, hproject):
 
 @cache_control(public=True, max_age=3600)
 def media(request, path, hproPk=None):
-    """Ask the server for a media and return it to the client browser. Add cache headers of 1 hour"""
+    """Ask the server for a media and return it to the client browser. Forward cache headers"""
 
     if not settings.PIAPI_STANDALONE:
         (plugIt, baseURI, _) = getPlugItObject(hproPk)
     else:
         global plugIt, baseURI
 
-    (media, contentType) = plugIt.getMedia(path)
+    (media, contentType, cache_control) = plugIt.getMedia(path)
 
     if not media:  # No media returned
         raise Http404
@@ -890,6 +890,9 @@ def media(request, path, hproPk=None):
     response = HttpResponse(media)
     response['Content-Type'] = contentType
     response['Content-Length'] = len(media)
+
+    if cache_control:
+        response['Cache-Control'] = cache_control
 
     return response
 

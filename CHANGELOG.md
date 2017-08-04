@@ -4,6 +4,7 @@ Introduction of `send_etag` decorator, who allow to send an ETag header to the f
 The `If-None-Match` http header is forwarded to the service, as `X-PlugIt-If-None_match`.
 If an *action* return a 304, 401, 403, 404, 429 or 500 status code, the final code will be passed to the final client (before that, only a 200, 404 (for any code not in [200, 500]) or 500 was sent back).
 The caching of the include tag has been improved.
+The Cache-Control header of media requests is forwarded to the client.
 
 
 # v0.3.5

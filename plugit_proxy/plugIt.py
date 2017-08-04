@@ -156,9 +156,14 @@ class PlugIt():
             if 'content-type' in r.headers:
                 content_type = r.headers['content-type']
 
-            return (r.content, content_type)
+            cache_control = None
+
+            if 'cache-control' in r.headers:
+                cache_control = r.headers['cache-control']
+
+            return (r.content, content_type, cache_control)
         else:
-            return (None, None)
+            return (None, None, None)
 
     def getMeta(self, uri):
         """Return meta information about an action. Cache the result as specified by the server"""

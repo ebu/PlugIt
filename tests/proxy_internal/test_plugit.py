@@ -103,21 +103,23 @@ class TestPlugIt(TestBase):
 
         media = str(uuid.uuid4())
 
-        data, content_type = self.plugIt.getMedia(media)
+        data, content_type, cache_control = self.plugIt.getMedia(media)
 
         assert(data == '{}')
         assert(content_type == 'application/octet-stream')
         assert(self.lastDoQueryCall['url'] == 'media/{}'.format(media))
+        assert(not cache_control)
 
-        self.plugIt.toReplyHeaders = lambda: {'content-type': 'test'}
+        self.plugIt.toReplyHeaders = lambda: {'content-type': 'test', 'cache-control': 'public, max-age=31536000'}
 
-        data, content_type = self.plugIt.getMedia(media)
+        data, content_type, cache_control = self.plugIt.getMedia(media)
 
         assert(data == '{}')
         assert(content_type == 'test')
+        assert(cache_control == 'public, max-age=31536000')
 
         self.plugIt.toReplyStatusCode = lambda: 201
-        data, content_type = self.plugIt.getMedia(media)
+        data, content_type, cache_control = self.plugIt.getMedia(media)
         assert(not data)
         assert(not content_type)
 
