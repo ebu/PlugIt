@@ -192,7 +192,14 @@ class PlugIt():
         """Return the template for an action. Cache the result. Can use an optional meta parameter with meta information"""
 
         if not meta:
-            meta = self.getMeta(uri)
+
+            metaKey = self.cacheKey + '_templatesmeta_cache_' + uri
+
+            meta = cache.get(metaKey, None)
+
+            if not meta:
+                meta = self.getMeta(uri)
+                cache.set(metaKey, meta, 15)
 
         if not meta:  # No meta, can return a template
             return None
