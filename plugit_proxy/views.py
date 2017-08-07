@@ -405,8 +405,6 @@ def build_extra_headers(request, proxyMode, orgaMode, currentOrga):
     # If in proxymode, add needed infos to headers
     if proxyMode:
 
-        things_to_add = {}
-
         # User
         for prop in settings.PIAPI_USERDATA:
             if hasattr(request.user, prop):
@@ -420,6 +418,9 @@ def build_extra_headers(request, proxyMode, orgaMode, currentOrga):
 
         # General
         things_to_add['base_url'] = baseURI
+
+    if request and hasattr(request, 'META') and 'REMOTE_ADDR' in request.META:
+        things_to_add['remote-addr'] = request.META['REMOTE_ADDR']
 
     return things_to_add
 

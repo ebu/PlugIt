@@ -76,6 +76,13 @@ class TestExternal(unittest.TestCase):
         assert(retour)
         assert('home_template' in retour.text)
 
+    def test_remote_addr_header(self):
+
+        retour = self.do_query('remote_addr')
+
+        assert(retour)
+        assert('127.0.0.1' in retour.text)
+
     def test_only_logged_user_ano(self):
         self.do_query('ebuio_setUser?mode=ano')
 
