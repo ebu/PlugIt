@@ -103,21 +103,23 @@ class TestPlugIt(TestBase):
 
         media = str(uuid.uuid4())
 
-        data, content_type = self.plugIt.getMedia(media)
+        data, content_type, cache_control = self.plugIt.getMedia(media)
 
         assert(data == '{}')
         assert(content_type == 'application/octet-stream')
         assert(self.lastDoQueryCall['url'] == 'media/{}'.format(media))
+        assert(not cache_control)
 
-        self.plugIt.toReplyHeaders = lambda: {'content-type': 'test'}
+        self.plugIt.toReplyHeaders = lambda: {'content-type': 'test', 'cache-control': 'public, max-age=31536000'}
 
-        data, content_type = self.plugIt.getMedia(media)
+        data, content_type, cache_control = self.plugIt.getMedia(media)
 
         assert(data == '{}')
         assert(content_type == 'test')
+        assert(cache_control == 'public, max-age=31536000')
 
         self.plugIt.toReplyStatusCode = lambda: 201
-        data, content_type = self.plugIt.getMedia(media)
+        data, content_type, cache_control = self.plugIt.getMedia(media)
         assert(not data)
         assert(not content_type)
 
@@ -200,7 +202,7 @@ class TestPlugIt(TestBase):
         self.plugIt.toReplyJson = lambda: {}
         self.plugIt.toReplyHeaders = lambda: {}
 
-        assert(self.plugIt.doAction(path) == ({}, {}))
+        assert(self.plugIt.doAction(path) == ({}, {}, {}))
         assert(self.lastDoQueryCall['url'] == 'action/{}'.format(path))
 
     def test_do_action_proxy_mode(self):
@@ -211,7 +213,7 @@ class TestPlugIt(TestBase):
         self.plugIt.toReplyJson = lambda: {}
         self.plugIt.toReplyHeaders = lambda: {}
 
-        assert(self.plugIt.doAction(path, proxyMode=True) == ("{}", {}))
+        assert(self.plugIt.doAction(path, proxyMode=True) == ("{}", {}, {}))
         assert(self.lastDoQueryCall['url'] == path)
 
     def test_do_action_proxy_mode_no_remplate(self):
@@ -222,7 +224,7 @@ class TestPlugIt(TestBase):
         self.plugIt.toReplyJson = lambda: {'k': k}
         self.plugIt.toReplyHeaders = lambda: {'ebuio-plugit-notemplate': True}
 
-        r, __ = self.plugIt.doAction('', proxyMode=True)
+        r, __, __ = self.plugIt.doAction('', proxyMode=True)
 
         assert(r.__class__.__name__ == 'PlugItNoTemplate')
         assert(json.loads(r.content)['k'] == k)
@@ -236,7 +238,7 @@ class TestPlugIt(TestBase):
         self.plugIt.toReplyJson = lambda: {'k': k}
         self.plugIt.toReplyHeaders = lambda: {}
 
-        assert(self.plugIt.doAction(path) == ({'k': k}, {}))
+        assert(self.plugIt.doAction(path) == ({'k': k}, {}, {}))
 
     def test_do_action_500(self):
         self.plugIt.toReplyStatusCode = lambda: 500
@@ -244,7 +246,21 @@ class TestPlugIt(TestBase):
 
     def test_do_action_fail(self):
         self.plugIt.toReplyStatusCode = lambda: 501
-        assert(self.plugIt.doAction('') == (None, {}))
+        assert(self.plugIt.doAction('') == (None, {}, {}))
+
+    def test_do_action_special_codes(self):
+
+        special_codes = [429, 404, 403, 401, 304]
+
+        for x in range(200, 500):
+            self.plugIt.toReplyStatusCode = lambda: x
+            r, __, __ = self.plugIt.doAction('')
+
+            if x in special_codes:
+                assert(r.__class__.__name__ == 'PlugItSpecialCode')
+                assert(r.code == x)
+            else:
+                assert(r.__class__.__name__ != 'PlugItSpecialCode')
 
     def test_do_action_session(self):
 
@@ -253,7 +269,7 @@ class TestPlugIt(TestBase):
         self.plugIt.toReplyStatusCode = lambda: 200
         self.plugIt.toReplyJson = lambda: {}
         self.plugIt.toReplyHeaders = lambda: {'Ebuio-PlugIt-SetSession-k': k}
-        assert(self.plugIt.doAction('') == ({}, {'k': k}))
+        assert(self.plugIt.doAction('') == ({}, {'k': k}, {}))
 
     def test_do_action_redirect(self):
 
@@ -262,11 +278,12 @@ class TestPlugIt(TestBase):
         self.plugIt.toReplyStatusCode = lambda: 200
         self.plugIt.toReplyJson = lambda: {}
         self.plugIt.toReplyHeaders = lambda: {'ebuio-plugit-redirect': k}
-        r, headers = self.plugIt.doAction('')
+        r, session, headers = self.plugIt.doAction('')
 
         assert(r.__class__.__name__ == 'PlugItRedirect')
         assert(r.url == k)
         assert(not r.no_prefix)
+        assert(session == {})
         assert(headers == {})
 
     def test_do_action_redirect_noprefix(self):
@@ -276,11 +293,12 @@ class TestPlugIt(TestBase):
         self.plugIt.toReplyStatusCode = lambda: 200
         self.plugIt.toReplyJson = lambda: {}
         self.plugIt.toReplyHeaders = lambda: {'ebuio-plugit-redirect': k, 'ebuio-plugit-redirect-noprefix': "True"}
-        r, headers = self.plugIt.doAction('')
+        r, session, headers = self.plugIt.doAction('')
 
         assert(r.__class__.__name__ == 'PlugItRedirect')
         assert(r.url == k)
         assert(r.no_prefix)
+        assert(session == {})
         assert(headers == {})
 
     def test_do_action_file(self):
@@ -292,14 +310,26 @@ class TestPlugIt(TestBase):
         self.plugIt.toReplyStatusCode = lambda: 200
         self.plugIt.toReplyJson = lambda: {'k': k}
         self.plugIt.toReplyHeaders = lambda: {'ebuio-plugit-itafile': k, 'Content-Type': content_type}
-        r, headers = self.plugIt.doAction('')
+        r, session, headers = self.plugIt.doAction('')
 
         assert(r.__class__.__name__ == 'PlugItFile')
         assert(json.loads(r.content)['k'] == k)
         assert(r.content_type == content_type)
         assert(r.content_disposition == '')
+        assert(session == {})
         assert(headers == {})
 
         self.plugIt.toReplyHeaders = lambda: {'ebuio-plugit-itafile': k, 'Content-Type': content_type, 'content-disposition': content_disposition}
-        r, headers = self.plugIt.doAction('')
+        r, __, __ = self.plugIt.doAction('')
         assert(r.content_disposition == content_disposition)
+
+    def test_do_action_etag(self):
+
+        k = str(uuid.uuid4())
+
+        self.plugIt.toReplyStatusCode = lambda: 200
+        self.plugIt.toReplyJson = lambda: {}
+        self.plugIt.toReplyHeaders = lambda: {'ETag': k}
+        r, session, headers = self.plugIt.doAction('')
+
+        assert(headers == {'ETag': k})

@@ -6,6 +6,7 @@ from nose.tools import *
 
 import uuid
 from werkzeug.exceptions import NotFound
+import copy
 
 
 class TestViews(TestBase):
@@ -437,3 +438,32 @@ class TestViews(TestBase):
         assert(response.data == file_content)
         assert(response.headers['Content-Type'] == minetype)
         assert(response.headers['Content-Disposition'] == "attachment; filename=" + atta_filename)
+
+    def test_action_send_etag(self):
+
+        self.patch_view(dont_jsonify=True)
+
+        data = {'a': str(uuid.uuid4()), '_plugit_etag': str(uuid.uuid4())}
+
+        def _tmpa(__):
+
+            data2 = copy.deepcopy(data)
+
+            class FakeResponse():
+                headers = {}
+                data = data2
+
+                def pop(self, k, d=None):
+                    return data2.pop(k, d)
+
+            return FakeResponse()
+
+        _tmpa.pi_api_send_etag = True
+
+        mv = self.plugitviews.ActionView(_tmpa)
+        response = mv.dispatch_request()
+        self.unpatch_view()
+
+        assert(response.data['a'] == data['a'])
+        assert('_plugit_etag' not in response.data)
+        assert(response.headers['ETag'] == data['_plugit_etag'])

@@ -81,6 +81,14 @@ def address_in_networks(networks):
     return real_decorator
 
 
+def send_etag():
+    """Decorator to specify that in data returned, '_plugit_etag' shouldn't be send back as data but in etag header"""
+    def real_decorator(function):
+        function.pi_api_send_etag = True
+        return function
+    return real_decorator
+
+
 def user_info(props):
     """Decorator to specify a list of properties requested about the current user"""
     def real_decorator(function):

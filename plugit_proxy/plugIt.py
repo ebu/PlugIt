@@ -156,9 +156,14 @@ class PlugIt():
             if 'content-type' in r.headers:
                 content_type = r.headers['content-type']
 
-            return (r.content, content_type)
+            cache_control = None
+
+            if 'cache-control' in r.headers:
+                cache_control = r.headers['cache-control']
+
+            return (r.content, content_type, cache_control)
         else:
-            return (None, None)
+            return (None, None, None)
 
     def getMeta(self, uri):
         """Return meta information about an action. Cache the result as specified by the server"""
@@ -192,7 +197,14 @@ class PlugIt():
         """Return the template for an action. Cache the result. Can use an optional meta parameter with meta information"""
 
         if not meta:
-            meta = self.getMeta(uri)
+
+            metaKey = self.cacheKey + '_templatesmeta_cache_' + uri
+
+            meta = cache.get(metaKey, None)
+
+            if not meta:
+                meta = self.getMeta(uri)
+                cache.set(metaKey, meta, 15)
 
         if not meta:  # No meta, can return a template
             return None
@@ -243,8 +255,16 @@ class PlugIt():
             """Object to return a 500"""
             pass
 
+        class PlugItSpecialCode():
+            """Object to return a special status code"""
+            def __init__(self, code):
+                self.code = code
+
         if r.status_code == 500:
-            return (PlugIt500(), {})
+            return (PlugIt500(), {}, {})
+
+        if r.status_code in [429, 404, 403, 401, 304]:
+            return (PlugItSpecialCode(r.status_code), {}, {})
 
         if r.status_code == 200:  # Get the content if there is not problem. If there is, template will stay to None
             # {} is parsed as None (but should be an empty object)
@@ -257,13 +277,20 @@ class PlugIt():
                 if key.lower().startswith(attr):
                     session_to_set[key[len(attr):]] = value
 
+            # Build list of headers to forward
+            headers_to_set = {}
+
+            for h in ['ETag']:
+                if h in r.headers:
+                    headers_to_set[h] = r.headers[h]
+
             if 'ebuio-plugit-redirect' in r.headers:
                 no_prefix = False
 
                 if 'ebuio-plugit-redirect-noprefix' in r.headers:
                     no_prefix = r.headers['ebuio-plugit-redirect-noprefix'] == 'True'
 
-                return (PlugItRedirect(r.headers['ebuio-plugit-redirect'], no_prefix), session_to_set)
+                return (PlugItRedirect(r.headers['ebuio-plugit-redirect'], no_prefix), session_to_set, headers_to_set)
 
             if 'ebuio-plugit-itafile' in r.headers:
 
@@ -272,17 +299,17 @@ class PlugIt():
                 else:
                     content_disposition = ''
 
-                return (PlugItFile(r.content, r.headers['Content-Type'], content_disposition), session_to_set)
+                return (PlugItFile(r.content, r.headers['Content-Type'], content_disposition), session_to_set, headers_to_set)
 
             if proxyMode and 'ebuio-plugit-notemplate' in r.headers:
-                return (PlugItNoTemplate(r.content), session_to_set)
+                return (PlugItNoTemplate(r.content), session_to_set, headers_to_set)
 
             if proxyMode:
-                return (r.content, session_to_set)
+                return (r.content, session_to_set, headers_to_set)
 
             if not r.content or r.content == "{}":
-                return ({}, session_to_set)
+                return ({}, session_to_set, headers_to_set)
 
-            return (r.json(), session_to_set)
+            return (r.json(), session_to_set, headers_to_set)
         else:
-            return (None, {})
+            return (None, {}, {})

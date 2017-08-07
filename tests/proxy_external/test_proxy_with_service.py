@@ -394,3 +394,38 @@ class TestExternal(unittest.TestCase):
         retour = self.do_query('sendfile_external', 'POST', files={'testfile2': open('tests/helpers/flask_server/media/testfile2', 'rb')}, headers={'X-CSRFToken': csrf_token.cookies['csrftoken']})
         assert(retour)
         assert('ok' in retour.text)
+
+    def test_generate_special_code_429(self):
+        retour = self.do_query('generate_429')
+        assert(retour.status_code == 429)
+
+    def test_generate_special_code_404(self):
+        retour = self.do_query('generate_404')
+        assert(retour.status_code == 404)
+
+    def test_generate_special_code_403(self):
+        retour = self.do_query('generate_403')
+        assert(retour.status_code == 403)
+
+    def test_generate_special_code_401(self):
+        retour = self.do_query('generate_401')
+        assert(retour.status_code == 401)
+
+    def test_generate_special_code_304(self):
+        retour = self.do_query('generate_304')
+        assert(retour.status_code == 304)
+
+    def test_send_etag(self):
+        retour = self.do_query('etag')
+        assert(retour.status_code == 200)
+        assert('ETag' in retour.headers)
+        assert(retour.headers['ETag'] == 'this-is-an-etag')
+
+    def test_if_none_match(self):
+
+        k = str(uuid.uuid4())
+
+        retour = self.do_query('if_none_match', headers={'If-None-Match': k})
+
+        assert(retour)
+        assert(k in retour.text)

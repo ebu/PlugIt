@@ -419,8 +419,11 @@ def build_extra_headers(request, proxyMode, orgaMode, currentOrga):
         # General
         things_to_add['base_url'] = baseURI
 
-    if request and hasattr(request, 'META') and 'REMOTE_ADDR' in request.META:
-        things_to_add['remote-addr'] = request.META['REMOTE_ADDR']
+    if request and hasattr(request, 'META'):
+        if 'REMOTE_ADDR' in request.META:
+            things_to_add['remote-addr'] = request.META['REMOTE_ADDR']
+        if 'HTTP_IF_NONE_MATCH' in request.META:
+            things_to_add['If-None-Match'] = request.META['HTTP_IF_NONE_MATCH']
 
     return things_to_add
 
@@ -433,6 +436,11 @@ def handle_special_cases(request, data, baseURI, meta):
 
     if data.__class__.__name__ == 'PlugIt500':
         return gen500(request, baseURI)
+
+    if data.__class__.__name__ == 'PlugItSpecialCode':
+        r = HttpResponse('')
+        r.status_code = data.code
+        return r
 
     if data.__class__.__name__ == 'PlugItRedirect':
         url = data.url
@@ -805,7 +813,7 @@ def main(request, query, hproPk=None, returnMenuOnly=False):
     current_session = get_current_session(request, hproPk)
 
     # Do the action
-    (data, session_to_set) = plugIt.doAction(query, request.method, getParameters, postParameters, files, things_to_add,
+    (data, session_to_set, headers_to_set) = plugIt.doAction(query, request.method, getParameters, postParameters, files, things_to_add,
                                              proxyMode=proxyMode, session=current_session)
 
     update_session(request, session_to_set, hproPk)
@@ -813,6 +821,10 @@ def main(request, query, hproPk=None, returnMenuOnly=False):
     # Handle special case (redirect, etc..)
     spe_cases = handle_special_cases(request, data, baseURI, meta)
     if spe_cases:
+
+        for header, value in headers_to_set.items():
+            spe_cases[header] = value
+
         return spe_cases
 
     # Save data for proxyMode
@@ -843,7 +855,12 @@ def main(request, query, hproPk=None, returnMenuOnly=False):
         return menu
 
     # Return the final response
-    return build_final_response(request, meta, result, menu, hproject, proxyMode, context)
+    final = build_final_response(request, meta, result, menu, hproject, proxyMode, context)
+
+    for header, value in headers_to_set.items():
+        final[header] = value
+
+    return final
 
 
 def _get_subscription_labels(user, hproject):
@@ -858,14 +875,14 @@ def _get_subscription_labels(user, hproject):
 
 @cache_control(public=True, max_age=3600)
 def media(request, path, hproPk=None):
-    """Ask the server for a media and return it to the client browser. Add cache headers of 1 hour"""
+    """Ask the server for a media and return it to the client browser. Forward cache headers"""
 
     if not settings.PIAPI_STANDALONE:
         (plugIt, baseURI, _) = getPlugItObject(hproPk)
     else:
         global plugIt, baseURI
 
-    (media, contentType) = plugIt.getMedia(path)
+    (media, contentType, cache_control) = plugIt.getMedia(path)
 
     if not media:  # No media returned
         raise Http404
@@ -873,6 +890,9 @@ def media(request, path, hproPk=None):
     response = HttpResponse(media)
     response['Content-Type'] = contentType
     response['Content-Length'] = len(media)
+
+    if cache_control:
+        response['Cache-Control'] = cache_control
 
     return response
 
