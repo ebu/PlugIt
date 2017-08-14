@@ -4,7 +4,7 @@ from django.core.management.base import BaseCommand
 
 
 from django.conf import settings
-from poplib import POP3
+from poplib import POP3, POP3_SSL
 import email
 import re
 import base64
@@ -20,7 +20,11 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         from Crypto.Cipher import AES
 
-        pop_connection = POP3(settings.INCOMING_MAIL_HOST, getattr(settings, 'INCOMING_MAIL_PORT'))
+        if int(getattr(settings, 'INCOMING_MAIL_PORT')) == 995:
+            pop_connection = POP3_SSL(settings.INCOMING_MAIL_HOST, getattr(settings, 'INCOMING_MAIL_PORT'))
+        else:
+            pop_connection = POP3(settings.INCOMING_MAIL_HOST, getattr(settings, 'INCOMING_MAIL_PORT'))
+
         pop_connection.user(settings.INCOMING_MAIL_USER)
         pop_connection.pass_(settings.INCOMING_MAIL_PASSWORD)
 
