@@ -1,3 +1,7 @@
+# v0.3.7
+
+Allow POPS to be used.
+
 # v0.3.6
 
 Introduction of `send_etag` decorator, who allow to send an ETag header to the final client, using the `_plugit_etag` value in returned data.
