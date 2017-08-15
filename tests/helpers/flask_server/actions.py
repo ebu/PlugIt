@@ -283,5 +283,4 @@ def test_if_none_match(request):
 @action(route='/crossdomain', template="echo.html")
 @crossdomain(origin='test')
 def test_cross_domain(request):
-    print(request.headers)
     return {'echo': request.headers.get('X-PlugIt-Origin')}
