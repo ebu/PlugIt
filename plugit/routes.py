@@ -52,5 +52,5 @@ def load_routes(app, actions, mail_callback=None):
             # Action
             app.add_url_rule(
                 '{}action{}'.format(PI_BASE_URL, obj.pi_api_route),
-                view_func=ActionView.as_view('action_{}'.format(act), action=obj),
+                view_func=ActionView.as_view_custom('action_{}'.format(act), action=obj),
                 methods=obj.pi_api_methods)

@@ -179,6 +179,20 @@ class TestUtils(TestBase):
 
         assert(_tmp.pi_api_send_etag)
 
+    def test_decorators_crossdomain(self):
+        """Test the crossdomai decorator"""
+        from plugit.utils import crossdomain
+
+        k = str(uuid.uuid4())
+
+        @crossdomain(k)
+        def _tmp():
+            pass
+
+        assert(_tmp.pi_api_crossdomain)
+        assert(_tmp.pi_api_crossdomain_data)
+        assert(_tmp.pi_api_crossdomain_data['origin'] == k)
+
     def test_md5checksum(self):
         """Test the md5Checksum util"""
         import tempfile

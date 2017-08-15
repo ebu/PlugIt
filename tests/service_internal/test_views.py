@@ -467,3 +467,33 @@ class TestViews(TestBase):
         assert(response.data['a'] == data['a'])
         assert('_plugit_etag' not in response.data)
         assert(response.headers['ETag'] == data['_plugit_etag'])
+
+    def test_action_cross_domain(self):
+
+        self.patch_view(dont_jsonify=True)
+
+        def _tmpa(__):
+            class FakeResponse():
+                headers = {}
+            return FakeResponse()
+
+        _tmpa.pi_api_crossdomain = True
+        _tmpa.pi_api_crossdomain_data = {
+            'origin': str(uuid.uuid4()),
+            'methods': str(uuid.uuid4()),
+            'max_age': str(uuid.uuid4()),
+            'headers': str(uuid.uuid4()),
+        }
+
+        assert(not hasattr(self.plugitviews.ActionView.as_view_custom('test', action=None), 'provide_automatic_options'))
+        assert(not self.plugitviews.ActionView.as_view_custom('test', action=_tmpa).provide_automatic_options)
+        assert(self.plugitviews.ActionView.as_view_custom('test', action=_tmpa).provide_automatic_options is not None)
+
+        mv = self.plugitviews.ActionView(_tmpa)
+        response = mv.dispatch_request()
+        self.unpatch_view()
+
+        assert(response.headers['Access-Control-Allow-Origin'] == _tmpa.pi_api_crossdomain_data['origin'])
+        assert(response.headers['Access-Control-Allow-Methods'] == _tmpa.pi_api_crossdomain_data['methods'])
+        assert(response.headers['Access-Control-Allow-Headers'] == _tmpa.pi_api_crossdomain_data['headers'])
+        assert(response.headers['Access-Control-Max-Age'] == _tmpa.pi_api_crossdomain_data['max_age'])

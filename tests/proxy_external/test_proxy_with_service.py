@@ -429,3 +429,25 @@ class TestExternal(unittest.TestCase):
 
         assert(retour)
         assert(k in retour.text)
+
+    def test_cross_domain(self):
+
+        k = str(uuid.uuid4())
+
+        retour = self.do_query('crossdomain', headers={'Origin': k})
+
+        assert(retour)
+        assert('Access-Control-Allow-Origin' in retour.headers)
+        assert(retour.headers['Access-Control-Allow-Origin'] == 'test')
+        assert(k in retour.text)
+
+    def test_cross_domain_options(self):
+
+        k = str(uuid.uuid4())
+
+        retour = self.do_query('crossdomain', 'OPTIONS', headers={'Origin': k})
+
+        assert(retour)
+        assert('Access-Control-Allow-Origin' in retour.headers)
+        assert(retour.headers['Access-Control-Allow-Origin'] == 'test')
+        assert(k not in retour.text)

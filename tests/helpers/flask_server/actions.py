@@ -9,7 +9,7 @@ sys.path.append('../../../')
 import time
 
 
-from plugit.utils import action, cache, only_logged_user, only_member_user, only_admin_user, only_orga_member_user, only_orga_admin_user, user_info, json_only, no_template, PlugItRedirect, PlugItSendFile, PlugItSetSession, get_session_from_request, xml_only, public, address_in_networks, send_etag
+from plugit.utils import action, cache, only_logged_user, only_member_user, only_admin_user, only_orga_member_user, only_orga_admin_user, user_info, json_only, no_template, PlugItRedirect, PlugItSendFile, PlugItSetSession, get_session_from_request, xml_only, public, address_in_networks, send_etag, crossdomain
 
 
 @action(route="/", template="home.html")
@@ -277,5 +277,11 @@ def test_etag(request):
 
 @action(route='/if_none_match', template="echo.html")
 def test_if_none_match(request):
-    print(request.headers)
     return {'echo': request.headers.get('X-PlugIt-If-None-Match')}
+
+
+@action(route='/crossdomain', template="echo.html")
+@crossdomain(origin='test')
+def test_cross_domain(request):
+    print(request.headers)
+    return {'echo': request.headers.get('X-PlugIt-Origin')}

@@ -1,3 +1,13 @@
+# v0.3.8
+
+Make "Cross-origin resource sharing" working:
+* Introduction of `crossdomain` decorator, who will automaticaly reply CORS headers (inclution OPTIONS requests)
+* Client CORS headers are forwarded to PlugIt services (`X-PlugIt-Origin`, `X-PlugIt-Access-Control-Request-Method` and `X-PlugIt-Access-Control-Request-Headers`
+* Services' CROS headers are forwarded back to clients (`Access-Control-Allow-Origin`, `Access-Control-Allow-Credentials`, `Access-Control-Expose-Headers`, `Access-Control-Max-Age`, `Access-Control-Allow-Methods`, `Access-Control-Allow-Headers`)
+* OPTIONS method is forwarded to services.
+* It's services reposibility to handle and if needed refuse to reply to some requests based on `Origin` header. The PlugIt proxy only act as a proxy.
+
+
 # v0.3.7
 
 Allow POPS to be used.
