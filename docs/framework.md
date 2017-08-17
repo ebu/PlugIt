@@ -26,6 +26,7 @@ It's possible to use various additional decorators to specify how the meta about
 * `@xml_only`: Specifies the action return only xml (Response to have structure {'xml':'..'})
 * `@no_template`: Specifies no master template should be used
 * `@send_etag`: Specifiy that, when execution the action, the `_plugit_etag` value should be send back in `ETag` header and not as data.
+* `@crossdomain(origin=None, methods=None, headers=None, max_age=21600)`: Will set [CORS](https://en.wikipedia.org/wiki/Cross-origin_resource_sharing) headers, based on parameters. Will also hook OPTIONS request to reply with headers.
 
 Again, the server.py file takes care of responding to /meta/, /template/ and /action/ call. The function in actions.py will be called when needed. The request is passed as the first parameters to actions.
 

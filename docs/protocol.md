@@ -60,6 +60,8 @@ It's possible to send a file using the header `EbuIo-PlugIt-ItAFile`. The conten
 
 The `ETag` header will be send back to the client.
 
+The [CORS](https://en.wikipedia.org/wiki/Cross-origin_resource_sharing) headers will be send back to the clinet.
+
 If this method return a 304, 401, 403, 404, 429 or 500 http status code the exact status code will be send back to the client. In others cases, if the status code is not 200, a 404 will be returned.
 
 ### /media/_medianame_
@@ -83,6 +85,9 @@ The PlugIt Proxy will send extra information about the client using HTTP headers
 
 * `X-Plugit-Remote-Addr`: The ip of the client doing the request.
 * `X-Plugit-If-None-Match`: The If-None-Match header value of the client doing the request.
+* `X-Plugit-Origin`: The Origin header value of the client doing the request.
+* `X-Plugit-Access-Control-Request-Method`: The Access-Control-Request-Method header value of the client doing the request.
+* `X-Plugit-Access-Control-Request-Headers`: The Access-Control-Request-Headers header value of the client doing the request.
 
 ### ProxyMode
 

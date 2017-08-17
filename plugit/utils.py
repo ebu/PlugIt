@@ -5,6 +5,7 @@ from params import PI_ALLOWED_NETWORKS, PI_USE_PROXY_IP
 
 import os
 import sys
+from datetime import timedelta
 
 
 # Decorators
@@ -15,6 +16,14 @@ def action(route, template='', methods=['GET']):
         function.pi_api_route = route
         function.pi_api_template = template
         function.pi_api_methods = methods
+
+        if hasattr(function, 'pi_api_crossdomain'):
+            if not function.pi_api_crossdomain_data['methods']:
+                function.pi_api_crossdomain_data['methods'] = methods
+
+            if 'OPTIONS' not in function.pi_api_methods:
+                function.pi_api_methods += ['OPTIONS']
+
         return function
     return real_decorator
 
@@ -127,6 +136,33 @@ def no_template():
         function.pi_api_no_template = True
         return function
     return real_decorator
+
+
+def crossdomain(origin=None, methods=None, headers=None, max_age=21600):
+
+    if methods is not None:
+        methods = ', '.join(sorted(x.upper() for x in methods))
+
+    if headers is not None and not isinstance(headers, basestring):
+        headers = ', '.join(x.upper() for x in headers)
+
+    if not isinstance(origin, basestring):
+        origin = ', '.join(origin)
+
+    if isinstance(max_age, timedelta):
+        max_age = max_age.total_seconds()
+
+    def real_decorator(function):
+        function.pi_api_crossdomain = True
+        function.pi_api_crossdomain_data = {
+            'origin': origin,
+            'methods': methods,
+            'max_age': str(max_age),
+            'headers': headers,
+        }
+        return function
+    return real_decorator
+
 
 # Utils
 

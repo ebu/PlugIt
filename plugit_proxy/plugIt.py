@@ -280,7 +280,7 @@ class PlugIt():
             # Build list of headers to forward
             headers_to_set = {}
 
-            for h in ['ETag']:
+            for h in ['ETag', 'Access-Control-Allow-Origin', 'Access-Control-Allow-Credentials', 'Access-Control-Expose-Headers', 'Access-Control-Max-Age', 'Access-Control-Allow-Methods', 'Access-Control-Allow-Headers']:
                 if h in r.headers:
                     headers_to_set[h] = r.headers[h]
 

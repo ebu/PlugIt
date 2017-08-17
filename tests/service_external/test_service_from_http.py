@@ -330,3 +330,10 @@ class TestExternal(unittest.TestCase):
         assert(self.do_query('baseurl/ping'))
 
         self.start_p()
+
+    def test_crossdomain(self):
+        r = self.do_query('action/crossdomain')
+
+        assert(r)
+        assert('Access-Control-Allow-Origin' in r.headers)
+        assert(r.headers['Access-Control-Allow-Origin'] == 'test')

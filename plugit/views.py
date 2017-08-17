@@ -64,12 +64,23 @@ class ActionView(View):
     def __init__(self, action):
         self.action = action
 
+    @classmethod
+    def as_view_custom(cls, *args, **kwargs):
+        r = ActionView.as_view(*args, **kwargs)
+
+        if hasattr(kwargs['action'], 'pi_api_crossdomain'):
+            r.provide_automatic_options = False
+        return r
+
     def dispatch_request(self, *args, **kwargs):
 
         check_ip(request)
 
         # Call the action
-        result = self.action(request, *args, **kwargs)
+        if getattr(request, 'method', 'GET') != 'OPTIONS':
+            result = self.action(request, *args, **kwargs)
+        else:
+            result = {}
 
         headers = {}
 
@@ -86,6 +97,18 @@ class ActionView(View):
                     etag = result.pop('_plugit_etag', None)
                     if etag:
                         response.headers['ETag'] = etag
+
+            if hasattr(self.action, 'pi_api_crossdomain'):
+
+                response.headers['Access-Control-Allow-Origin'] = self.action.pi_api_crossdomain_data['origin']
+
+                if self.action.pi_api_crossdomain_data['methods']:
+                    response.headers['Access-Control-Allow-Methods'] = self.action.pi_api_crossdomain_data['methods']
+
+                response.headers['Access-Control-Max-Age'] = self.action.pi_api_crossdomain_data['max_age']
+
+                if self.action.pi_api_crossdomain_data['headers']:
+                    response.headers['Access-Control-Allow-Headers'] = self.action.pi_api_crossdomain_data['headers']
 
         # Is it a redirect ?
         if isinstance(result, PlugItRedirect):

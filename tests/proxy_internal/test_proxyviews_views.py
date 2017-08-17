@@ -75,6 +75,13 @@ class TestProxyViewsViews(TestProxyViews):
     def test_media_view(self):
         assert(self.views.media(self.build_request('/'), 'testfile2').content.strip() == "This is test file 2 !")
 
+    def test_main_view_options(self):
+        settings.PIAPI_USERDATA = ['pk']
+        r = self.views.main(self.build_request('/', 'OPTIONS'), 'crossdomain')
+        assert(r.status_code == 200)
+        assert(r.content.strip() == "")
+        assert(r['Access-Control-Allow-Origin'] == 'test')
+
     def test_media_view_404(self):
         try:
             self.views.media(self.build_request('/'), '_')

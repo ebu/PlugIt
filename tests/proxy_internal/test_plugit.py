@@ -333,3 +333,16 @@ class TestPlugIt(TestBase):
         r, session, headers = self.plugIt.doAction('')
 
         assert(headers == {'ETag': k})
+
+    def test_do_action_crossdomain(self):
+
+        k = str(uuid.uuid4())
+
+        self.plugIt.toReplyStatusCode = lambda: 200
+        self.plugIt.toReplyJson = lambda: {}
+
+        for header in ['Access-Control-Allow-Origin', 'Access-Control-Allow-Credentials', 'Access-Control-Expose-Headers', 'Access-Control-Max-Age', 'Access-Control-Allow-Methods', 'Access-Control-Allow-Headers']:
+            self.plugIt.toReplyHeaders = lambda: {header: k}
+            r, session, headers = self.plugIt.doAction('')
+
+            assert(headers == {header: k})

@@ -422,14 +422,20 @@ def build_extra_headers(request, proxyMode, orgaMode, currentOrga):
     if request and hasattr(request, 'META'):
         if 'REMOTE_ADDR' in request.META:
             things_to_add['remote-addr'] = request.META['REMOTE_ADDR']
-        if 'HTTP_IF_NONE_MATCH' in request.META:
-            things_to_add['If-None-Match'] = request.META['HTTP_IF_NONE_MATCH']
+
+        for meta_header, dest_header in [('HTTP_IF_NONE_MATCH', 'If-None-Match'), ('HTTP_ORIGIN', 'Origin'), ('HTTP_ACCESS_CONtROL_REQUEST_METHOD', 'Access-Control-Request-Method'), ('HTTP_ACCESS_CONTROL_REQUEST_HEADERS', 'Access-Control-Request-Headers')]:
+            if meta_header in request.META:
+                things_to_add[dest_header] = request.META[meta_header]
 
     return things_to_add
 
 
 def handle_special_cases(request, data, baseURI, meta):
     """Handle sepcial cases for returned values by the doAction function"""
+
+    if request.method == 'OPTIONS':
+        r = HttpResponse('')
+        return r
 
     if data is None:
         return gen404(request, baseURI, 'data')
@@ -813,8 +819,7 @@ def main(request, query, hproPk=None, returnMenuOnly=False):
     current_session = get_current_session(request, hproPk)
 
     # Do the action
-    (data, session_to_set, headers_to_set) = plugIt.doAction(query, request.method, getParameters, postParameters, files, things_to_add,
-                                             proxyMode=proxyMode, session=current_session)
+    (data, session_to_set, headers_to_set) = plugIt.doAction(query, request.method, getParameters, postParameters, files, things_to_add, proxyMode=proxyMode, session=current_session)
 
     update_session(request, session_to_set, hproPk)
 

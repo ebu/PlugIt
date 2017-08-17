@@ -69,8 +69,9 @@ class TestProxyViews(TestBase):
     def restore_base_url(self):
         self.views.baseURI = self.views.baseURI_bkp
 
-    def build_request(self, path):
+    def build_request(self, path, method='GET'):
         r = self.factory.get(path)
         r.session = {}
+        r.method = method
 
         return r

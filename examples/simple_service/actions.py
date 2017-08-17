@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import sqlite3
-from plugit.utils import action, cache, only_logged_user, only_member_user, user_info, json_only, PlugItRedirect, PlugItSendFile
+from plugit.utils import action, cache, only_logged_user, only_member_user, user_info, json_only, PlugItRedirect, PlugItSendFile, xml_only, crossdomain
 
 # ## Basic sample service: polls
 # Anonymous users can see polls
@@ -25,8 +25,9 @@ curDB.execute("VACUUM")
 coxDB.commit()
 
 
-@action(route="/", template="home.html")
+@action(route="/", template="home.html", methods=["GET", "PUT"])
 @cache(time=5, byUser=True)
+@crossdomain(origin='*', methods=["GET", "PUT"])
 def home(request):
     """Show the home page. Send the list of polls"""
 
