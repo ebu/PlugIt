@@ -1,3 +1,7 @@
+# v0.3.9
+
+* Fixed a bug in 'api.send_mail' where 'html_message' was always considered true.
+
 # v0.3.8
 
 Make "Cross-origin resource sharing" working:

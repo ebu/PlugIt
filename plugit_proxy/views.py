@@ -1195,6 +1195,9 @@ def api_send_mail(request, key=None, hproPk=None):
     message = request.POST['message']
     html_message = request.POST.get('html_message')
 
+    if html_message and html_message.lower() == 'false':
+        html_message = False
+
     if 'response_id' in request.POST:
         key = hproPk + ':' + request.POST['response_id']
     else:
