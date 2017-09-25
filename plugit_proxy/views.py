@@ -174,6 +174,14 @@ def gen403(request, baseURI, reason, project=None):
     }, context_instance=RequestContext(request)))
 
 
+def report_backend_error(request, error, query_type, hproPk):
+    try:
+        from raven.contrib.django.raven_compat.models import client
+        client.captureException(fingerprint=['{{ default }}', '{}-{}'.format(query_type, hproPk)])
+    except:
+        pass
+
+
 def get_cache_key(request, meta, orgaMode, currentOrga):
     """Return the cache key to use"""
 
@@ -740,7 +748,12 @@ def main(request, query, hproPk=None, returnMenuOnly=False):
 
         # Get meta, if not in proxy mode
         if not proxyMode:
-            meta = plugIt.getMeta(query)
+
+            try:
+                meta = plugIt.getMeta(query)
+            except Exception as e:
+                report_backend_error(request, e, 'meta', hproPk)
+                meta = None
 
             if not meta:
                 return gen404(request, baseURI, 'meta')
@@ -757,7 +770,12 @@ def main(request, query, hproPk=None, returnMenuOnly=False):
 
         # Get meta, if not in proxy mode
         if not proxyMode:
-            meta = plugIt.getMeta(query)
+
+            try:
+                meta = plugIt.getMeta(query)
+            except Exception as e:
+                report_backend_error(request, e, 'meta', hproPk)
+                meta = None
 
             if not meta:
                 return gen404(request, baseURI, 'meta')
@@ -819,7 +837,11 @@ def main(request, query, hproPk=None, returnMenuOnly=False):
     current_session = get_current_session(request, hproPk)
 
     # Do the action
-    (data, session_to_set, headers_to_set) = plugIt.doAction(query, request.method, getParameters, postParameters, files, things_to_add, proxyMode=proxyMode, session=current_session)
+    try:
+        (data, session_to_set, headers_to_set) = plugIt.doAction(query, request.method, getParameters, postParameters, files, things_to_add, proxyMode=proxyMode, session=current_session)
+    except Exception as e:
+        report_backend_error(request, e, 'meta', hproPk)
+        return gen500(request, baseURI)
 
     update_session(request, session_to_set, hproPk)
 
@@ -887,7 +909,11 @@ def media(request, path, hproPk=None):
     else:
         global plugIt, baseURI
 
-    (media, contentType, cache_control) = plugIt.getMedia(path)
+    try:
+        (media, contentType, cache_control) = plugIt.getMedia(path)
+    except Exception as e:
+        report_backend_error(request, e, 'meta', hproPk)
+        return gen500(request, baseURI)
 
     if not media:  # No media returned
         raise Http404
