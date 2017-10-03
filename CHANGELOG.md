@@ -1,3 +1,8 @@
+# v0.3.11
+
+* New API call: `/user/<pk>/techgroups/` return the list of the techgroups of the user (EBUIo only)
+* New API call: `/techgroups/` return the list of the techgroups (EBUIo only)
+
 # v0.3.9
 
 * Fixed a bug in 'api.send_mail' where 'html_message' was always considered true.
