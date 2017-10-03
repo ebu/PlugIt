@@ -2,6 +2,7 @@
 
 * New API call: `/user/<pk>/techgroups/` return the list of the techgroups of the user (EBUIo only)
 * New API call: `/techgroups/` return the list of the techgroups (EBUIo only)
+* New option: set `HONOR_X_FORWARDED_FOR` in django's config to use `X-Forwarded-For` ip for `X-PlugIt-Remote-Addr` (if you're behind a proxy that may be useful)
 
 # v0.3.9
 

@@ -173,6 +173,8 @@ PIAPI_REALUSERS = False  # Don't active this with PIAPI_ORGAMODE !
 PIAPI_PLUGITMENUACTION = 'menubar'
 PIAPI_PLUGITTEMPLATE = 'plugItBase-menu.html'  # One out of 'plugItBase.html', 'plugItBase-menu.html'
 
+HONOR_X_FORWARDED_FOR = False  # Use `X-Forwarded-For` ip for `X-PlugIt-Remote-Addr` (if you're behind a proxy that may be useful)
+
 PIAPI_PROXYMODE = False
 
 CACHES = {
