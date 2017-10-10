@@ -431,6 +431,9 @@ def build_extra_headers(request, proxyMode, orgaMode, currentOrga):
         if 'REMOTE_ADDR' in request.META:
             things_to_add['remote-addr'] = request.META['REMOTE_ADDR']
 
+        if 'HTTP_X_FORWARDED_FOR' in request.META and getattr(settings, 'HONOR_X_FORWARDED_FOR'):
+            things_to_add['remote-addr'] = request.META['HTTP_X_FORWARDED_FOR']
+
         for meta_header, dest_header in [('HTTP_IF_NONE_MATCH', 'If-None-Match'), ('HTTP_ORIGIN', 'Origin'), ('HTTP_ACCESS_CONtROL_REQUEST_METHOD', 'Access-Control-Request-Method'), ('HTTP_ACCESS_CONTROL_REQUEST_HEADERS', 'Access-Control-Request-Headers')]:
             if meta_header in request.META:
                 things_to_add[dest_header] = request.META[meta_header]
@@ -1170,6 +1173,39 @@ def api_get_project_members(request, key=None, hproPk=True):
         liste.append(retour)
 
     return HttpResponse(json.dumps({'members': liste}), content_type="application/json")
+
+
+def api_techgroup_list(request, key, hproPk):
+    """Return the list of techgroup"""
+
+    if not check_api_key(request, key, hproPk):
+        return HttpResponseForbidden
+
+    from users.models import TechGroup
+
+    retour = [{
+        'uuid': t.uuid,
+        'uid': t.uid,
+        'name': t.name,
+    } for t in TechGroup.objects.filter(is_enabled=True)]
+
+    return HttpResponse(json.dumps(retour), content_type="application/json")
+
+
+def api_user_techgroup_list(request, userPk, key, hproPk):
+    """Return the list of techgroup of a user"""
+
+    if not check_api_key(request, key, hproPk):
+        return HttpResponseForbidden
+
+    # From UUID to Pk
+    from users.models import TechUser
+
+    user = get_object_or_404(TechUser, pk=userPk)
+
+    retour = [t.uuid for t in user.techgroup_set.filter(is_enabled=True)]
+
+    return HttpResponse(json.dumps(retour), content_type="application/json")
 
 
 def generic_send_mail(sender, dests, subject, message, key, origin='', html_message=False):

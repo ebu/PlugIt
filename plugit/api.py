@@ -39,6 +39,13 @@ class PlugItAPI(object):
             return u
         return None
 
+    def get_user_techgroups(self, userPk):
+        """Return the list of techgroups for a user"""
+        try:
+            return self._request('user/{}/techgroups/'.format(userPk)).json()
+        except:
+            return []
+
     def get_subscription_labels(self, userPk):
         """Returns a list with all the labels the user is subscribed to"""
         r = self._request('subscriptions/' + str(userPk))
@@ -93,6 +100,13 @@ class PlugItAPI(object):
             retour.append(u)
 
         return retour
+
+    def get_techgroups(self):
+        """Return the list of techgroups"""
+        try:
+            return self._request('techgroups/').json()
+        except:
+            return []
 
     def send_mail(self, sender, subject, recipients, message, response_id=None, html_message=False):
         """Send an email using EBUio features. If response_id is set, replies will be send back to the PlugIt server."""

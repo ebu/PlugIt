@@ -52,11 +52,15 @@ else:
         # Orga change
         url(r'^(?P<hproPk>[0-9a-zA-Z_\-]*)/_ebuio_setOrga$', 'setOrga'),
 
+        # Extra api
+        url(r'^' + API_BASE_PATTERN + r'techgroups/$', 'api_techgroup_list'),
+        url(r'^' + API_BASE_PATTERN + r'user/(?P<userPk>-?[0-9]+)/techgroups/$', 'api_user_techgroup_list'),
+
         # Main Pattern
         url(r'^(?P<hproPk>[0-9a-zA-Z_\-]*)/(?P<query>.*)$', 'main'),
 
         # Home Patterns
         url(r'^(?P<hproPk>[0-9a-zA-Z_\-]*)$', 'home'),
         url(r'^(?P<key>[0-9a-zA-Z]*)$', 'home'),
-    )
 
+    )
