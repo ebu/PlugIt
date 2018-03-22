@@ -25,6 +25,7 @@ setup(
         "Topic :: Internet :: WWW/HTTP :: HTTP Servers",
     ],
     long_description=open("README.md").read() + "\n\n",
+    long_description_content_type='text/markdown',
     install_requires=[
         'requests',
         'flask',
