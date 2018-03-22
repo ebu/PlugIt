@@ -115,7 +115,7 @@ class SimpleUser():
     pass
 
 
-def gen404(request, baseURI, reason):
+def gen404(request, baseURI, reason, project=None):
     """Return a 404 error"""
     return HttpResponseNotFound(
         render_to_response('plugIt/404.html', {'context':
@@ -123,18 +123,20 @@ def gen404(request, baseURI, reason):
                 'reason': reason,
                 'ebuio_baseUrl': baseURI,
                 'ebuio_userMode': request.session.get('plugit-standalone-usermode', 'ano'),
-            }
+            },
+            'project': project
         }, context_instance=RequestContext(request)))
 
 
-def gen500(request, baseURI):
+def gen500(request, baseURI, project=None):
     """Return a 500 error"""
     return HttpResponseServerError(
         render_to_response('plugIt/500.html', {
             'context': {
                 'ebuio_baseUrl': baseURI,
                 'ebuio_userMode': request.session.get('plugit-standalone-usermode', 'ano'),
-            }
+            },
+            'project': project
         }, context_instance=RequestContext(request)))
 
 
@@ -169,8 +171,8 @@ def gen403(request, baseURI, reason, project=None):
             'public_ask': public_ask,
             'ebuio_baseUrl': baseURI,
             'ebuio_userMode': request.session.get('plugit-standalone-usermode', 'ano'),
-            'ebuio_project': project
-        }
+        },
+        'project': project
     }, context_instance=RequestContext(request)))
 
 
@@ -225,37 +227,37 @@ def get_cache_key(request, meta, orgaMode, currentOrga):
     return cacheKey
 
 
-def check_rights_and_access(request, meta):
+def check_rights_and_access(request, meta, project=None):
     """Check if the user can access the page"""
     # User must be logged ?
     if ('only_logged_user' in meta and meta['only_logged_user']):
         if not request.user.is_authenticated():
-            return gen403(request, baseURI, 'only_logged_user')
+            return gen403(request, baseURI, 'only_logged_user', project)
 
     # User must be member of the project ?
     if ('only_member_user' in meta and meta['only_member_user']):
         if not request.user.ebuio_member:
-            return gen403(request, baseURI, 'only_member_user')
+            return gen403(request, baseURI, 'only_member_user', project)
 
     # User must be administrator of the project ?
     if ('only_admin_user' in meta and meta['only_admin_user']):
         if not request.user.ebuio_admin:
-            return gen403(request, baseURI, 'only_admin_user')
+            return gen403(request, baseURI, 'only_admin_user', project)
 
     # User must be member of the orga ?
     if ('only_orga_member_user' in meta and meta['only_orga_member_user']):
         if not request.user.ebuio_orga_member:
-            return gen403(request, baseURI, 'only_orga_member_user')
+            return gen403(request, baseURI, 'only_orga_member_user', project)
 
     # User must be administrator of the orga ?
     if ('only_orga_admin_user' in meta and meta['only_orga_admin_user']):
         if not request.user.ebuio_orga_admin:
-            return gen403(request, baseURI, 'only_orga_admin_user')
+            return gen403(request, baseURI, 'only_orga_admin_user', project)
 
     # Remote IP must be in range ?
     if ('address_in_networks' in meta):
         if not is_requestaddress_in_networks(request, meta['address_in_networks']):
-            return gen403(request, baseURI, 'address_in_networks')
+            return gen403(request, baseURI, 'address_in_networks', project)
 
 
 def is_requestaddress_in_networks(request, networks):
@@ -820,7 +822,7 @@ def main(request, query, hproPk=None, returnMenuOnly=False):
     cacheKey = get_cache_key(request, meta, orgaMode, currentOrga)
 
     # Check access rights
-    error = check_rights_and_access(request, meta)
+    error = check_rights_and_access(request, meta, hproject)
 
     if error:
         return error
