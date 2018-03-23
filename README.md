@@ -112,7 +112,7 @@ Use the following commands to run the proxy:
 
 ## Copyright & license
 
-Copyright (c) 2014-2016, EBU-UER Technology & Innovation
+Copyright (c) 2014-2018, EBU-UER Technology & Innovation
 
 The code is under BSD (3-Clause) License. (see [LICENSE](./LICENSE))
 
